@@ -22,6 +22,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<MacroWorkspaceService>();
         builder.Services.AddSingleton<RecordingCoordinator>();
         builder.Services.AddSingleton<InAppInfoMessageChannel>();
+        builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddSingleton<IUiLocalizer, ResxUiLocalizer>();
         builder.Services.AddSingleton<IUserDialogService, WpfUserDialogService>();
         builder.Services.AddSingleton<IEditorInsertDialogs, WpfEditorInsertDialogs>();

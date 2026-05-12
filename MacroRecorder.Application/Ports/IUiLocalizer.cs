@@ -9,6 +9,14 @@ public interface IUiLocalizer
 {
     CultureInfo CurrentUiCulture { get; }
 
+    /// <summary>Raised after <see cref="ApplyUiCulture"/> completes.</summary>
+    event EventHandler? UiCultureChanged;
+
+    /// <summary>
+    /// Persists the preference, updates thread UI culture, and notifies listeners so the UI can refresh without restart.
+    /// </summary>
+    void ApplyUiCulture(CultureInfo culture);
+
     /// <summary>Returns the localized string for <paramref name="key"/> or the key itself if missing.</summary>
     string GetString(string key);
 

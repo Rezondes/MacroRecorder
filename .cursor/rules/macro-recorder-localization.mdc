@@ -31,7 +31,7 @@ alwaysApply: false
 
 - Unterstützt: **`de`**, **`en`** (alles andere → **en**).
 - Quelle: `%LocalAppData%/MacroRecorderByRezondes/settings.json` → `uiCulture`; sonst System-`CurrentUICulture` (nur `de` wird übernommen, sonst `en`).
-- Sprachwechsel: Hauptfenster **Einstellungen** (Zahnrad) → Overlay **`ApplicationSettingsView`** im Shell-Fenster → Sprache wählen, **Speichern** → bei Änderung Abfrage **Neustart**; vollständiger Live-Wechsel ohne Neustart ist nicht vorgesehen (V1).
+- Sprachwechsel: Hauptfenster **Einstellungen** (Zahnrad) → Shell-Seite **Settings** mit Tabs (z. B. **Allgemein**) → Sprache wählen, **Speichern** → `IUiLocalizer.ApplyUiCulture` (persistiert, Live-Update der UI ohne Neustart).
 
 ## System-`MessageBox`
 

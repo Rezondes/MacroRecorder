@@ -68,9 +68,21 @@ public partial class MacroEditorViewModel : ObservableObject
         }
         else
             _ = LoadAsync();
+
+        _loc.UiCultureChanged += (_, _) => OnUiCultureChanged();
     }
 
     public MacroId MacroId { get; }
+
+    private void OnUiCultureChanged()
+    {
+        UpdateRecordingCaption();
+        if (_macro is not null)
+            WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
+        else
+            WindowTitle = _loc.GetString("Editor_DefaultWindowTitle");
+        RebuildRows();
+    }
 
     public ObservableCollection<EditorTimelineRow> Rows { get; } = new();
 

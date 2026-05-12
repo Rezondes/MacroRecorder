@@ -1,5 +1,6 @@
+using System.Windows;
+using System.Windows.Data;
 using System.Windows.Markup;
-using MacroRecorder.Application.Ports;
 
 namespace MacroRecorder.App.Localization;
 
@@ -18,6 +19,27 @@ public sealed class LocExtension : MarkupExtension
     {
         if (string.IsNullOrEmpty(Key))
             return "";
-        return UiLocalizerHost.Current?.GetString(Key) ?? Key;
+
+        if (serviceProvider.GetService(typeof(IProvideValueTarget)) is not IProvideValueTarget provideTarget)
+            return UiLocalizerHost.Current?.GetString(Key) ?? Key;
+
+        if (provideTarget.TargetObject is Setter)
+            return UiLocalizerHost.Current?.GetString(Key) ?? Key;
+
+        if (provideTarget.TargetProperty is not DependencyProperty)
+            return UiLocalizerHost.Current?.GetString(Key) ?? Key;
+
+        if (provideTarget.TargetObject is not DependencyObject)
+            return UiLocalizerHost.Current?.GetString(Key) ?? Key;
+
+        var binding = new Binding(nameof(UiCulturePulse.Tick))
+        {
+            Source = UiCulturePulse.Instance,
+            Mode = BindingMode.OneWay,
+            Converter = LocKeyToStringConverter.Instance,
+            ConverterParameter = Key
+        };
+
+        return binding.ProvideValue(serviceProvider);
     }
 }

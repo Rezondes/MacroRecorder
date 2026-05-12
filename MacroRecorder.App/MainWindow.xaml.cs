@@ -50,13 +50,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (Shell.IsSettingsOpen)
-        {
-            Shell.CloseSettingsCommand.Execute(null);
-            e.Handled = true;
-            return;
-        }
-
         if (Shell.CanGoBack && Shell.GoBackCommand.CanExecute(null))
         {
             Shell.GoBackCommand.Execute(null);
@@ -72,13 +65,4 @@ public partial class MainWindow : Window
     }
 
     private void OnInfoModalInnerMouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
-
-    private void OnSettingsOverlayBackgroundMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (!ReferenceEquals(e.OriginalSource, sender))
-            return;
-        Shell.CloseSettingsCommand.Execute(null);
-    }
-
-    private void OnSettingsModalInnerMouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 }

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Resources;
+using MacroRecorder.App.Localization;
 using MacroRecorder.Application.Ports;
 
 namespace MacroRecorder.App.Services;
@@ -13,18 +14,41 @@ public sealed class ResxUiLocalizer : IUiLocalizer
         "MacroRecorder.App.Localization.UiStrings",
         typeof(ResxUiLocalizer).Assembly);
 
+    private CultureInfo _currentUiCulture;
+
     public ResxUiLocalizer()
     {
-        CurrentUiCulture = UiCultureSettings.ResolveUiCulture();
-        CultureInfo.DefaultThreadCurrentUICulture = CurrentUiCulture;
-        CultureInfo.CurrentUICulture = CurrentUiCulture;
+        _currentUiCulture = UiCultureSettings.ResolveUiCulture();
+        CultureInfo.DefaultThreadCurrentUICulture = _currentUiCulture;
+        CultureInfo.CurrentUICulture = _currentUiCulture;
     }
 
-    public CultureInfo CurrentUiCulture { get; }
+    public CultureInfo CurrentUiCulture => _currentUiCulture;
+
+    public event EventHandler? UiCultureChanged;
+
+    public void ApplyUiCulture(CultureInfo culture)
+    {
+        var normalized = NormalizeUiCulture(culture);
+        UiCultureSettings.SaveUiCulturePreference(normalized.TwoLetterISOLanguageName);
+        CultureInfo.DefaultThreadCurrentUICulture = normalized;
+        CultureInfo.CurrentUICulture = normalized;
+        _currentUiCulture = normalized;
+        UiCulturePulse.Instance.Bump();
+        UiCultureChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static CultureInfo NormalizeUiCulture(CultureInfo culture)
+    {
+        var name = culture.TwoLetterISOLanguageName;
+        return name.Equals("de", StringComparison.OrdinalIgnoreCase)
+            ? CultureInfo.GetCultureInfo("de")
+            : CultureInfo.GetCultureInfo("en");
+    }
 
     public string GetString(string key)
     {
-        var value = ResourceManager.GetString(key, CurrentUiCulture);
+        var value = ResourceManager.GetString(key, _currentUiCulture);
         return string.IsNullOrEmpty(value) ? ResourceManager.GetString(key, CultureInfo.GetCultureInfo("en")) ?? key : value;
     }
 
@@ -33,7 +57,7 @@ public sealed class ResxUiLocalizer : IUiLocalizer
         var template = GetString(key);
         try
         {
-            return string.Format(CurrentUiCulture, template, args);
+            return string.Format(_currentUiCulture, template, args);
         }
         catch (FormatException)
         {

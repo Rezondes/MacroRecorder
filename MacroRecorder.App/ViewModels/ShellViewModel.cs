@@ -30,6 +30,7 @@ public partial class ShellViewModel : ObservableObject
         _loc = loc;
         _inAppInfo = inAppInfo;
         _inAppInfo.InfoRequested += OnInAppInfoRequested;
+        _loc.UiCultureChanged += (_, _) => UpdateShellTitle();
         _stack.Add(overview);
         CurrentPage = overview;
         UpdateShellTitle();
@@ -39,9 +40,6 @@ public partial class ShellViewModel : ObservableObject
 
     [ObservableProperty]
     private object? currentPage;
-
-    [ObservableProperty]
-    private bool isSettingsOpen;
 
     [ObservableProperty]
     private bool isInfoModalOpen;
@@ -81,10 +79,12 @@ public partial class ShellViewModel : ObservableObject
     public bool ShowBackButton => CanGoBack;
 
     [RelayCommand]
-    private void OpenSettings() => IsSettingsOpen = true;
-
-    [RelayCommand]
-    private void CloseSettings() => IsSettingsOpen = false;
+    private void OpenSettings()
+    {
+        var vm = _services.GetRequiredService<SettingsViewModel>();
+        vm.LoadStateFromPreferences();
+        PushPage(vm);
+    }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
     private async Task GoBackAsync()
@@ -172,6 +172,7 @@ public partial class ShellViewModel : ObservableObject
         {
             MacroEditorViewModel ed => ed.WindowTitle,
             RecordViewModel => _loc.GetString("Record_WindowTitle"),
+            SettingsViewModel => _loc.GetString("Main_Settings_PageTitle"),
             _ => _loc.GetString("Main_WindowTitle")
         };
     }

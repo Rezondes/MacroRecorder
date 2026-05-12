@@ -25,6 +25,9 @@
         <DataTemplate DataType="{x:Type vm:RecordViewModel}">
             <views:RecordView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView />
+        </DataTemplate>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -53,19 +56,6 @@
         <ContentControl Grid.Row="1"
                         Margin="0,0,0,8"
                         Content="{Binding CurrentPage}" />
-        <Grid Grid.Row="0"
-              Grid.RowSpan="2"
-              Panel.ZIndex="100"
-              Background="#99000000"
-              Visibility="{Binding IsSettingsOpen, Converter={StaticResource BoolToVis}}"
-              MouseDown="OnSettingsOverlayBackgroundMouseDown">
-            <Border VerticalAlignment="Center"
-                    HorizontalAlignment="Center"
-                    Background="Transparent"
-                    MouseDown="OnSettingsModalInnerMouseDown">
-                <views:ApplicationSettingsView Width="380" />
-            </Border>
-        </Grid>
         <Grid Grid.Row="0"
               Grid.RowSpan="2"
               Panel.ZIndex="101"

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Services;
@@ -31,6 +32,13 @@ public partial class MainViewModel : ObservableObject
         _inAppInfo = inAppInfo;
         _navigation = navigation;
         _loc = loc;
+        _loc.UiCultureChanged += (_, _) => OnUiCultureChanged();
+    }
+
+    private void OnUiCultureChanged()
+    {
+        var view = CollectionViewSource.GetDefaultView(Macros);
+        view?.Refresh();
     }
 
     public ObservableCollection<MacroSummary> Macros { get; } = new();
