@@ -806,7 +806,8 @@ public partial class MacroEditorViewModel : ObservableObject
             var snap = _flatEvents.Select(CloneEvent).ToList();
             TimelineNormalizer.NormalizeInPlace(snap);
             var test = new Macro(_macro.Id, _macro.Name, _macro.Metadata, snap, _macro.WasModifiedAfterRecording);
-            await _playback.PlayAsync(test).ConfigureAwait(true);
+            var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
+            await _playback.PlayAsync(test, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
         }
         catch (PlaybackInterruptedByUserException)
         {

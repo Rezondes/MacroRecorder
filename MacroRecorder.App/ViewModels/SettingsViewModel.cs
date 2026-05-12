@@ -20,6 +20,7 @@ public partial class SettingsViewModel : ObservableObject
 
     private int _selectedSettingsTabIndex;
     private int _savedRecordingMouseMoveMinPixels = 5;
+    private int _savedPlaybackInterruptGraceMs;
 
     /// <summary>0 = General, 1 = Visuals, 2 = Macro. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
     public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
@@ -57,7 +58,8 @@ public partial class SettingsViewModel : ObservableObject
     public IReadOnlyList<ThemeCatalogEntry> ThemeEntries => ThemeCatalog.Entries;
 
     public bool HasUnsavedSettingsChanges =>
-        HasPendingLanguageChange() || _appearance.HasPendingChanges || HasPendingMacroRecordingChange();
+        HasPendingLanguageChange() || _appearance.HasPendingChanges || HasPendingMacroRecordingChange()
+        || HasPendingPlaybackGraceChange();
 
     public bool IsLightMode
     {
@@ -91,6 +93,13 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnMouseMoveRecordingMinPixelsTextChanged(string value) =>
         OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
 
+    /// <summary>Milliseconds (digits) for playback user-interrupt grace; 0 = off.</summary>
+    [ObservableProperty]
+    private string playbackInterruptGraceMsText = "0";
+
+    partial void OnPlaybackInterruptGraceMsTextChanged(string value) =>
+        OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
+
     public void LoadStateFromPreferences()
     {
         var code = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
@@ -99,6 +108,8 @@ public partial class SettingsViewModel : ObservableObject
         var prefs = AppSettingsStore.Load();
         _savedRecordingMouseMoveMinPixels = prefs.RecordingMouseMoveMinPixels;
         MouseMoveRecordingMinPixelsText = prefs.RecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
+        _savedPlaybackInterruptGraceMs = prefs.PlaybackUserInterruptGraceMs;
+        PlaybackInterruptGraceMsText = prefs.PlaybackUserInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -132,10 +143,13 @@ public partial class SettingsViewModel : ObservableObject
         _appearance.Persist();
         var app = AppSettingsStore.Load();
         app.RecordingMouseMoveMinPixels = ParseRecordingMinPixelsForSave();
+        app.PlaybackUserInterruptGraceMs = ParsePlaybackGraceMsForSave();
         AppSettingsStore.Save(app);
         var reloaded = AppSettingsStore.Load();
         _savedRecordingMouseMoveMinPixels = reloaded.RecordingMouseMoveMinPixels;
         MouseMoveRecordingMinPixelsText = reloaded.RecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
+        _savedPlaybackInterruptGraceMs = reloaded.PlaybackUserInterruptGraceMs;
+        PlaybackInterruptGraceMsText = reloaded.PlaybackUserInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -176,6 +190,7 @@ public partial class SettingsViewModel : ObservableObject
         SelectedLanguageCode = NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName);
         _appearance.RevertToSaved();
         MouseMoveRecordingMinPixelsText = _savedRecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
+        PlaybackInterruptGraceMsText = _savedPlaybackInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -218,6 +233,14 @@ public partial class SettingsViewModel : ObservableObject
                 MacroMinPixelsPendingDisplay()));
         }
 
+        if (HasPendingPlaybackGraceChange())
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Settings_UnsavedCategoryPlaybackGrace"),
+                _savedPlaybackInterruptGraceMs.ToString(_loc.CurrentUiCulture),
+                PlaybackGracePendingDisplay()));
+        }
+
         var intro = _loc.GetString("Settings_UnsavedIntro");
         var outro = _loc.GetString("Settings_UnsavedOutro");
         if (lines.Count == 0)
@@ -232,6 +255,38 @@ public partial class SettingsViewModel : ObservableObject
             NormalizeLanguageCode(SelectedLanguageCode),
             NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName),
             StringComparison.OrdinalIgnoreCase);
+
+    private bool HasPendingPlaybackGraceChange()
+    {
+        if (!TryParsePlaybackGraceMs(PlaybackInterruptGraceMsText, out var parsed))
+            return true;
+        return parsed != _savedPlaybackInterruptGraceMs;
+    }
+
+    private string PlaybackGracePendingDisplay() =>
+        TryParsePlaybackGraceMs(PlaybackInterruptGraceMsText, out var parsed)
+            ? parsed.ToString(_loc.CurrentUiCulture)
+            : (PlaybackInterruptGraceMsText ?? string.Empty).Trim();
+
+    private int ParsePlaybackGraceMsForSave()
+    {
+        if (TryParsePlaybackGraceMs(PlaybackInterruptGraceMsText, out var parsed))
+            return parsed;
+        return _savedPlaybackInterruptGraceMs;
+    }
+
+    private static bool TryParsePlaybackGraceMs(string? text, out int value)
+    {
+        value = 0;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+            return false;
+        value = Math.Clamp(n, 0, MaxPlaybackGraceMs);
+        return true;
+    }
+
+    private const int MaxPlaybackGraceMs = 300_000;
 
     private bool HasPendingMacroRecordingChange()
     {

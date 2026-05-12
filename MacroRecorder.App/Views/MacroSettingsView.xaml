@@ -6,7 +6,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="220" d:DesignWidth="560"
+             d:DesignHeight="320" d:DesignWidth="560"
              Background="Transparent">
     <ScrollViewer Style="{DynamicResource UiSettingsFormScrollViewer}">
         <StackPanel Style="{DynamicResource UiSettingsFormStackPanel}">
@@ -28,6 +28,31 @@
                                           SpinDownToolTip="{loc:Loc Editor_PromptWaitSpinDown}"
                                           Text="{Binding MouseMoveRecordingMinPixelsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                 <TextBlock Text="px"
+                           VerticalAlignment="Center"
+                           Margin="8,0,0,0"
+                           FontSize="13"
+                           Foreground="{DynamicResource UiBrush.TextSecondary}" />
+            </StackPanel>
+
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Margin="0,20,0,0"
+                       Text="{loc:Loc Settings_Macro_PlaybackGraceLabel}" />
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Left">
+                <wpf:DigitsOnlyNumericBox MinWidth="120"
+                                          HorizontalAlignment="Left"
+                                          MinHeight="40"
+                                          MinInnerHeight="40"
+                                          InputFontSize="13"
+                                          DigitsOnly="True"
+                                          MinimumValue="0"
+                                          MaximumValue="300000"
+                                          SpinnerStep="1"
+                                          ShowSpinner="True"
+                                          SpinUpToolTip="{loc:Loc Editor_PromptWaitSpinUp}"
+                                          SpinDownToolTip="{loc:Loc Editor_PromptWaitSpinDown}"
+                                          Text="{Binding PlaybackInterruptGraceMsText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="ms"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
                            FontSize="13"

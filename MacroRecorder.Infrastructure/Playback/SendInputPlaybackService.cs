@@ -16,6 +16,8 @@ public sealed class SendInputPlaybackService : IPlaybackService
     private CancellationTokenSource? _interruptCts;
     private nint _interruptKeyboardHook;
     private nint _interruptMouseHook;
+    private Stopwatch? _userInterruptGraceStopwatch;
+    private int _userInterruptGraceMs;
 
     public SendInputPlaybackService()
     {
@@ -23,14 +25,14 @@ public sealed class SendInputPlaybackService : IPlaybackService
         _interruptMsProc = InterruptMouseLowLevelHook;
     }
 
-    public Task PlayAsync(Macro macro, CancellationToken cancellationToken = default) =>
+    public Task PlayAsync(Macro macro, CancellationToken cancellationToken = default, int userInputInterruptGraceMilliseconds = 0) =>
         Task.Run(() =>
         {
             lock (_playLock)
-                RunPlayLocked(macro, cancellationToken);
+                RunPlayLocked(macro, cancellationToken, userInputInterruptGraceMilliseconds);
         }, cancellationToken);
 
-    private void RunPlayLocked(Macro macro, CancellationToken cancellationToken)
+    private void RunPlayLocked(Macro macro, CancellationToken cancellationToken, int userInputInterruptGraceMilliseconds)
     {
         if (macro.Events.Count == 0)
             return;
@@ -52,8 +54,14 @@ public sealed class SendInputPlaybackService : IPlaybackService
                 "Playback: failed to install low-level keyboard or mouse hooks for user-interrupt detection.");
         }
 
+        _userInterruptGraceMs = Math.Clamp(userInputInterruptGraceMilliseconds, 0, 300_000);
+        _userInterruptGraceStopwatch = Stopwatch.StartNew();
+
         try
         {
+            // No events until grace elapses; hooks still ignore user cancel while Elapsed < grace (see interrupt hooks).
+            if (_userInterruptGraceMs > 0)
+                Task.Delay(_userInterruptGraceMs, linked.Token).GetAwaiter().GetResult();
             PlayCore(macro, linked.Token);
         }
         catch (OperationCanceledException)
@@ -67,6 +75,8 @@ public sealed class SendInputPlaybackService : IPlaybackService
         {
             CleanupInterruptHooks();
             _interruptCts = null;
+            _userInterruptGraceStopwatch = null;
+            _userInterruptGraceMs = 0;
         }
     }
 
@@ -90,7 +100,9 @@ public sealed class SendInputPlaybackService : IPlaybackService
         if (nCode >= 0 && _interruptCts is { IsCancellationRequested: false })
         {
             var keyboardLowLevel = Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
-            if ((keyboardLowLevel.flags & NativeMethods.LLKHF_INJECTED) == 0)
+            if ((keyboardLowLevel.flags & NativeMethods.LLKHF_INJECTED) == 0
+                && (_userInterruptGraceMs == 0
+                    || (_userInterruptGraceStopwatch?.ElapsedMilliseconds ?? 0) >= _userInterruptGraceMs))
                 _interruptCts.Cancel();
         }
 
@@ -102,7 +114,9 @@ public sealed class SendInputPlaybackService : IPlaybackService
         if (nCode >= 0 && _interruptCts is { IsCancellationRequested: false })
         {
             var mouseLowLevel = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
-            if ((mouseLowLevel.flags & NativeMethods.LLMHF_INJECTED) == 0)
+            if ((mouseLowLevel.flags & NativeMethods.LLMHF_INJECTED) == 0
+                && (_userInterruptGraceMs == 0
+                    || (_userInterruptGraceStopwatch?.ElapsedMilliseconds ?? 0) >= _userInterruptGraceMs))
                 _interruptCts.Cancel();
         }
 

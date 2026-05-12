@@ -65,7 +65,8 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            await _playback.PlayAsync(macro).ConfigureAwait(true);
+            var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
+            await _playback.PlayAsync(macro, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
         }
         catch (PlaybackInterruptedByUserException)
         {
