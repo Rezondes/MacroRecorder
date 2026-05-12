@@ -12,14 +12,10 @@
         <conv:LocResxWithPulseMultiConverter x:Key="LocResxWithPulse" />
         <conv:HexStringToColorConverter x:Key="HexToBrush" />
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  Background="Transparent">
-        <StackPanel Margin="0,12,0,0">
-            <TextBlock Text="{loc:Loc Visuals_AppearanceModeHeader}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource UiBrush.TextPrimary}"
-                       Margin="0,0,0,8" />
+    <ScrollViewer Style="{DynamicResource UiSettingsFormScrollViewer}">
+        <StackPanel Style="{DynamicResource UiSettingsFormStackPanel}">
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Text="{loc:Loc Visuals_AppearanceModeHeader}" />
             <Border HorizontalAlignment="Left"
                     Background="{DynamicResource UiBrush.SurfaceElevated}"
                     BorderBrush="{DynamicResource UiBrush.Border}"
@@ -50,11 +46,8 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="{loc:Loc Visuals_ColorThemeHeader}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource UiBrush.TextPrimary}"
-                       Margin="0,0,0,8" />
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Text="{loc:Loc Visuals_ColorThemeHeader}" />
             <ItemsControl ItemsSource="{Binding ThemeEntries}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>

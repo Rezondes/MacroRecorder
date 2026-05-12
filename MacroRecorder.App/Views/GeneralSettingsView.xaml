@@ -7,18 +7,11 @@
              mc:Ignorable="d"
              d:DesignHeight="220" d:DesignWidth="560"
              Background="Transparent">
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  Background="Transparent">
-        <StackPanel Margin="0,12,0,0">
-            <TextBlock Text="{loc:Loc Main_Settings_LanguageHeader}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource UiBrush.TextPrimary}"
-                       Margin="0,0,0,8" />
-            <ComboBox Style="{DynamicResource UiComboBox}"
-                      MinHeight="40"
-                      FontSize="13"
-                      VerticalContentAlignment="Center"
+    <ScrollViewer Style="{DynamicResource UiSettingsFormScrollViewer}">
+        <StackPanel Style="{DynamicResource UiSettingsFormStackPanel}">
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Text="{loc:Loc Main_Settings_LanguageHeader}" />
+            <ComboBox Style="{DynamicResource UiSettingsComboBox}"
                       ItemsSource="{Binding LanguageOptions}"
                       DisplayMemberPath="DisplayName"
                       SelectedValuePath="Code"

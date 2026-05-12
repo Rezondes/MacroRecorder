@@ -5,11 +5,7 @@
              xmlns:wpf="clr-namespace:MacroRecorder.Wpf.Controls;assembly=MacroRecorder.Wpf"
              Background="Transparent"
              Focusable="True">
-    <Border Background="{DynamicResource UiBrush.Surface}"
-            BorderBrush="{DynamicResource UiBrush.Border}"
-            BorderThickness="1"
-            CornerRadius="8"
-            Padding="20">
+    <Border Style="{DynamicResource UiDialogSurface}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -19,23 +15,17 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <TextBlock Grid.Row="0"
-                       Text="{loc:Loc DialogInsertMouse_Heading}"
-                       FontSize="18"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource UiBrush.TextPrimary}"
-                       Margin="0,0,0,4" />
+                       Style="{DynamicResource UiDialogTitle}"
+                       Margin="0,0,0,4"
+                       Text="{loc:Loc DialogInsertMouse_Heading}" />
             <TextBlock Grid.Row="1"
-                       Text="{loc:Loc DialogInsertMouse_Description}"
-                       FontSize="12"
-                       Foreground="{DynamicResource UiBrush.TextSecondary}"
-                       TextWrapping="Wrap"
-                       Margin="0,0,0,16" />
+                       Style="{DynamicResource UiDialogDescription}"
+                       Margin="0,0,0,16"
+                       Text="{loc:Loc DialogInsertMouse_Description}" />
             <ComboBox x:Name="ButtonCombo"
                       Grid.Row="2"
                       Margin="0,0,0,12"
-                      FontSize="13"
-                      MinHeight="40"
-                      Style="{DynamicResource UiComboBox}" />
+                      Style="{DynamicResource UiSettingsComboBox}" />
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -43,10 +33,8 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="{loc:Loc DialogInsertMouse_LabelX}"
-                               FontSize="12"
-                               Foreground="{DynamicResource UiBrush.TextSecondary}"
-                               Margin="0,0,0,4" />
+                    <TextBlock Style="{DynamicResource UiFormFieldLabel}"
+                               Text="{loc:Loc DialogInsertMouse_LabelX}" />
                     <wpf:DigitsOnlyNumericBox x:Name="XBox"
                                              MinHeight="36"
                                              MinInnerHeight="36"
@@ -55,10 +43,8 @@
                                              ShowSpinner="False" />
                 </StackPanel>
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="{loc:Loc DialogInsertMouse_LabelY}"
-                               FontSize="12"
-                               Foreground="{DynamicResource UiBrush.TextSecondary}"
-                               Margin="0,0,0,4" />
+                    <TextBlock Style="{DynamicResource UiFormFieldLabel}"
+                               Text="{loc:Loc DialogInsertMouse_LabelY}" />
                     <wpf:DigitsOnlyNumericBox x:Name="YBox"
                                              MinHeight="36"
                                              MinInnerHeight="36"
@@ -68,9 +54,7 @@
                 </StackPanel>
             </Grid>
             <StackPanel Grid.Row="4"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="0,20,0,0">
+                        Style="{DynamicResource UiDialogFooter}">
                 <Button Content="{loc:Loc Common_Cancel}"
                         MinWidth="100"
                         Margin="0,0,8,0"

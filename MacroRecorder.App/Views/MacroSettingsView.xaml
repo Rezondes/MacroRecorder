@@ -8,14 +8,10 @@
              mc:Ignorable="d"
              d:DesignHeight="220" d:DesignWidth="560"
              Background="Transparent">
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  Background="Transparent">
-        <StackPanel Margin="0,12,0,0">
-            <TextBlock Text="{loc:Loc Settings_Macro_MouseMoveMinLabel}"
-                       FontSize="13"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource UiBrush.TextPrimary}"
-                       Margin="0,0,0,8" />
+    <ScrollViewer Style="{DynamicResource UiSettingsFormScrollViewer}">
+        <StackPanel Style="{DynamicResource UiSettingsFormStackPanel}">
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Text="{loc:Loc Settings_Macro_MouseMoveMinLabel}" />
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Left">
                 <wpf:DigitsOnlyNumericBox MinWidth="120"

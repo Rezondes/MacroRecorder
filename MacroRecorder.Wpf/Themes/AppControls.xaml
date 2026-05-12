@@ -250,6 +250,63 @@
         </Setter>
     </Style>
 
+    <!-- Settings page + dialog typography and chrome (MacroRecorder.App and other hosts) -->
+    <Style x:Key="UiSettingsFormScrollViewer" TargetType="ScrollViewer">
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style x:Key="UiSettingsFormStackPanel" TargetType="StackPanel">
+        <Setter Property="Margin" Value="0,12,0,0" />
+    </Style>
+
+    <Style x:Key="UiSettingsSectionHeader" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <Style x:Key="UiDialogTitle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <Style x:Key="UiDialogDescription" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextSecondary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <Style x:Key="UiFormFieldLabel" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextSecondary}" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
+    <Style x:Key="UiDialogSurface" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource UiBrush.Surface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource UiBrush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="20" />
+    </Style>
+
+    <Style x:Key="UiDialogFooter" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="Margin" Value="0,20,0,0" />
+    </Style>
+
+    <Style x:Key="UiSettingsComboBox" TargetType="ComboBox" BasedOn="{StaticResource UiComboBox}">
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
     <Style x:Key="UiTabControl" TargetType="TabControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
