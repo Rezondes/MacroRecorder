@@ -1,0 +1,44 @@
+---
+description: MacroRecorder DDD/MVVM/DRY, naming, editor timeline, playback, UI language
+alwaysApply: true
+---
+
+# MacroRecorder – Projektkonventionen
+
+## Architektur (DDD & Schichten)
+
+- **Domain** (`MacroRecorder.Domain`): Modelle, `RecordedInputEvent`-Hierarchie, Makro-Daten — keine UI, keine Plattform-APIs.
+- **Application** (`MacroRecorder.Application`): Orchestrierung, **Ports** (`IPlaybackService`, `IRecordingEngine`, Dialog-Ports), `RecordingCoordinator`, `TimelineNormalizer`.
+- **Infrastructure** (`MacroRecorder.Infrastructure`): Port-Implementierungen (Low-Level-Hooks, `SendInput`, Dateispeicher).
+- **App** (`MacroRecorder.App`): WPF, **MVVM** — Logik in ViewModels/Services, nicht in XAML Code-behind duplizieren.
+
+## MVVM
+
+- Zustand und Commands in ViewModels (`CommunityToolkit.Mvvm`); Abhängigkeiten per Konstruktor (DI in `App.xaml.cs`).
+- Views binden an ViewModels; reines View-Verhalten (Scroll, Drag-Drop-Position) bleibt im Code-behind, bleibt aber dünn.
+
+## DRY
+
+- Wiederholte Guard-Blöcke oder gleiche Merge-Logik nicht mehrfach copy-pasten; gemeinsame Normalisierung (`TimelineNormalizer`) nutzen.
+
+## Benennung
+
+- Keine **unklaren Einbuchstaben-Namen** (`r`, `z`, `zq`). Dialog-Ergebnisse z. B. `showDialogResult`, `isAccepted`; geometrische Werte `screenX` / `screenY`, Tastatur `virtualKey`, `scanCode`, `isExtendedKey`.
+- **Ausnahme**: sehr kurze Schleifenindizes nur, wenn der Zweck sofort offensichtlich ist — bevorzugt sprechende Namen (`eventIndex`, `rowIndex`).
+- `catch (Exception ex)` → lieber `exception`, wenn die Variable genutzt wird.
+
+## Editor-Zeitleiste
+
+- **Anzeige-Reihenfolge** = Reihenfolge in `_flatEvents` (`EditorTimelineGrouper` **nicht** nach `Sequence` sortieren — neue Aufnahme vergibt wieder kleine Sequenznummern).
+- **`OrderBy(... Sequence)`** ist dagegen in Ordnung für **persistiertes Laden**, **Speichern** und **Playback**, sobald die Liste als „nach Sequenz sortiert“ behandelt werden soll.
+- Zeile ↔ flache Liste: **`ReferenceEquals`** für Zuordnung (doppelte `Sequence` während Aufnahme möglich).
+- Nach **Nach oben / Nach unten**: Auswahl mit `SelectRowByIndex` wiederherstellen, damit dieselbe Aktion markiert bleibt.
+
+## Wiedergabe
+
+- Echter Nutzer-Input während Playback bricht ab; bei Nutzerabbruch **`PlaybackInterruptedByUserException`** und Info-Dialog (nicht still `OperationCanceledException` schlucken).
+
+## Sprache UI
+
+- Nutzer sichtbare Texte: **Lokalisierung DE/EN** über `IUiLocalizer`, RESX und XAML `{loc:Loc …}`; Details und Schichtenregeln siehe [macro-recorder-localization.mdc](macro-recorder-localization.mdc).
+- Eigene Dialoge (`WpfUserDialogService.PromptText`): Schaltflächen aus RESX (`Common_Ok` / `Common_Cancel`).

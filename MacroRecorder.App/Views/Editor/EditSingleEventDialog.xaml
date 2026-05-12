@@ -1,0 +1,36 @@
+<Window x:Class="MacroRecorder.App.Views.Editor.EditSingleEventDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:MacroRecorder.App.Localization"
+        Title="{loc:Loc DialogEditEvent_Title}"
+        Width="460" Height="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#FAFAFA">
+    <Border Margin="20" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="20">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Top"
+                       Text="{loc:Loc DialogEdit_HeadingValues}"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="#1A1A1A"
+                       Margin="0,0,0,8" />
+            <TextBlock DockPanel.Dock="Top"
+                       Text="{loc:Loc DialogEdit_DescriptionValues}"
+                       FontSize="12"
+                       Foreground="#666666"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,12" />
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,16,0,0">
+                <Button Content="{loc:Loc Common_Cancel}" Width="100" Margin="0,0,8,0" Padding="10,6" IsCancel="True" />
+                <Button Content="{loc:Loc Common_Ok}" Width="100" Padding="10,6" IsDefault="True" Click="OnOk" />
+            </StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                <StackPanel x:Name="FieldsPanel" />
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</Window>

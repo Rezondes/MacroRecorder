@@ -1,0 +1,43 @@
+---
+description: MacroRecorder UI localization (DE/EN), RESX, IUiLocalizer, layer rules
+alwaysApply: false
+---
+
+# MacroRecorder – Lokalisierung (DE / EN)
+
+## Ziel
+
+- **Nutzer sichtbar**: Fenstertitel, Buttons, Statuszeilen, `MessageBox` / `IUserDialogService` / Editor-Dialoge, Editor-Zeilen (`ActionLabel` / `ValueText`) – **nur über Schlüssel** (`IUiLocalizer` oder `{loc:Loc …}` in XAML), gespeichert in **RESX** (`MacroRecorder.App/Localization/UiStrings.resx` = neutral **en**, `UiStrings.de.resx` = **de**).
+- **Nicht lokalisieren**: technische `Exception.Message` für Diagnose, interne Logs, XML-Docs, Domain-Argumenttexte – vorzugsweise **Englisch**.
+
+## Schichten
+
+- **`IUiLocalizer`** lebt im Port in **Application** (`MacroRecorder.Application.Ports`).
+- **Implementierung** (`ResxUiLocalizer`) und **RESX** nur in **MacroRecorder.App**.
+- **Infrastructure / Domain** werfen **keine** nutzerorientierten deutschen Meldungen; nutzerrelevante Texte kommen aus der UI-Schicht (ViewModels, Services, XAML), typisiert abgefangen (z. B. `PlaybackInterruptedByUserException` → eigener RESX-Key, `InvalidOperationException` bei Playback-Hooks → generischer UI-Key, nicht rohe englische Exception anzeigen, wenn ein Key existiert).
+
+## Schlüsselnamen
+
+- Hierarchisch mit Unterstrich: `Main_Play`, `Editor_Save`, `DialogRename_Title`, `Event_Action_KeyDown`.
+- Platzhalter für `string.Format` / `GetString(key, args…)`: `{0}`, `{1}` … (Kultur = `CurrentUICulture` der App).
+
+## XAML
+
+- `xmlns:loc="clr-namespace:MacroRecorder.App.Localization"`
+- Statische Labels: `{loc:Loc Editor_Save}` (MarkupExtension `LocExtension`, Klasse `LocExtension`, XAML-Tag `Loc`).
+- `UiLocalizerHost.Current` wird in `App.xaml.cs` **vor** `MainWindow.Show()` gesetzt; ohne Host liefert die Extension den **Schlüssel** zurück (Designzeit).
+
+## Kultur
+
+- Unterstützt: **`de`**, **`en`** (alles andere → **en**).
+- Quelle: `%LocalAppData%/MacroRecorderByRezondes/settings.json` → `uiCulture`; sonst System-`CurrentUICulture` (nur `de` wird übernommen, sonst `en`).
+- Sprachwechsel: Hauptfenster **Einstellungen** (Zahnrad) → `ApplicationSettingsWindow` → Sprache wählen, **Speichern** → bei Änderung Abfrage **Neustart**; vollständiger Live-Wechsel ohne Neustart ist nicht vorgesehen (V1).
+
+## System-`MessageBox`
+
+- **Beschriftung** (Titel) und **Inhalt** aus RESX; **Ja/Nein/OK**-Schaltflächen folgen weiter der **Windows-Anzeigesprache**, nicht zwingend der App-`uiCulture`.
+
+## Pflege
+
+- Neue UI-Strings: **beide** RESX-Dateien pflegen (Generator-Skript `scripts/build_ui_resx.py` oder manuell synchron halten).
+- Keine hart kodierten nutzersichtbaren Zeichenketten in ViewModels / WPF-Services / XAML (außer reine technische Ausnahmetexte in tiefer Infrastruktur).

@@ -1,0 +1,20 @@
+﻿Macro Recorder by Rezondes
+
+
+winexe
+C#
+.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Release\net10.0-windows\
+MacroRecorder.App
+none
+false
+TRACE;RELEASE;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NET10_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
+f:\Code\MacroRecorder\MacroRecorder.App\App.xaml
+81242422627
+
+26-2019708985
+2371025163034
+ApplicationSettingsWindow.xaml;MacroEditorWindow.xaml;MainWindow.xaml;RecordWindow.xaml;Views\Editor\EditSingleEventDialog.xaml;Views\Editor\InsertKeyStrokeDialog.xaml;Views\Editor\InsertMouseClickDialog.xaml;Views\Editor\RenameMacroDialog.xaml;
+
+False
+

@@ -1,0 +1,17 @@
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Infrastructure.deps.json
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Infrastructure.dll
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Infrastructure.pdb
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Application.dll
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Domain.dll
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Application.pdb
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\bin\Debug\net10.0-windows\MacroRecorder.Domain.pdb
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.csproj.AssemblyReference.cache
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.AssemblyInfoInputs.cache
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.AssemblyInfo.cs
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.csproj.CoreCompileInputs.cache
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRec.B3F9A2EB.Up2Date
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.dll
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\refint\MacroRecorder.Infrastructure.dll
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\MacroRecorder.Infrastructure.pdb
+f:\Code\MacroRecorder\MacroRecorder.Infrastructure\obj\Debug\net10.0-windows\ref\MacroRecorder.Infrastructure.dll

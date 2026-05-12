@@ -1,0 +1,25 @@
+<Window x:Class="MacroRecorder.App.RecordWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:MacroRecorder.App.Localization"
+        Title="{loc:Loc Record_WindowTitle}"
+        Height="240" Width="440"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+    <StackPanel Margin="20" VerticalAlignment="Center">
+        <TextBlock TextWrapping="Wrap" Margin="0,0,0,16"
+                   Text="{loc:Loc Record_Description}" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="{loc:Loc Record_Start}" Padding="16,8" Margin="8"
+                    Command="{Binding StartCommand}" />
+            <Button Content="{loc:Loc Record_Stop}" Padding="16,8" Margin="8"
+                    Command="{Binding StopCommand}" />
+        </StackPanel>
+        <TextBlock HorizontalAlignment="Center" Margin="0,16,0,0" Foreground="DarkGreen"
+                   Text="{loc:Loc Record_StatusRunning}"
+                   Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}" />
+    </StackPanel>
+</Window>

@@ -1,0 +1,11 @@
+f:\Code\MacroRecorder\MacroRecorder.Domain\bin\Release\net10.0\MacroRecorder.Domain.deps.json
+f:\Code\MacroRecorder\MacroRecorder.Domain\bin\Release\net10.0\MacroRecorder.Domain.dll
+f:\Code\MacroRecorder\MacroRecorder.Domain\bin\Release\net10.0\MacroRecorder.Domain.pdb
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\MacroRecorder.Domain.GeneratedMSBuildEditorConfig.editorconfig
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\MacroRecorder.Domain.AssemblyInfoInputs.cache
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\MacroRecorder.Domain.AssemblyInfo.cs
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\MacroRecorder.Domain.csproj.CoreCompileInputs.cache
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\MacroRecorder.Domain.dll
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\refint\MacroRecorder.Domain.dll
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\MacroRecorder.Domain.pdb
+f:\Code\MacroRecorder\MacroRecorder.Domain\obj\Release\net10.0\ref\MacroRecorder.Domain.dll

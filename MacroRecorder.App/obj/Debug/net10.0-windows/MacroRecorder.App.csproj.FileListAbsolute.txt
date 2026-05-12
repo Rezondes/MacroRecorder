@@ -1,0 +1,76 @@
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Macro Recorder by Rezondes.exe
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Macro Recorder by Rezondes.deps.json
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Macro Recorder by Rezondes.runtimeconfig.json
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Macro Recorder by Rezondes.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Macro Recorder by Rezondes.pdb
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\CommunityToolkit.Mvvm.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.Abstractions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.Binder.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.CommandLine.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.FileExtensions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.Json.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Configuration.UserSecrets.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.DependencyInjection.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Diagnostics.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Diagnostics.Abstractions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.FileProviders.Abstractions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.FileProviders.Physical.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.FileSystemGlobbing.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Hosting.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Hosting.Abstractions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.Abstractions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.Configuration.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.Console.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.Debug.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.EventLog.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Logging.EventSource.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Options.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\Microsoft.Extensions.Primitives.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\MacroRecorder.Application.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\MacroRecorder.Domain.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\MacroRecorder.Infrastructure.dll
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\MacroRecorder.Application.pdb
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\MacroRecorder.Domain.pdb
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\MacroRecorder.Infrastructure.pdb
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.csproj.AssemblyReference.cache
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroEditorWindow.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MainWindow.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\RecordWindow.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\App.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroEditorWindow.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MainWindow.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\RecordWindow.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\App.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Macro Recorder by Rezondes_MarkupCompile.cache
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Macro Recorder by Rezondes.g.resources
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.GeneratedMSBuildEditorConfig.editorconfig
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.AssemblyInfoInputs.cache
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.AssemblyInfo.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.csproj.CoreCompileInputs.cache
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRec.6CF13B59.Up2Date
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Macro Recorder by Rezondes.dll
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\refint\Macro Recorder by Rezondes.dll
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Macro Recorder by Rezondes.pdb
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.genruntimeconfig.cache
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\ref\Macro Recorder by Rezondes.dll
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\EditSingleEventDialog.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\InsertKeyStrokeDialog.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\InsertMouseClickDialog.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\RenameMacroDialog.baml
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\EditSingleEventDialog.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\InsertKeyStrokeDialog.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\InsertMouseClickDialog.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Views\Editor\RenameMacroDialog.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\GeneratedInternalTypeHelper.g.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\Macro Recorder by Rezondes_MarkupCompile.lref
+f:\Code\MacroRecorder\MacroRecorder.App\bin\Debug\net10.0-windows\de\Macro Recorder by Rezondes.resources.dll
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.Localization.UiStrings.resources
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.Localization.UiStrings.de.resources
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\MacroRecorder.App.csproj.GenerateResource.cache
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\de\Macro Recorder by Rezondes.resources.cs
+f:\Code\MacroRecorder\MacroRecorder.App\obj\Debug\net10.0-windows\de\Macro Recorder by Rezondes.resources.dll

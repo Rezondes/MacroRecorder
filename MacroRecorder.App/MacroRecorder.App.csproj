@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>MacroRecorder.App</RootNamespace>
+    <AssemblyName>Macro Recorder by Rezondes</AssemblyName>
+    <ApplicationTitle>Macro Recorder by Rezondes</ApplicationTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MacroRecorder.Application\MacroRecorder.Application.csproj" />
+    <ProjectReference Include="..\MacroRecorder.Domain\MacroRecorder.Domain.csproj" />
+    <ProjectReference Include="..\MacroRecorder.Infrastructure\MacroRecorder.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
