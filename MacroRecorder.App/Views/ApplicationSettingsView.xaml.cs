@@ -1,18 +1,20 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 using MacroRecorder.App.Localization;
 using MacroRecorder.App.Services;
+using MacroRecorder.App.ViewModels;
 
-namespace MacroRecorder.App;
+namespace MacroRecorder.App.Views;
 
-public partial class ApplicationSettingsWindow : Window
+public partial class ApplicationSettingsView : UserControl
 {
     private readonly record struct LanguageOption(string Code, string Display);
 
-    public ApplicationSettingsWindow()
+    public ApplicationSettingsView()
     {
         InitializeComponent();
-        PopulateLanguageCombo();
+        Loaded += (_, _) => PopulateLanguageCombo();
     }
 
     private void PopulateLanguageCombo()
@@ -32,11 +34,9 @@ public partial class ApplicationSettingsWindow : Window
         LanguageCombo.SelectedValue = code.Equals("de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
     }
 
-    private void OnCancel(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-        Close();
-    }
+    private ShellViewModel? Shell => Window.GetWindow(this)?.DataContext as ShellViewModel;
+
+    private void OnCancel(object sender, RoutedEventArgs e) => Shell?.CloseSettingsCommand.Execute(null);
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
@@ -47,8 +47,7 @@ public partial class ApplicationSettingsWindow : Window
         var current = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
         if (selected.Equals(current, StringComparison.OrdinalIgnoreCase))
         {
-            DialogResult = true;
-            Close();
+            Shell?.CloseSettingsCommand.Execute(null);
             return;
         }
 
@@ -56,8 +55,7 @@ public partial class ApplicationSettingsWindow : Window
         var loc = UiLocalizerHost.Current;
         if (loc is null)
         {
-            DialogResult = true;
-            Close();
+            Shell?.CloseSettingsCommand.Execute(null);
             return;
         }
 
@@ -74,7 +72,6 @@ public partial class ApplicationSettingsWindow : Window
             return;
         }
 
-        DialogResult = true;
-        Close();
+        Shell?.CloseSettingsCommand.Execute(null);
     }
 }

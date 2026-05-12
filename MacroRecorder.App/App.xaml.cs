@@ -24,9 +24,12 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IUiLocalizer, ResxUiLocalizer>();
         builder.Services.AddSingleton<IUserDialogService, WpfUserDialogService>();
         builder.Services.AddSingleton<IEditorInsertDialogs, WpfEditorInsertDialogs>();
-        builder.Services.AddSingleton<INavigationService, WpfNavigationService>();
+        builder.Services.AddSingleton<Lazy<INavigationService>>(static sp =>
+            new Lazy<INavigationService>(() => sp.GetRequiredService<INavigationService>()));
         builder.Services.AddSingleton<MainViewModel>();
-        builder.Services.AddSingleton(sp => new MainWindow(sp.GetRequiredService<MainViewModel>()));
+        builder.Services.AddSingleton<ShellViewModel>();
+        builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
+        builder.Services.AddSingleton(sp => new MainWindow(sp.GetRequiredService<ShellViewModel>()));
 
         _host = builder.Build();
         UiLocalizerHost.Current = _host.Services.GetRequiredService<IUiLocalizer>();

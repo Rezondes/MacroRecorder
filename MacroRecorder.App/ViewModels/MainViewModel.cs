@@ -13,14 +13,14 @@ public partial class MainViewModel : ObservableObject
     private readonly MacroWorkspaceService _workspace;
     private readonly IPlaybackService _playback;
     private readonly IUserDialogService _dialogs;
-    private readonly INavigationService _navigation;
+    private readonly Lazy<INavigationService> _navigation;
     private readonly IUiLocalizer _loc;
 
     public MainViewModel(
         MacroWorkspaceService workspace,
         IPlaybackService playback,
         IUserDialogService dialogs,
-        INavigationService navigation,
+        Lazy<INavigationService> navigation,
         IUiLocalizer loc)
     {
         _workspace = workspace;
@@ -79,7 +79,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (item is null)
             return;
-        _navigation.OpenEditor(item.Id, OnMacroListShouldRefresh);
+        _navigation.Value.OpenEditor(item.Id, OnMacroListShouldRefresh);
     }
 
     [RelayCommand]
@@ -97,7 +97,7 @@ public partial class MainViewModel : ObservableObject
     private void NewRecording()
     {
         var macro = Macro.CreateEmpty(_loc.GetString("Main_NewMacroDefaultName"));
-        _navigation.OpenNewMacroEditor(macro, OnMacroListShouldRefresh);
+        _navigation.Value.OpenNewMacroEditor(macro, OnMacroListShouldRefresh);
     }
 
     private void OnMacroListShouldRefresh() => _ = RefreshAsync();

@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -6,23 +5,22 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using MacroRecorder.App.ViewModels;
 
-namespace MacroRecorder.App;
+namespace MacroRecorder.App.Views;
 
-public partial class MacroEditorWindow : Window
+public partial class MacroEditorView : UserControl
 {
     private const string RowDragFormat = "MacroRecorder.MacroEditor.RowIndex";
 
     private Point _dragStart;
     private int? _dragSourceRowIndex;
 
-    public MacroEditorWindow(MacroEditorViewModel viewModel)
+    public MacroEditorView()
     {
-        DataContext = viewModel;
         InitializeComponent();
-        Closed += OnWindowClosed;
+        Unloaded += OnUnloaded;
     }
 
-    private void OnWindowClosed(object? sender, EventArgs _)
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is MacroEditorViewModel editorViewModel)
             editorViewModel.RequestTimelineScrollToEnd -= OnScrollTimelineToEnd;
@@ -32,23 +30,11 @@ public partial class MacroEditorWindow : Window
     {
         if (DataContext is MacroEditorViewModel editorViewModel)
         {
-            editorViewModel.AttachOwner(this);
+            var owner = Window.GetWindow(this);
+            if (owner is not null)
+                editorViewModel.AttachOwner(owner);
             editorViewModel.RequestTimelineScrollToEnd += OnScrollTimelineToEnd;
         }
-    }
-
-    private void OnWindowClosing(object? sender, CancelEventArgs cancelEventArgs)
-    {
-        if (DataContext is not MacroEditorViewModel editorViewModel)
-            return;
-        if (!editorViewModel.TryAbortRecordingForClose())
-        {
-            cancelEventArgs.Cancel = true;
-            return;
-        }
-
-        if (!editorViewModel.TryConfirmDiscardUnpersistedForClose())
-            cancelEventArgs.Cancel = true;
     }
 
     private void OnScrollTimelineToEnd()
