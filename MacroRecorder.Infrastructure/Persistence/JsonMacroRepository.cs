@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MacroRecorder.Application.Ports;
+using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 
 namespace MacroRecorder.Infrastructure.Persistence;
@@ -82,7 +83,7 @@ public sealed class JsonMacroRepository : IMacroRepository
                     summaries.Add(new MacroSummary(
                         new MacroId(macroFileDto.Id),
                         macroFileDto.Name,
-                        macroFileDto.Events.Count,
+                        TimelineActionRowCount.Count(macroFileDto.Events),
                         new DateTimeOffset(lastWriteTimeUtc, TimeSpan.Zero)));
                 }
                 catch

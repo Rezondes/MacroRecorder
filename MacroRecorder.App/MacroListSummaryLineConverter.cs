@@ -16,7 +16,7 @@ public sealed class MacroListSummaryLineConverter : IMultiValueConverter
         if (values[0] is not int count || values[1] is not DateTimeOffset modified)
             return "";
         var loc = UiLocalizerHost.Current;
-        return loc is null ? "" : loc.GetString("Main_MacroListEventsFormat", count, modified);
+        return loc is null ? "" : loc.GetString("Main_MacroListActionsFormat", count, modified);
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>

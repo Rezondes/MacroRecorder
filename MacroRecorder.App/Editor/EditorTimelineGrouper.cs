@@ -1,4 +1,5 @@
 using MacroRecorder.Application.Ports;
+using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 
 namespace MacroRecorder.App.Editor;
@@ -14,25 +15,15 @@ public static class EditorTimelineGrouper
     {
         var ordered = events is List<RecordedInputEvent> list ? list : events.ToList();
         var rows = new List<EditorTimelineRow>();
-        var flatIndex = 0;
-        while (flatIndex < ordered.Count)
+        foreach (var group in TimelineActionRowCount.EnumerateActionRowGroups(ordered))
         {
-            if (ordered[flatIndex] is MouseMoveRecordedEvent)
+            if (group[0] is MouseMoveRecordedEvent)
             {
-                var group = new List<MouseMoveRecordedEvent>();
-                while (flatIndex < ordered.Count && ordered[flatIndex] is MouseMoveRecordedEvent moveEvent)
-                {
-                    group.Add(moveEvent);
-                    flatIndex++;
-                }
-
-                rows.Add(new EditorMousePathRow(group, loc));
+                var moves = group.Cast<MouseMoveRecordedEvent>().ToList();
+                rows.Add(new EditorMousePathRow(moves, loc));
             }
             else
-            {
-                rows.Add(new EditorSingleEventRow(ordered[flatIndex], loc));
-                flatIndex++;
-            }
+                rows.Add(new EditorSingleEventRow(group[0], loc));
         }
 
         return rows;

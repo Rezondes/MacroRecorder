@@ -132,7 +132,7 @@
                                            TextTrimming="CharacterEllipsis">
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{StaticResource MacroSummaryLine}">
-                                            <Binding Path="EventCount" />
+                                            <Binding Path="ActionCount" />
                                             <Binding Path="LastModifiedUtc" />
                                         </MultiBinding>
                                     </TextBlock.Text>
