@@ -30,6 +30,7 @@ public partial class MacroEditorViewModel : ObservableObject
     private bool _isDirty;
     private bool _persistedOnDisk = true;
     private List<RecordedInputEvent>? _recordingSnapshot;
+    private readonly Action? _onMacroSaved;
 
     public event Action? RequestTimelineScrollToEnd;
 
@@ -42,7 +43,8 @@ public partial class MacroEditorViewModel : ObservableObject
         IUiLocalizer uiLocalizer,
         MacroId macroId,
         bool loadFromDisk,
-        Macro? inMemoryMacro)
+        Macro? inMemoryMacro,
+        Action? onMacroSaved = null)
     {
         _workspace = workspace;
         _dialogs = dialogs;
@@ -50,6 +52,7 @@ public partial class MacroEditorViewModel : ObservableObject
         _playback = playback;
         _recording = recording;
         _loc = uiLocalizer;
+        _onMacroSaved = onMacroSaved;
         _uiDispatcher = Dispatcher.CurrentDispatcher;
         MacroId = macroId;
         WindowTitle = _loc.GetString("Editor_DefaultWindowTitle");
@@ -853,5 +856,6 @@ public partial class MacroEditorViewModel : ObservableObject
         RedoCommand.NotifyCanExecuteChanged();
         NotifySaveCanExecute();
         _dialogs.ShowInfo(_loc.GetString("Editor_Saved"));
+        _onMacroSaved?.Invoke();
     }
 }

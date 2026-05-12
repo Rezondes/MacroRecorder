@@ -13,19 +13,22 @@ public partial class RecordViewModel : ObservableObject
     private readonly IUserDialogService _dialogs;
     private readonly INavigationService _navigation;
     private readonly IUiLocalizer _loc;
+    private readonly Action? _onMacroSavedFromEditor;
 
     public RecordViewModel(
         RecordingCoordinator recording,
         MacroWorkspaceService workspace,
         IUserDialogService dialogs,
         INavigationService navigation,
-        IUiLocalizer loc)
+        IUiLocalizer loc,
+        Action? onMacroSavedFromEditor = null)
     {
         _recording = recording;
         _workspace = workspace;
         _dialogs = dialogs;
         _navigation = navigation;
         _loc = loc;
+        _onMacroSavedFromEditor = onMacroSavedFromEditor;
     }
 
     [ObservableProperty]
@@ -62,6 +65,6 @@ public partial class RecordViewModel : ObservableObject
         await _workspace.SaveAsync(macro).ConfigureAwait(true);
         _dialogs.ShowInfo(_loc.GetString("Record_Saved"));
         if (_dialogs.Confirm(_loc.GetString("Record_OpenInEditor")))
-            _navigation.OpenEditor(macro.Id);
+            _navigation.OpenEditor(macro.Id, _onMacroSavedFromEditor);
     }
 }

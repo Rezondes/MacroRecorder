@@ -79,7 +79,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (item is null)
             return;
-        _navigation.OpenEditor(item.Id);
+        _navigation.OpenEditor(item.Id, OnMacroListShouldRefresh);
     }
 
     [RelayCommand]
@@ -97,6 +97,8 @@ public partial class MainViewModel : ObservableObject
     private void NewRecordingAsync()
     {
         var macro = Macro.CreateEmpty(_loc.GetString("Main_NewMacroDefaultName"));
-        _navigation.OpenNewMacroEditor(macro);
+        _navigation.OpenNewMacroEditor(macro, OnMacroListShouldRefresh);
     }
+
+    private void OnMacroListShouldRefresh() => _ = RefreshAsync();
 }

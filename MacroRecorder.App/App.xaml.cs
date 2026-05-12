@@ -26,8 +26,6 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IEditorInsertDialogs, WpfEditorInsertDialogs>();
         builder.Services.AddSingleton<INavigationService, WpfNavigationService>();
         builder.Services.AddSingleton<MainViewModel>();
-        builder.Services.AddTransient<RecordViewModel>();
-        builder.Services.AddTransient<MacroEditorViewModel>();
         builder.Services.AddSingleton(sp => new MainWindow(sp.GetRequiredService<MainViewModel>()));
 
         _host = builder.Build();
