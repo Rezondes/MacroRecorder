@@ -94,11 +94,9 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task NewRecordingAsync()
+    private void NewRecordingAsync()
     {
         var macro = Macro.CreateEmpty(_loc.GetString("Main_NewMacroDefaultName"));
-        await _workspace.SaveAsync(macro).ConfigureAwait(true);
-        _navigation.OpenEditor(macro.Id);
-        await RefreshAsync().ConfigureAwait(true);
+        _navigation.OpenNewMacroEditor(macro);
     }
 }

@@ -11,7 +11,20 @@ public sealed class WpfNavigationService(IServiceProvider serviceProvider) : INa
     {
         var editorViewModel = ActivatorUtilities.CreateInstance<MacroEditorViewModel>(
             serviceProvider,
-            id);
+            id,
+            true,
+            (Macro?)null);
+        var editorWindow = new MacroEditorWindow(editorViewModel) { Owner = System.Windows.Application.Current?.MainWindow };
+        editorWindow.Show();
+    }
+
+    public void OpenNewMacroEditor(Macro macro)
+    {
+        var editorViewModel = ActivatorUtilities.CreateInstance<MacroEditorViewModel>(
+            serviceProvider,
+            macro.Id,
+            false,
+            macro);
         var editorWindow = new MacroEditorWindow(editorViewModel) { Owner = System.Windows.Application.Current?.MainWindow };
         editorWindow.Show();
     }

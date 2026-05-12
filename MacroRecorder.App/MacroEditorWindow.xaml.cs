@@ -39,7 +39,15 @@ public partial class MacroEditorWindow : Window
 
     private void OnWindowClosing(object? sender, CancelEventArgs cancelEventArgs)
     {
-        if (DataContext is MacroEditorViewModel editorViewModel && !editorViewModel.TryAbortRecordingForClose())
+        if (DataContext is not MacroEditorViewModel editorViewModel)
+            return;
+        if (!editorViewModel.TryAbortRecordingForClose())
+        {
+            cancelEventArgs.Cancel = true;
+            return;
+        }
+
+        if (!editorViewModel.TryConfirmDiscardUnpersistedForClose())
             cancelEventArgs.Cancel = true;
     }
 

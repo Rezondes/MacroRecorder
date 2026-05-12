@@ -28,6 +28,7 @@ public partial class MacroEditorViewModel : ObservableObject
     private Macro? _macro;
     private Window? _ownerWindow;
     private bool _isDirty;
+    private bool _persistedOnDisk = true;
     private List<RecordedInputEvent>? _recordingSnapshot;
 
     public event Action? RequestTimelineScrollToEnd;
@@ -39,7 +40,9 @@ public partial class MacroEditorViewModel : ObservableObject
         IPlaybackService playback,
         RecordingCoordinator recording,
         IUiLocalizer uiLocalizer,
-        MacroId macroId)
+        MacroId macroId,
+        bool loadFromDisk,
+        Macro? inMemoryMacro)
     {
         _workspace = workspace;
         _dialogs = dialogs;
@@ -51,7 +54,14 @@ public partial class MacroEditorViewModel : ObservableObject
         MacroId = macroId;
         WindowTitle = _loc.GetString("Editor_DefaultWindowTitle");
         RecordingButtonCaption = _loc.GetString("Editor_RecordingStart");
-        _ = LoadAsync();
+        if (!loadFromDisk)
+        {
+            if (inMemoryMacro is null)
+                throw new ArgumentNullException(nameof(inMemoryMacro));
+            ApplyInMemoryMacro(inMemoryMacro);
+        }
+        else
+            _ = LoadAsync();
     }
 
     public MacroId MacroId { get; }
@@ -147,6 +157,24 @@ public partial class MacroEditorViewModel : ObservableObject
     private void UpdateRecordingCaption() =>
         RecordingButtonCaption = IsRecording ? _loc.GetString("Editor_RecordingStop") : _loc.GetString("Editor_RecordingStart");
 
+    private void ApplyInMemoryMacro(Macro macro)
+    {
+        _persistedOnDisk = false;
+        _macro = macro;
+        WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
+        _flatEvents.Clear();
+        _flatEvents.AddRange(_macro.Events.OrderBy(recordedEvent => recordedEvent.Sequence));
+        _isDirty = false;
+        _undo.Clear();
+        _redo.Clear();
+        RebuildRows();
+        EditorHasMacro = true;
+        CanUseCommandsWhileNotRecording = !IsRecording;
+        UpdateRecordingCaption();
+        NotifySaveCanExecute();
+        RefreshCommandStates();
+    }
+
     private async Task LoadAsync()
     {
         _macro = await _workspace.GetAsync(MacroId).ConfigureAwait(true);
@@ -157,6 +185,7 @@ public partial class MacroEditorViewModel : ObservableObject
             return;
         }
 
+        _persistedOnDisk = true;
         WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
         _flatEvents.Clear();
         _flatEvents.AddRange(_macro.Events.OrderBy(recordedEvent => recordedEvent.Sequence));
@@ -778,13 +807,35 @@ public partial class MacroEditorViewModel : ObservableObject
 
     private bool CanEditOrInform() => !IsRecording && SelectedRow is not null;
 
-    private bool CanSave() => _macro is not null && _isDirty && !IsRecording;
+    internal bool TryConfirmDiscardUnpersistedForClose()
+    {
+        if (_persistedOnDisk)
+            return true;
+        if (!_isDirty && _flatEvents.Count == 0)
+            return true;
+        return _dialogs.Confirm(_loc.GetString("Editor_ConfirmDiscardNewMacro"));
+    }
+
+    private bool CanSave() => _macro is not null && !IsRecording && (_isDirty || !_persistedOnDisk);
 
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
     {
         if (IsRecording || _macro is null)
             return;
+
+        if (!_persistedOnDisk)
+        {
+            var name = _dialogs.PromptText(
+                _loc.GetString("Editor_FirstSaveTitle"),
+                _loc.GetString("Editor_FirstSaveMessage"),
+                _macro.Name);
+            if (string.IsNullOrWhiteSpace(name))
+                return;
+            _macro.Rename(name.Trim());
+            WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
+        }
+
         if (_isDirty)
             TimelineNormalizer.NormalizeInPlace(_flatEvents);
         var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
@@ -794,6 +845,7 @@ public partial class MacroEditorViewModel : ObservableObject
         _flatEvents.Clear();
         _flatEvents.AddRange(ordered);
         _isDirty = false;
+        _persistedOnDisk = true;
         _undo.Clear();
         _redo.Clear();
         RebuildRows();
