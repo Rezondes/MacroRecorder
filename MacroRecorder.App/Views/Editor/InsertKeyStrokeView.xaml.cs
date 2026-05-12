@@ -55,11 +55,7 @@ public partial class InsertKeyStrokeView : UserControl, IContentModalEscape
         _capturedVirtualKey = (ushort)KeyInterop.VirtualKeyFromKey(physicalKey);
         _capturedScanCode = VkScanMapper.VirtualKeyToScanCode(_capturedVirtualKey);
         _isExtendedKey = IsExtendedKey(physicalKey);
-        StatusText.Text = _loc.GetString(
-            "DialogKeyStroke_StatusFormat",
-            _capturedVirtualKey,
-            _capturedScanCode,
-            _isExtendedKey ? _loc.GetString("DialogKeyStroke_StatusExtended") : "");
+        StatusText.Text = KeyDisplayName.GetName(_capturedVirtualKey, _capturedScanCode, _isExtendedKey);
         keyEventArgs.Handled = true;
     }
 

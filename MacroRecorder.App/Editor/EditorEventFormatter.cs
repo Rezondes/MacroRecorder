@@ -1,5 +1,6 @@
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
+using MacroRecorder.Infrastructure.Input;
 
 namespace MacroRecorder.App.Editor;
 
@@ -37,13 +38,9 @@ public static class EditorEventFormatter
     public static string ValueText(RecordedInputEvent recordedEvent, IUiLocalizer loc) =>
         recordedEvent switch
         {
-            KeyDownRecordedEvent keyDown => loc.GetString(
-                "DialogKeyStroke_StatusFormat",
-                keyDown.Vk,
-                keyDown.ScanCode,
-                keyDown.IsExtendedKey ? loc.GetString("DialogKeyStroke_StatusExtended") : ""),
+            KeyDownRecordedEvent keyDown => KeyDisplayName.GetName(keyDown.Vk, keyDown.ScanCode, keyDown.IsExtendedKey),
             KeyUpRecordedEvent keyUp =>
-                loc.GetString("Editor_Value_KeyUpFormat", keyUp.Vk, keyUp.ScanCode),
+                KeyDisplayName.GetName(keyUp.Vk, keyUp.ScanCode, keyUp.IsExtendedKey),
             MouseMoveRecordedEvent mouseMove =>
                 loc.GetString(
                     "Editor_Value_MouseMoveFormat",

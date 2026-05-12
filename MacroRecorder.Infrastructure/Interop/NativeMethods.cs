@@ -197,6 +197,9 @@ internal static class NativeMethods
 
     public const uint MAPVK_VK_TO_VSC = 0;
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int GetKeyNameText(int lParam, System.Text.StringBuilder lpString, int cchSize);
+
     [DllImport("user32.dll")]
     public static extern bool GetCursorPos(out POINT lpPoint);
 
