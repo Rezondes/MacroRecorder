@@ -49,9 +49,9 @@ public partial class ShellViewModel : ObservableObject
     private void CloseSettings() => IsSettingsOpen = false;
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
-    private void GoBack()
+    private async Task GoBackAsync()
     {
-        if (!TryLeaveTopPage())
+        if (!await TryLeaveTopPageAsync().ConfigureAwait(true))
             return;
         if (_stack.Count <= 1)
             return;
@@ -90,16 +90,10 @@ public partial class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowBackButton));
     }
 
-    internal bool TryLeaveTopPage()
+    internal async Task<bool> TryLeaveTopPageAsync()
     {
         if (CurrentPage is MacroEditorViewModel editor)
-        {
-            if (!editor.TryAbortRecordingForClose())
-                return false;
-            if (!editor.TryConfirmDiscardUnpersistedForClose())
-                return false;
-        }
-
+            return await editor.TryLeaveEditorAsync().ConfigureAwait(true) == EditorLeaveResult.Proceed;
         return true;
     }
 

@@ -7,6 +7,8 @@ namespace MacroRecorder.App;
 
 public partial class MainWindow : Window
 {
+    private bool _forceClose;
+
     public MainWindow(ShellViewModel shellViewModel)
     {
         DataContext = shellViewModel;
@@ -18,8 +20,23 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosing(object? sender, CancelEventArgs e)
     {
-        if (!Shell.TryLeaveTopPage())
-            e.Cancel = true;
+        if (_forceClose)
+            return;
+        e.Cancel = true;
+        _ = Dispatcher.InvokeAsync(async () =>
+        {
+            if (!await Shell.TryLeaveTopPageAsync().ConfigureAwait(true))
+                return;
+            _forceClose = true;
+            try
+            {
+                Close();
+            }
+            finally
+            {
+                _forceClose = false;
+            }
+        });
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)

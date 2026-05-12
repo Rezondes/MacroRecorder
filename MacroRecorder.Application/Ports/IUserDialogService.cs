@@ -7,4 +7,6 @@ public interface IUserDialogService
     void ShowInfo(string message);
 
     bool Confirm(string message);
+
+    UnsavedChangesPromptResult PromptUnsavedChanges(string message, string title);
 }

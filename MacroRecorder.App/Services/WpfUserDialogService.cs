@@ -85,4 +85,89 @@ public sealed class WpfUserDialogService(IUiLocalizer loc) : IUserDialogService
     public bool Confirm(string message) =>
         MessageBox.Show(message, loc.GetString("Common_AppTitle"), MessageBoxButton.YesNo, MessageBoxImage.Question) ==
         MessageBoxResult.Yes;
+
+    public UnsavedChangesPromptResult PromptUnsavedChanges(string message, string title)
+    {
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 440,
+            MinHeight = 140,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = System.Windows.Application.Current?.MainWindow,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false
+        };
+
+        UnsavedChangesPromptResult? picked = null;
+
+        var root = new Grid { Margin = new Thickness(16) };
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var messageBlock = new TextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 16)
+        };
+        Grid.SetRow(messageBlock, 0);
+        root.Children.Add(messageBlock);
+
+        var buttonRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var saveButton = new Button
+        {
+            Content = loc.GetString("Editor_Save"),
+            MinWidth = 88,
+            Margin = new Thickness(8, 0, 0, 0),
+            IsDefault = true,
+            Padding = new Thickness(12, 4, 12, 4)
+        };
+        var discardButton = new Button
+        {
+            Content = loc.GetString("Editor_UnsavedDiscard"),
+            MinWidth = 88,
+            Margin = new Thickness(8, 0, 0, 0),
+            Padding = new Thickness(12, 4, 12, 4)
+        };
+        var cancelButton = new Button
+        {
+            Content = loc.GetString("Common_Cancel"),
+            MinWidth = 88,
+            Margin = new Thickness(8, 0, 0, 0),
+            IsCancel = true,
+            Padding = new Thickness(12, 4, 12, 4)
+        };
+
+        saveButton.Click += (_, _) =>
+        {
+            picked = UnsavedChangesPromptResult.Save;
+            dialog.Close();
+        };
+        discardButton.Click += (_, _) =>
+        {
+            picked = UnsavedChangesPromptResult.Discard;
+            dialog.Close();
+        };
+        cancelButton.Click += (_, _) =>
+        {
+            picked = UnsavedChangesPromptResult.Cancel;
+            dialog.Close();
+        };
+
+        buttonRow.Children.Add(saveButton);
+        buttonRow.Children.Add(discardButton);
+        buttonRow.Children.Add(cancelButton);
+        Grid.SetRow(buttonRow, 1);
+        root.Children.Add(buttonRow);
+
+        dialog.Content = root;
+        dialog.ShowDialog();
+        return picked ?? UnsavedChangesPromptResult.Cancel;
+    }
 }

@@ -810,13 +810,41 @@ public partial class MacroEditorViewModel : ObservableObject
 
     private bool CanEditOrInform() => !IsRecording && SelectedRow is not null;
 
-    internal bool TryConfirmDiscardUnpersistedForClose()
+    private bool HasUnsavedEditorState()
     {
-        if (_persistedOnDisk)
-            return true;
-        if (!_isDirty && _flatEvents.Count == 0)
-            return true;
-        return _dialogs.Confirm(_loc.GetString("Editor_ConfirmDiscardNewMacro"));
+        if (_macro is null)
+            return false;
+        if (!_persistedOnDisk)
+            return _isDirty || _flatEvents.Count > 0;
+        return _isDirty;
+    }
+
+    internal async Task<EditorLeaveResult> TryLeaveEditorAsync()
+    {
+        if (!TryAbortRecordingForClose())
+            return EditorLeaveResult.Cancel;
+
+        if (!HasUnsavedEditorState())
+            return EditorLeaveResult.Proceed;
+
+        var macroName = _macro?.Name ?? "";
+        var choice = _dialogs.PromptUnsavedChanges(
+            _loc.GetString("Editor_UnsavedChangesMessage", macroName),
+            _loc.GetString("Editor_UnsavedChangesTitle"));
+
+        switch (choice)
+        {
+            case UnsavedChangesPromptResult.Cancel:
+                return EditorLeaveResult.Cancel;
+            case UnsavedChangesPromptResult.Discard:
+                return EditorLeaveResult.Proceed;
+            case UnsavedChangesPromptResult.Save:
+                if (!await TryPersistCurrentMacroAsync(showSavedToast: true).ConfigureAwait(true))
+                    return EditorLeaveResult.Cancel;
+                return EditorLeaveResult.Proceed;
+            default:
+                return EditorLeaveResult.Cancel;
+        }
     }
 
     private bool CanSave() => _macro is not null && !IsRecording && (_isDirty || !_persistedOnDisk);
@@ -824,8 +852,13 @@ public partial class MacroEditorViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
     {
+        _ = await TryPersistCurrentMacroAsync(showSavedToast: true).ConfigureAwait(true);
+    }
+
+    private async Task<bool> TryPersistCurrentMacroAsync(bool showSavedToast)
+    {
         if (IsRecording || _macro is null)
-            return;
+            return false;
 
         if (!_persistedOnDisk)
         {
@@ -834,7 +867,7 @@ public partial class MacroEditorViewModel : ObservableObject
                 _loc.GetString("Editor_FirstSaveMessage"),
                 _macro.Name);
             if (string.IsNullOrWhiteSpace(name))
-                return;
+                return false;
             _macro.Rename(name.Trim());
             WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
         }
@@ -855,7 +888,9 @@ public partial class MacroEditorViewModel : ObservableObject
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
         NotifySaveCanExecute();
-        _dialogs.ShowInfo(_loc.GetString("Editor_Saved"));
+        if (showSavedToast)
+            _dialogs.ShowInfo(_loc.GetString("Editor_Saved"));
         _onMacroSaved?.Invoke();
+        return true;
     }
 }
