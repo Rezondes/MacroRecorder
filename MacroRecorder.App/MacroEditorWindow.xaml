@@ -9,6 +9,11 @@
         MinHeight="420" MinWidth="640"
         Background="#F3F3F3"
         Closing="OnWindowClosing">
+    <Window.InputBindings>
+        <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}" />
+        <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}" />
+        <KeyBinding Key="Z" Modifiers="Control+Shift" Command="{Binding RedoCommand}" />
+    </Window.InputBindings>
     <Window.Resources>
         <local:InverseBooleanConverter x:Key="InverseBool" />
         <Style x:Key="ToolbarBtn" TargetType="Button">
