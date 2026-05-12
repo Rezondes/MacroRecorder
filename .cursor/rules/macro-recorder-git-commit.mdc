@@ -1,0 +1,70 @@
+---
+description: Commit messages must follow Karma Runner (Angular-style) git commit conventions
+alwaysApply: true
+---
+
+# Git-Commit-Nachrichten (Karma Runner Conventions)
+
+Alle Commit-Nachrichten in diesem Repository folgen dem Format aus den **Karma Runner Commit Conventions** (Angular Commit Message Format). Vollständige Spezifikation: [Karma – Git Commit Msg](https://karma-runner.github.io/6.4/dev/git-commit-msg.html).
+
+## Erste Zeile (Subject)
+
+```text
+<type>(<scope>): <subject>
+```
+
+- **`type`** und **`scope`** (falls gesetzt): **kleinschreibung**.
+- **`scope`**: optional; bei globalem oder schwer zuordenbarem Change **Klammern weglassen** (nur `<type>: <subject>`).
+- **`subject`**: **höchstens 72 Zeichen**, Imperativ / Gegenwart („add“, „fix“, nicht „added“ / „fixes“), ohne Punkt am Ende.
+- Nach der ersten Zeile folgt bei Bedarf eine **Leerzeile**, dann **Body** und optional **Footer**.
+
+### Erlaubte `<type>`-Werte
+
+| type | Verwendung |
+|------|------------|
+| **feat** | Neue Nutzerfunktion (kein reines Build-Skript-Feature). |
+| **fix** | Bugfix für Nutzer (kein reiner Build-Skript-Fix). |
+| **perf** | Performance-Verbesserung. |
+| **docs** | Dokumentation. |
+| **style** | Formatierung, fehlende Semikolons usw. (keine Logikänderung). |
+| **refactor** | Refactoring Produktionscode (z. B. Umbenennung). |
+| **test** | Tests ergänzen/refaktorisieren; keine Produktionscode-Änderung. |
+| **build** | Build-Konfiguration, Dev-Tools, sonstige nicht-nutzerrelevante Änderungen. |
+
+### `<scope>` (Beispiele)
+
+Projektbezogene Scopes sind sinnvoll, z. B. `app`, `domain`, `application`, `infrastructure`, `localization`, `ci`, `rules` – oder leer lassen, wenn es nicht passt.
+
+## Body
+
+- Imperativ, Gegenwart; **Motivation** und Abgrenzung zum vorherigen Verhalten, wenn nötig.
+
+## Footer
+
+- Issues: `Closes #123` (eine oder mehrere Nummern).
+- Breaking Changes: Abschnitt `BREAKING CHANGE:` mit Beschreibung, Begründung und Migration (siehe Karma-Doku).
+
+## Beispiele
+
+```text
+fix(app): resolve localized playback hook error copy
+
+Infrastructure throws English-only InvalidOperationException; UI maps to localized key.
+
+Closes #42
+```
+
+```text
+docs(rules): add git commit message convention rule
+```
+
+```text
+build: stop tracking bin and obj directories
+```
+
+Beim Erstellen von Commits (inkl. von Agenten) diese Konvention **konsequent** einhalten.
+
+## Keine KI-/Editor-Trailer
+
+- **`Co-authored-by: Cursor …`** oder ähnliche automatische **Co-authored-by**-Zeilen **nicht** anhängen, sofern der Nutzer das **nicht ausdrücklich** verlangt.
+- Commit-Nachricht endet nach Body/Footer nur mit den Inhalten, die der Nutzer bzw. die Konvention vorsieht (z. B. `Closes #…`, `BREAKING CHANGE:`).

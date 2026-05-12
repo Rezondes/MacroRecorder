@@ -42,3 +42,7 @@ alwaysApply: true
 
 - Nutzer sichtbare Texte: **Lokalisierung DE/EN** über `IUiLocalizer`, RESX und XAML `{loc:Loc …}`; Details und Schichtenregeln siehe [macro-recorder-localization.mdc](macro-recorder-localization.mdc).
 - Eigene Dialoge (`WpfUserDialogService.PromptText`): Schaltflächen aus RESX (`Common_Ok` / `Common_Cancel`).
+
+## Git-Commits
+
+- Commit-Nachrichten: [macro-recorder-git-commit.mdc](macro-recorder-git-commit.mdc) (Karma Runner / Angular-Format; Referenz: [Karma – Git Commit Msg](https://karma-runner.github.io/6.4/dev/git-commit-msg.html)).
