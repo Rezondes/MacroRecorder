@@ -229,10 +229,13 @@ public partial class MacroEditorViewModel : ObservableObject
 
     private void UpdateStatusText()
     {
+        var playbackTotal = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(_flatEvents);
+        var durationText = playbackTotal.ToString(@"hh\:mm\:ss\.fff", _loc.CurrentUiCulture);
+
         if (IsRecording)
         {
             StatusText =
-                _loc.GetString("Editor_StatusRecordingFormat", Rows.Count, _flatEvents.Count);
+                _loc.GetString("Editor_StatusRecordingFormat", Rows.Count, _flatEvents.Count, durationText);
             return;
         }
 
@@ -242,9 +245,8 @@ public partial class MacroEditorViewModel : ObservableObject
             return;
         }
 
-        var duration = _flatEvents.Max(e => e.ElapsedSinceSessionStart);
         StatusText =
-            _loc.GetString("Editor_StatusSavedFormat", Rows.Count, _flatEvents.Count, duration);
+            _loc.GetString("Editor_StatusSavedFormat", Rows.Count, _flatEvents.Count, durationText);
     }
 
     private void PushUndo()
@@ -375,6 +377,12 @@ public partial class MacroEditorViewModel : ObservableObject
 
         Mutate(() =>
         {
+            if (!TryGetFlatSpan(SelectedRow, out var flatStart, out var flatLength))
+                return;
+
+            var flatEnd = flatStart + flatLength - 1;
+            var gap = TimelinePlaybackGapCollapse.ComputeGapToSubtractBeforeRemovingRange(_flatEvents, flatStart, flatEnd);
+
             switch (SelectedRow)
             {
                 case EditorMousePathRow path:
@@ -385,6 +393,9 @@ public partial class MacroEditorViewModel : ObservableObject
                     _flatEvents.RemoveAll(e => ReferenceEquals(e, single.Event));
                     break;
             }
+
+            if (gap > TimeSpan.Zero && flatStart < _flatEvents.Count)
+                TimelinePlaybackGapCollapse.ShiftElapsedEarlierFromIndex(_flatEvents, flatStart, gap);
         });
     }
 
