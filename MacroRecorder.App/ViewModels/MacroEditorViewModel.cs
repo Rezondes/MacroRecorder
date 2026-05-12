@@ -108,6 +108,9 @@ public partial class MacroEditorViewModel : ObservableObject
     [ObservableProperty]
     private string recordingButtonCaption = "";
 
+    [ObservableProperty]
+    private bool recordMouseMoves = true;
+
     public void AttachOwner(Window owner) => _ownerWindow = owner;
 
     internal bool TryAbortRecordingForClose()
@@ -694,7 +697,7 @@ public partial class MacroEditorViewModel : ObservableObject
             _redo.Clear();
             IsRecording = true;
             RefreshCommandStates();
-            _recording.StartRecording(OnLiveRecordedEvent);
+            _recording.StartRecording(OnLiveRecordedEvent, RecordMouseMoves);
         }
         catch (Exception exception)
         {

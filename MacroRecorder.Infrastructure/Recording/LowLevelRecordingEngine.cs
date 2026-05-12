@@ -9,6 +9,8 @@ namespace MacroRecorder.Infrastructure.Recording;
 
 public sealed class LowLevelRecordingEngine : IRecordingEngine
 {
+    private static readonly TimeSpan MinAnchorGap = TimeSpan.FromMilliseconds(1);
+
     private readonly object _lock = new();
     private readonly List<RecordedInputEvent> _events = new();
     private readonly NativeMethods.LowLevelProc _keyboardProc;
@@ -28,6 +30,9 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private int _lastRecordedMouseMoveX;
     private int _lastRecordedMouseMoveY;
     private Action<RecordedInputEvent>? _onEventRecorded;
+    private bool _recordMouseMoves = true;
+    private bool _haveAnchor;
+    private TimeSpan _lastAnchorElapsed;
 
     public LowLevelRecordingEngine()
     {
@@ -37,7 +42,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
     public bool IsRunning => _running;
 
-    public void Start(Action<RecordedInputEvent>? onEventRecorded = null)
+    public void Start(Action<RecordedInputEvent>? onEventRecorded = null, bool recordMouseMoves = true)
     {
         if (_running)
             throw new InvalidOperationException("Recording already running.");
@@ -47,6 +52,9 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _events.Clear();
             Interlocked.Exchange(ref _sequence, 0);
             _haveLastRecordedMouseMove = false;
+            _recordMouseMoves = recordMouseMoves;
+            _haveAnchor = false;
+            _lastAnchorElapsed = TimeSpan.Zero;
         }
 
         _onEventRecorded = onEventRecorded;
@@ -262,12 +270,19 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private void AppendStamped(RecordedInputEvent eventTemplate)
     {
         Action<RecordedInputEvent>? live;
-        RecordedInputEvent stampedEvent;
+        List<RecordedInputEvent> pendingCallbacks = new(2);
         lock (_lock)
         {
             live = _onEventRecorded;
 
-            if (eventTemplate is MouseMoveRecordedEvent mouseMoveEvent)
+            if (!_recordMouseMoves && eventTemplate is MouseMoveRecordedEvent)
+                return;
+
+            if (eventTemplate is KeyDownRecordedEvent keyDownAutorepeat
+                && IsKeyboardAutorepeatKeyDown(_events, keyDownAutorepeat))
+                return;
+
+            if (eventTemplate is MouseMoveRecordedEvent mouseMoveEvent && _recordMouseMoves)
             {
                 if (_haveLastRecordedMouseMove &&
                     mouseMoveEvent.ScreenX == _lastRecordedMouseMoveX &&
@@ -280,12 +295,69 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             }
 
             var elapsed = _stopwatch?.Elapsed ?? TimeSpan.Zero;
+
+            if (!_recordMouseMoves && IsAnchorEvent(eventTemplate) && _haveAnchor)
+            {
+                var gap = elapsed - _lastAnchorElapsed;
+                if (gap >= MinAnchorGap)
+                {
+                    var waitSequence = (ulong)Interlocked.Increment(ref _sequence);
+                    var waitStamped = Stamp(
+                        new SyntheticWaitRecordedEvent
+                        {
+                            ElapsedSinceSessionStart = default,
+                            Sequence = 0,
+                            AdditionalDelay = gap
+                        },
+                        elapsed,
+                        waitSequence);
+                    _events.Add(waitStamped);
+                    pendingCallbacks.Add(waitStamped);
+                }
+            }
+
             var nextSequence = (ulong)Interlocked.Increment(ref _sequence);
-            stampedEvent = Stamp(eventTemplate, elapsed, nextSequence);
+            var stampedEvent = Stamp(eventTemplate, elapsed, nextSequence);
             _events.Add(stampedEvent);
+            pendingCallbacks.Add(stampedEvent);
+
+            if (!_recordMouseMoves && IsAnchorEvent(eventTemplate))
+            {
+                _haveAnchor = true;
+                _lastAnchorElapsed = elapsed;
+            }
         }
 
-        live?.Invoke(CloneForCallback(stampedEvent));
+        foreach (var recordedEvent in pendingCallbacks)
+            live?.Invoke(CloneForCallback(recordedEvent));
+    }
+
+    private static bool IsAnchorEvent(RecordedInputEvent recordedEvent) =>
+        recordedEvent is KeyDownRecordedEvent
+            or KeyUpRecordedEvent
+            or MouseButtonDownRecordedEvent
+            or MouseButtonUpRecordedEvent;
+
+    /// <summary>
+    /// WH_KEYBOARD_LL sends repeated <see cref="KeyDownRecordedEvent"/> for the same VK while the key is held.
+    /// We keep only the first key-down per hold; repeats are not stored so the timeline shows one action until <see cref="KeyUpRecordedEvent"/>.
+    /// </summary>
+    private static bool IsKeyboardAutorepeatKeyDown(IReadOnlyList<RecordedInputEvent> events, KeyDownRecordedEvent keyDown)
+    {
+        for (var i = events.Count - 1; i >= 0; i--)
+        {
+            switch (events[i])
+            {
+                case SyntheticWaitRecordedEvent:
+                    continue;
+                case KeyDownRecordedEvent previousKeyDown:
+                    return previousKeyDown.Vk == keyDown.Vk;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     private static RecordedInputEvent CloneForCallback(RecordedInputEvent recordedEvent) =>
