@@ -94,7 +94,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void NewRecordingAsync()
+    private void NewRecording()
     {
         var macro = Macro.CreateEmpty(_loc.GetString("Main_NewMacroDefaultName"));
         _navigation.OpenNewMacroEditor(macro, OnMacroListShouldRefresh);
