@@ -53,6 +53,13 @@ public partial class MainWindow : Window
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (Shell.IsContentModalOpen && Shell.ContentModalContent is IContentModalKeyCaptureHost)
+        {
+            var physicalKey = e.Key == Key.System ? e.SystemKey : e.Key;
+            if (e.Key == Key.Escape || physicalKey is Key.LWin or Key.RWin)
+                return;
+        }
+
         if (e.Key != Key.Escape)
             return;
         if (Shell.IsInfoModalOpen)

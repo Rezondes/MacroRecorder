@@ -7,6 +7,9 @@ internal static class NativeMethods
     public const int WH_KEYBOARD_LL = 13;
     public const int WH_MOUSE_LL = 14;
 
+    /// <summary>LLKHF_EXTENDED — 1 if the key is an extended key.</summary>
+    public const uint LLKHF_EXTENDED = 0x01;
+
     /// <summary>LLKHF_INJECTED — set if input was produced by SendInput or similar.</summary>
     public const uint LLKHF_INJECTED = 0x10;
 
@@ -156,6 +159,11 @@ internal static class NativeMethods
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern nint GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    public static extern nint GetAncestor(nint hwnd, uint gaFlags);
+
+    public const uint GA_ROOT = 2;
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     public static extern int GetWindowText(nint hWnd, System.Text.StringBuilder lpString, int nMaxCount);
