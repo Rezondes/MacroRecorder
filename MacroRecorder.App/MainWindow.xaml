@@ -66,5 +66,46 @@
                 <views:ApplicationSettingsView Width="380" />
             </Border>
         </Grid>
+        <Grid Grid.Row="0"
+              Grid.RowSpan="2"
+              Panel.ZIndex="101"
+              Background="#99000000"
+              Visibility="{Binding IsInfoModalOpen, Converter={StaticResource BoolToVis}}"
+              MouseDown="OnInfoOverlayBackgroundMouseDown">
+            <Border MaxWidth="440"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="White"
+                    CornerRadius="8"
+                    Padding="20"
+                    MouseDown="OnInfoModalInnerMouseDown">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold"
+                               FontSize="15"
+                               Margin="0,0,0,10"
+                               Text="{Binding InfoModalTitle}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding InfoModalTitle}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{Binding InfoModalMessage}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,16" />
+                    <Button MinWidth="88"
+                            HorizontalAlignment="Right"
+                            Padding="12,6"
+                            IsDefault="True"
+                            Content="{loc:Loc Common_Ok}"
+                            Command="{Binding CloseInfoModalCommand}" />
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

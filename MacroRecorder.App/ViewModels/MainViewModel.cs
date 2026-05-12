@@ -13,6 +13,7 @@ public partial class MainViewModel : ObservableObject
     private readonly MacroWorkspaceService _workspace;
     private readonly IPlaybackService _playback;
     private readonly IUserDialogService _dialogs;
+    private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly Lazy<INavigationService> _navigation;
     private readonly IUiLocalizer _loc;
 
@@ -20,12 +21,14 @@ public partial class MainViewModel : ObservableObject
         MacroWorkspaceService workspace,
         IPlaybackService playback,
         IUserDialogService dialogs,
+        InAppInfoMessageChannel inAppInfo,
         Lazy<INavigationService> navigation,
         IUiLocalizer loc)
     {
         _workspace = workspace;
         _playback = playback;
         _dialogs = dialogs;
+        _inAppInfo = inAppInfo;
         _navigation = navigation;
         _loc = loc;
     }
@@ -58,7 +61,9 @@ public partial class MainViewModel : ObservableObject
         }
         catch (PlaybackInterruptedByUserException)
         {
-            _dialogs.ShowInfo(_loc.GetString("Main_Play_InterruptedByUser"));
+            _inAppInfo.RequestInfo(
+                _loc.GetString("Main_Play_InterruptedByUser"),
+                _loc.GetString("Main_PlaybackInterruptedModalTitle"));
         }
         catch (OperationCanceledException)
         {

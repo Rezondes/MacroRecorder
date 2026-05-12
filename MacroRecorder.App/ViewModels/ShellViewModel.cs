@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MacroRecorder.App.Services;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
@@ -14,14 +15,21 @@ public partial class ShellViewModel : ObservableObject
     private readonly MainViewModel _overview;
     private readonly IServiceProvider _services;
     private readonly IUiLocalizer _loc;
+    private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly List<object> _stack = new();
     private MacroEditorViewModel? _editorTitleSource;
 
-    public ShellViewModel(MainViewModel overview, IServiceProvider services, IUiLocalizer loc)
+    public ShellViewModel(
+        MainViewModel overview,
+        IServiceProvider services,
+        IUiLocalizer loc,
+        InAppInfoMessageChannel inAppInfo)
     {
         _overview = overview;
         _services = services;
         _loc = loc;
+        _inAppInfo = inAppInfo;
+        _inAppInfo.InfoRequested += OnInAppInfoRequested;
         _stack.Add(overview);
         CurrentPage = overview;
         UpdateShellTitle();
@@ -36,7 +44,37 @@ public partial class ShellViewModel : ObservableObject
     private bool isSettingsOpen;
 
     [ObservableProperty]
+    private bool isInfoModalOpen;
+
+    [ObservableProperty]
+    private string infoModalTitle = "";
+
+    [ObservableProperty]
+    private string infoModalMessage = "";
+
+    [ObservableProperty]
     private string shellTitle = "";
+
+    [RelayCommand]
+    private void CloseInfoModal() => IsInfoModalOpen = false;
+
+    private void OnInAppInfoRequested(object? sender, InAppInfoMessageEventArgs e)
+    {
+        void Apply()
+        {
+            InfoModalMessage = e.Message;
+            InfoModalTitle = string.IsNullOrWhiteSpace(e.Title) ? "" : e.Title.Trim();
+            IsInfoModalOpen = true;
+        }
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+            return;
+        if (dispatcher.CheckAccess())
+            Apply();
+        else
+            dispatcher.Invoke(Apply);
+    }
 
     public bool CanGoBack => _stack.Count > 1;
 
@@ -150,6 +188,7 @@ public partial class ShellViewModel : ObservableObject
             _services.GetRequiredService<IPlaybackService>(),
             _services.GetRequiredService<RecordingCoordinator>(),
             _services.GetRequiredService<IUiLocalizer>(),
+            _services.GetRequiredService<InAppInfoMessageChannel>(),
             macroId,
             loadFromDisk,
             inMemoryMacro,

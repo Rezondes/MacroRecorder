@@ -43,6 +43,13 @@ public partial class MainWindow : Window
     {
         if (e.Key != Key.Escape)
             return;
+        if (Shell.IsInfoModalOpen)
+        {
+            Shell.CloseInfoModalCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         if (Shell.IsSettingsOpen)
         {
             Shell.CloseSettingsCommand.Execute(null);
@@ -56,6 +63,15 @@ public partial class MainWindow : Window
             e.Handled = true;
         }
     }
+
+    private void OnInfoOverlayBackgroundMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!ReferenceEquals(e.OriginalSource, sender))
+            return;
+        Shell.CloseInfoModalCommand.Execute(null);
+    }
+
+    private void OnInfoModalInnerMouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 
     private void OnSettingsOverlayBackgroundMouseDown(object sender, MouseButtonEventArgs e)
     {

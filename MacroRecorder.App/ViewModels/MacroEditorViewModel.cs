@@ -21,6 +21,7 @@ public partial class MacroEditorViewModel : ObservableObject
     private readonly IPlaybackService _playback;
     private readonly RecordingCoordinator _recording;
     private readonly IUiLocalizer _loc;
+    private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly Dispatcher _uiDispatcher;
     private readonly List<RecordedInputEvent> _flatEvents = new();
     private readonly Stack<List<RecordedInputEvent>> _undo = new();
@@ -41,6 +42,7 @@ public partial class MacroEditorViewModel : ObservableObject
         IPlaybackService playback,
         RecordingCoordinator recording,
         IUiLocalizer uiLocalizer,
+        InAppInfoMessageChannel inAppInfo,
         MacroId macroId,
         bool loadFromDisk,
         Macro? inMemoryMacro,
@@ -52,6 +54,7 @@ public partial class MacroEditorViewModel : ObservableObject
         _playback = playback;
         _recording = recording;
         _loc = uiLocalizer;
+        _inAppInfo = inAppInfo;
         _onMacroSaved = onMacroSaved;
         _uiDispatcher = Dispatcher.CurrentDispatcher;
         MacroId = macroId;
@@ -768,7 +771,9 @@ public partial class MacroEditorViewModel : ObservableObject
         }
         catch (PlaybackInterruptedByUserException)
         {
-            _dialogs.ShowInfo(_loc.GetString("Editor_PlayTestInterrupted"));
+            _inAppInfo.RequestInfo(
+                _loc.GetString("Editor_PlayTestInterrupted"),
+                _loc.GetString("Main_PlaybackInterruptedModalTitle"));
         }
         catch (InvalidOperationException)
         {
