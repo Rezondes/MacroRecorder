@@ -51,9 +51,13 @@ public partial class MainWindow : Window
         });
     }
 
+    private static bool ContentModalDefersPhysicalKeyRouting(object? content) =>
+        content is IContentModalKeyCaptureHost
+        || (content is Views.Editor.EditSingleEventView editEventView && editEventView.IsEditingKeyPhysicalEvent);
+
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (Shell.IsContentModalOpen && Shell.ContentModalContent is IContentModalKeyCaptureHost)
+        if (Shell.IsContentModalOpen && ContentModalDefersPhysicalKeyRouting(Shell.ContentModalContent))
         {
             var physicalKey = e.Key == Key.System ? e.SystemKey : e.Key;
             if (e.Key == Key.Escape || physicalKey is Key.LWin or Key.RWin)
