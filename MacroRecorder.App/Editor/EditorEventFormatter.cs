@@ -5,6 +5,19 @@ namespace MacroRecorder.App.Editor;
 
 public static class EditorEventFormatter
 {
+    /// <summary>Segoe MDL2 Assets codepoint (single char) for the editor timeline icon column.</summary>
+    public static string TimelineIconGlyph(RecordedInputEvent recordedEvent) =>
+        recordedEvent switch
+        {
+            KeyDownRecordedEvent or KeyUpRecordedEvent => "\uE92E",
+            MouseMoveRecordedEvent => "\uE7C9",
+            MouseButtonDownRecordedEvent or MouseButtonUpRecordedEvent => "\uE962",
+            MouseWheelRecordedEvent => "\uEE94",
+            FocusChangedRecordedEvent => "\uE8F9",
+            SyntheticWaitRecordedEvent => "\uE916",
+            _ => "\uE9CE"
+        };
+
     public static string ActionLabel(RecordedInputEvent recordedEvent, IUiLocalizer loc) =>
         recordedEvent switch
         {

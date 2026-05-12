@@ -124,6 +124,22 @@
         </Setter>
     </Style>
 
+    <!-- GridView first column: icon slot, no header text (matches action column chrome). -->
+    <Style x:Key="UiGridViewIconColumnHeader" TargetType="GridViewColumnHeader" BasedOn="{StaticResource UiGridViewColumnHeader}">
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="GridViewColumnHeader">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="8,10"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Non-editable ComboBox (e.g. language picker): rounded, themed popup -->
     <ControlTemplate x:Key="UiComboBoxTemplate" TargetType="ComboBox">
         <Grid SnapsToDevicePixels="True">

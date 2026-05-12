@@ -228,6 +228,23 @@
                     </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
+                            <GridViewColumn Width="44"
+                                            HeaderContainerStyle="{StaticResource UiGridViewIconColumnHeader}">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding TimelineIconGlyph}"
+                                                   FontFamily="Segoe MDL2 Assets"
+                                                   FontSize="17"
+                                                   Foreground="{DynamicResource UiBrush.TextSecondary}"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center"
+                                                   Padding="6,8"
+                                                   TextAlignment="Center"
+                                                   ToolTip="{Binding ActionLabel}"
+                                                   AutomationProperties.Name="{Binding ActionLabel}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                             <GridViewColumn Header="{loc:Loc Editor_GridAction}" Width="260">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>

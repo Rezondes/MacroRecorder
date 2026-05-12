@@ -7,6 +7,8 @@ public abstract class EditorTimelineRow
 {
     public abstract string ActionLabel { get; }
     public abstract string ValueText { get; }
+    /// <summary>Segoe MDL2 Assets glyph (one character) for the icon column.</summary>
+    public abstract string TimelineIconGlyph { get; }
 }
 
 public sealed class EditorSingleEventRow : EditorTimelineRow
@@ -24,6 +26,8 @@ public sealed class EditorSingleEventRow : EditorTimelineRow
     public override string ActionLabel => EditorEventFormatter.ActionLabel(Event, _loc);
 
     public override string ValueText => EditorEventFormatter.ValueText(Event, _loc);
+
+    public override string TimelineIconGlyph => EditorEventFormatter.TimelineIconGlyph(Event);
 }
 
 public sealed class EditorMousePathRow : EditorTimelineRow
@@ -39,6 +43,8 @@ public sealed class EditorMousePathRow : EditorTimelineRow
     public IReadOnlyList<MouseMoveRecordedEvent> Moves { get; }
 
     public override string ActionLabel => _loc.GetString("Editor_Event_MousePath");
+
+    public override string TimelineIconGlyph => "\uEC87";
 
     public override string ValueText
     {
