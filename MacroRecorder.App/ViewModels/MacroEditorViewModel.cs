@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -525,10 +526,21 @@ public partial class MacroEditorViewModel : ObservableObject
         var delayMillisecondsText = _dialogs.PromptText(
             _loc.GetString("Editor_PromptWaitTitle"),
             _loc.GetString("Editor_PromptWaitMessage"),
-            _loc.GetString("Editor_PromptWaitDefault"));
+            _loc.GetString("Editor_PromptWaitDefault"),
+            text =>
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                    return _loc.GetString("Editor_PromptWaitErrorRequired");
+                if (!int.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n))
+                    return _loc.GetString("Editor_PromptWaitErrorNumber");
+                if (n < 1)
+                    return _loc.GetString("Editor_PromptWaitErrorMin");
+                return null;
+            },
+            restrictInputToDigits: true);
         if (string.IsNullOrWhiteSpace(delayMillisecondsText) ||
-            !int.TryParse(delayMillisecondsText, out var parsedDelayMilliseconds) ||
-            parsedDelayMilliseconds < 0)
+            !int.TryParse(delayMillisecondsText.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var parsedDelayMilliseconds) ||
+            parsedDelayMilliseconds < 1)
             return;
 
         var insertAt = GetInsertIndex(after);

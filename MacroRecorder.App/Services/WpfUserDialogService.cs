@@ -10,8 +10,13 @@ public sealed class WpfUserDialogService(
     Lazy<IPromptTextModalHost> promptTextModalHost,
     InAppInfoMessageChannel inAppInfo) : IUserDialogService
 {
-    public string? PromptText(string title, string message, string defaultValue = "") =>
-        promptTextModalHost.Value.PromptText(title, message, defaultValue);
+    public string? PromptText(
+        string title,
+        string message,
+        string defaultValue = "",
+        PromptTextValidator? validator = null,
+        bool restrictInputToDigits = false) =>
+        promptTextModalHost.Value.PromptText(title, message, defaultValue, validator, restrictInputToDigits);
 
     public void ShowInfo(string message) =>
         inAppInfo.RequestInfo(message, loc.GetString("Common_AppTitle"));

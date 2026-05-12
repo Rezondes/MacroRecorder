@@ -408,22 +408,33 @@ public partial class ShellViewModel : ObservableObject,
         return false;
     }
 
-    string? IPromptTextModalHost.PromptText(string title, string message, string defaultValue)
+    string? IPromptTextModalHost.PromptText(
+        string title,
+        string message,
+        string defaultValue,
+        PromptTextValidator? validator,
+        bool restrictInputToDigits)
     {
         var dispatcher = System.Windows.Application.Current?.Dispatcher;
         if (dispatcher is null)
             return null;
         if (!dispatcher.CheckAccess())
-            return dispatcher.Invoke(() => ((IPromptTextModalHost)this).PromptText(title, message, defaultValue));
+            return dispatcher.Invoke(() =>
+                ((IPromptTextModalHost)this).PromptText(title, message, defaultValue, validator, restrictInputToDigits));
 
-        return PromptTextOnUiThread(title, message, defaultValue);
+        return PromptTextOnUiThread(title, message, defaultValue, validator, restrictInputToDigits);
     }
 
-    private string? PromptTextOnUiThread(string title, string message, string defaultValue)
+    private string? PromptTextOnUiThread(
+        string title,
+        string message,
+        string defaultValue,
+        PromptTextValidator? validator,
+        bool restrictInputToDigits)
     {
         string? result = null;
         var ok = RunBlockingContentModal(
-            complete => new PromptTextView(title, message, defaultValue, complete),
+            complete => new PromptTextView(title, message, defaultValue, complete, validator, restrictInputToDigits),
             (confirmed, v) =>
             {
                 if (confirmed && v is PromptTextView p)
