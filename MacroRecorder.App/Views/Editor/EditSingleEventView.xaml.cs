@@ -1,9 +1,10 @@
-using System.Collections.Generic;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
+using MacroRecorder.Wpf.Controls;
 
 namespace MacroRecorder.App.Views.Editor;
 
@@ -13,7 +14,8 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
     private readonly IUiLocalizer _loc;
     private readonly Action<string> _showValidationError;
     private readonly Action<bool> _onCompleted;
-    private readonly Dictionary<string, TextBox> _fields = new();
+    private readonly Dictionary<string, FrameworkElement> _fields = new();
+    private ComboBox? _mouseButtonCombo;
 
     public EditSingleEventView(
         RecordedInputEvent original,
@@ -62,13 +64,13 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                 },
                 MouseButtonDownRecordedEvent mouseButtonDown => mouseButtonDown with
                 {
-                    Button = Enum.Parse<MouseButtonKind>(Str("btn"), ignoreCase: true),
+                    Button = ReadSelectedMouseButton(),
                     ScreenX = Int("x"),
                     ScreenY = Int("y")
                 },
                 MouseButtonUpRecordedEvent mouseButtonUp => mouseButtonUp with
                 {
-                    Button = Enum.Parse<MouseButtonKind>(Str("btn"), ignoreCase: true),
+                    Button = ReadSelectedMouseButton(),
                     ScreenX = Int("x"),
                     ScreenY = Int("y")
                 },
@@ -105,7 +107,7 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         _onCompleted(true);
     }
 
-    private void AddField(string label, string fieldKey, string value)
+    private void AddField(string label, string fieldKey, string value, bool restrictToDigitsOnlyCoordinates = false)
     {
         var labelBlock = new TextBlock
         {
@@ -115,6 +117,24 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         };
         labelBlock.SetResourceReference(TextBlock.ForegroundProperty, "UiBrush.TextSecondary");
         FieldsPanel.Children.Add(labelBlock);
+
+        if (restrictToDigitsOnlyCoordinates)
+        {
+            var box = new DigitsOnlyNumericBox
+            {
+                Text = value,
+                Tag = fieldKey,
+                DigitsOnly = true,
+                ShowSpinner = false,
+                InputFontSize = 13,
+                MinInnerHeight = 36,
+                MinHeight = 36
+            };
+            FieldsPanel.Children.Add(box);
+            _fields[fieldKey] = box;
+            return;
+        }
+
         var textBox = new TextBox
         {
             Text = value,
@@ -131,8 +151,64 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         _fields[fieldKey] = textBox;
     }
 
+    private void AddCoordinateFieldWithSpinner(string label, string fieldKey, string value)
+    {
+        var labelBlock = new TextBlock
+        {
+            Text = label,
+            FontSize = 12,
+            Margin = new Thickness(0, 10, 0, 4)
+        };
+        labelBlock.SetResourceReference(TextBlock.ForegroundProperty, "UiBrush.TextSecondary");
+        FieldsPanel.Children.Add(labelBlock);
+
+        var box = new DigitsOnlyNumericBox
+        {
+            Text = value,
+            Tag = fieldKey,
+            DigitsOnly = true,
+            ShowSpinner = true,
+            InputFontSize = 13,
+            MinInnerHeight = 40,
+            SpinnerStep = 1,
+            MinimumValue = int.MinValue,
+            MaximumValue = int.MaxValue,
+            SpinUpToolTip = _loc.GetString("Editor_PromptWaitSpinUp"),
+            SpinDownToolTip = _loc.GetString("Editor_PromptWaitSpinDown")
+        };
+        FieldsPanel.Children.Add(box);
+        _fields[fieldKey] = box;
+    }
+
+    private void AddMouseButtonField(string label, MouseButtonKind selected)
+    {
+        var labelBlock = new TextBlock
+        {
+            Text = label,
+            FontSize = 12,
+            Margin = new Thickness(0, 10, 0, 4)
+        };
+        labelBlock.SetResourceReference(TextBlock.ForegroundProperty, "UiBrush.TextSecondary");
+        FieldsPanel.Children.Add(labelBlock);
+        var combo = new ComboBox
+        {
+            FontSize = 13,
+            MinHeight = 40,
+            Margin = new Thickness(0, 0, 0, 12)
+        };
+        combo.SetResourceReference(FrameworkElement.StyleProperty, "UiComboBox");
+        combo.ItemsSource = Enum.GetValues<MouseButtonKind>();
+        combo.SelectedItem = selected;
+        FieldsPanel.Children.Add(combo);
+        _mouseButtonCombo = combo;
+    }
+
+    private MouseButtonKind ReadSelectedMouseButton() =>
+        _mouseButtonCombo?.SelectedItem is MouseButtonKind kind ? kind : MouseButtonKind.Left;
+
     private void BuildFields()
     {
+        _mouseButtonCombo = null;
         switch (_original)
         {
             case KeyDownRecordedEvent keyDown:
@@ -148,22 +224,22 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                 AddField(_loc.GetString("DialogEdit_Field_AltDown"), "alt", keyUp.IsAltDown.ToString());
                 break;
             case MouseMoveRecordedEvent mouseMove:
-                AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseMove.ScreenX.ToString());
-                AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseMove.ScreenY.ToString());
+                AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseMove.ScreenX.ToString(), restrictToDigitsOnlyCoordinates: true);
+                AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseMove.ScreenY.ToString(), restrictToDigitsOnlyCoordinates: true);
                 break;
             case MouseButtonDownRecordedEvent mouseButtonDown:
-                AddField(_loc.GetString("DialogEdit_Field_Button"), "btn", mouseButtonDown.Button.ToString());
-                AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseButtonDown.ScreenX.ToString());
-                AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseButtonDown.ScreenY.ToString());
+                AddMouseButtonField(_loc.GetString("DialogEdit_Field_Button"), mouseButtonDown.Button);
+                AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_X"), "x", mouseButtonDown.ScreenX.ToString());
+                AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_Y"), "y", mouseButtonDown.ScreenY.ToString());
                 break;
             case MouseButtonUpRecordedEvent mouseButtonUp:
-                AddField(_loc.GetString("DialogEdit_Field_Button"), "btn", mouseButtonUp.Button.ToString());
-                AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseButtonUp.ScreenX.ToString());
-                AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseButtonUp.ScreenY.ToString());
+                AddMouseButtonField(_loc.GetString("DialogEdit_Field_Button"), mouseButtonUp.Button);
+                AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_X"), "x", mouseButtonUp.ScreenX.ToString());
+                AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_Y"), "y", mouseButtonUp.ScreenY.ToString());
                 break;
             case MouseWheelRecordedEvent mouseWheel:
-                AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseWheel.ScreenX.ToString());
-                AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseWheel.ScreenY.ToString());
+                AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseWheel.ScreenX.ToString(), restrictToDigitsOnlyCoordinates: true);
+                AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseWheel.ScreenY.ToString(), restrictToDigitsOnlyCoordinates: true);
                 AddField(_loc.GetString("DialogEdit_Field_Delta"), "delta", mouseWheel.WheelDelta.ToString());
                 AddField(_loc.GetString("DialogEdit_Field_Horizontal"), "horiz", mouseWheel.IsHorizontal.ToString());
                 break;
@@ -188,14 +264,26 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         }
     }
 
-    private string Str(string fieldKey) => _fields[fieldKey].Text.Trim();
+    private string Str(string fieldKey) => ReadFieldText(fieldKey).Trim();
+
+    private string ReadFieldText(string fieldKey)
+    {
+        if (!_fields.TryGetValue(fieldKey, out var element))
+            return string.Empty;
+        return element switch
+        {
+            DigitsOnlyNumericBox digitsBox => digitsBox.Text,
+            TextBox textBox => textBox.Text,
+            _ => string.Empty
+        };
+    }
 
     private ushort UShort(string fieldKey) => ushort.Parse(Str(fieldKey));
 
     private int Int(string fieldKey) => int.Parse(Str(fieldKey));
 
     private double Double(string fieldKey) =>
-        double.Parse(Str(fieldKey), System.Globalization.CultureInfo.InvariantCulture);
+        double.Parse(Str(fieldKey), CultureInfo.InvariantCulture);
 
     private bool Bool(string fieldKey) => bool.Parse(Str(fieldKey));
 

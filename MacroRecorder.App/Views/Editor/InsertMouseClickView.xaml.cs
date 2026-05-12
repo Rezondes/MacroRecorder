@@ -18,16 +18,6 @@ public partial class InsertMouseClickView : UserControl, IContentModalEscape
         InitializeComponent();
         ButtonCombo.ItemsSource = Enum.GetValues<MouseButtonKind>();
         ButtonCombo.SelectedIndex = 0;
-        ThemeTextBox(XBox);
-        ThemeTextBox(YBox);
-    }
-
-    private static void ThemeTextBox(TextBox box)
-    {
-        box.SetResourceReference(TextBox.BackgroundProperty, "UiBrush.SurfaceElevated");
-        box.SetResourceReference(TextBox.ForegroundProperty, "UiBrush.TextPrimary");
-        box.SetResourceReference(TextBox.BorderBrushProperty, "UiBrush.Border");
-        box.BorderThickness = new Thickness(1);
     }
 
     public MouseButtonKind SelectedButton =>

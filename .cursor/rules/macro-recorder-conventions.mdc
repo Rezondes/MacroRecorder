@@ -11,6 +11,14 @@ alwaysApply: true
 - **Application** (`MacroRecorder.Application`): Orchestrierung, **Ports** (`IPlaybackService`, `IRecordingEngine`, Dialog-Ports), `RecordingCoordinator`, `TimelineNormalizer`.
 - **Infrastructure** (`MacroRecorder.Infrastructure`): Port-Implementierungen (Low-Level-Hooks, `SendInput`, Dateispeicher).
 - **App** (`MacroRecorder.App`): WPF, **MVVM** — Logik in ViewModels/Services, nicht in XAML Code-behind duplizieren.
+- **WPF-Bibliothek** (`MacroRecorder.Wpf`): gemeinsame UI-Bausteine; Konventionen im Abschnitt **WPF-UI (`MacroRecorder.Wpf`)** unten.
+
+## WPF-UI (`MacroRecorder.Wpf`)
+
+- **Generisch** wiederverwendbare Oberflächenbausteine (z. B. Button-/ComboBox-Stile, Textfelder, zusammengesetzte Controls wie numerische Eingaben) in **`MacroRecorder.Wpf`** anlegen, nicht pro Screen in der App neu erfinden.
+- **Styles und Templates** (Aussehen von Standard-Controls) in den Theme-Resource-Dictionaries, z. B. `Themes/AppControls.xaml`.
+- **Eigene Controls mit Verhalten** (Dependency Properties, Eingabefilter, zusammengesetzte UI) als Typen unter `Controls/` (XAML + Code-behind bzw. `CustomControl` nach Bedarf).
+- **`MacroRecorder.App`** bindet und nutzt diese Bibliothek; app-spezifische Views, Dialoge und ViewModels bleiben in der App.
 
 ## MVVM
 

@@ -1,8 +1,5 @@
-using System.Globalization;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
 
@@ -10,8 +7,6 @@ namespace MacroRecorder.App.Views.Editor;
 
 public partial class PromptTextView : UserControl, IContentModalEscape
 {
-    private const int SpinnerMaxMs = int.MaxValue;
-
     private readonly Action<bool> _onCompleted;
     private readonly PromptTextValidator? _validator;
     private readonly bool _restrictInputToDigits;
@@ -30,25 +25,22 @@ public partial class PromptTextView : UserControl, IContentModalEscape
         InitializeComponent();
         TitleBlock.Text = title;
         MessageBlock.Text = message;
-        InputBox.Text = defaultValue;
-        InputBox.TextChanged += (_, _) => ErrorBlock.Visibility = Visibility.Collapsed;
-
-        if (_restrictInputToDigits)
+        InputNumeric.Text = defaultValue;
+        InputNumeric.DigitsOnly = restrictInputToDigits;
+        InputNumeric.ShowSpinner = restrictInputToDigits;
+        if (restrictInputToDigits)
         {
-            NumericSpinner.Visibility = Visibility.Visible;
-            InputBox.PreviewTextInput += OnInputPreviewTextInput;
-            InputBox.PreviewKeyDown += OnInputPreviewKeyDown;
-            InputBox.AddHandler(DataObject.PastingEvent, new DataObjectPastingEventHandler(OnInputPasting), true);
+            InputNumeric.MinimumValue = 1;
+            InputNumeric.MaximumValue = int.MaxValue;
+            InputNumeric.SpinnerStep = 1;
         }
 
-        Loaded += (_, _) =>
-        {
-            InputBox.Focus();
-            InputBox.SelectAll();
-        };
+        InputNumeric.TextChanged += (_, _) => ErrorBlock.Visibility = Visibility.Collapsed;
+
+        Loaded += (_, _) => InputNumeric.SelectAll();
     }
 
-    public string ResultText => InputBox.Text;
+    public string ResultText => InputNumeric.Text;
 
     public void CancelFromHost() => _onCompleted(false);
 
@@ -58,7 +50,7 @@ public partial class PromptTextView : UserControl, IContentModalEscape
     {
         if (_validator is not null)
         {
-            var err = _validator(InputBox.Text);
+            var err = _validator(InputNumeric.Text);
             if (!string.IsNullOrEmpty(err))
             {
                 ErrorBlock.Text = err;
@@ -69,75 +61,5 @@ public partial class PromptTextView : UserControl, IContentModalEscape
 
         ErrorBlock.Visibility = Visibility.Collapsed;
         _onCompleted(true);
-    }
-
-    private void OnSpinnerUpClick(object sender, RoutedEventArgs e)
-    {
-        var n = ParseMillisOrZero(InputBox.Text);
-        if (n < 1)
-            n = 1;
-        else if (n >= SpinnerMaxMs)
-            return;
-        else
-            n++;
-
-        InputBox.Text = n.ToString(CultureInfo.InvariantCulture);
-        FocusInputCaretEnd();
-    }
-
-    private void OnSpinnerDownClick(object sender, RoutedEventArgs e)
-    {
-        var n = ParseMillisOrZero(InputBox.Text);
-        if (n <= 1)
-            InputBox.Text = "1";
-        else
-            InputBox.Text = (n - 1).ToString(CultureInfo.InvariantCulture);
-
-        FocusInputCaretEnd();
-    }
-
-    private static int ParseMillisOrZero(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return 0;
-        return int.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
-    }
-
-    private void FocusInputCaretEnd()
-    {
-        InputBox.Focus();
-        InputBox.CaretIndex = InputBox.Text.Length;
-    }
-
-    private void OnInputPreviewTextInput(object sender, TextCompositionEventArgs e)
-    {
-        if (!_restrictInputToDigits)
-            return;
-        if (e.Text is null || e.Text.Length == 0)
-            return;
-        if (e.Text.Any(static c => !char.IsDigit(c)))
-            e.Handled = true;
-    }
-
-    private void OnInputPreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        if (!_restrictInputToDigits)
-            return;
-        if (e.Key == Key.Space)
-            e.Handled = true;
-    }
-
-    private void OnInputPasting(object sender, DataObjectPastingEventArgs e)
-    {
-        if (!_restrictInputToDigits)
-            return;
-        if (e.DataObject.GetData(DataFormats.UnicodeText) is not string paste || paste.Length == 0)
-        {
-            e.CancelCommand();
-            return;
-        }
-
-        if (paste.Any(static c => !char.IsDigit(c)))
-            e.CancelCommand();
     }
 }
