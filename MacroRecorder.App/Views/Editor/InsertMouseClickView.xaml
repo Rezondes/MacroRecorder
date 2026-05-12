@@ -37,48 +37,35 @@
                       MinHeight="40"
                       Style="{DynamicResource UiComboBox}" />
             <Grid Grid.Row="3">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="{loc:Loc DialogInsertMouse_LabelX}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource UiBrush.TextSecondary}"
-                                   Margin="0,0,0,4" />
-                        <wpf:DigitsOnlyNumericBox x:Name="XBox"
-                                                 MinHeight="36"
-                                                 MinInnerHeight="36"
-                                                 InputFontSize="13"
-                                                 DigitsOnly="True"
-                                                 ShowSpinner="False" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="{loc:Loc DialogInsertMouse_LabelY}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource UiBrush.TextSecondary}"
-                                   Margin="0,0,0,4" />
-                        <wpf:DigitsOnlyNumericBox x:Name="YBox"
-                                                 MinHeight="36"
-                                                 MinInnerHeight="36"
-                                                 InputFontSize="13"
-                                                 DigitsOnly="True"
-                                                 ShowSpinner="False" />
-                    </StackPanel>
-                </Grid>
-                <Button Grid.Row="1"
-                        Content="{loc:Loc DialogInsertMouse_UseCursorPosition}"
-                        Margin="0,14,0,0"
-                        Padding="12,8"
-                        HorizontalAlignment="Stretch"
-                        Style="{DynamicResource UiButtonChrome}"
-                        Click="OnCaptureClick" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{loc:Loc DialogInsertMouse_LabelX}"
+                               FontSize="12"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}"
+                               Margin="0,0,0,4" />
+                    <wpf:DigitsOnlyNumericBox x:Name="XBox"
+                                             MinHeight="36"
+                                             MinInnerHeight="36"
+                                             InputFontSize="13"
+                                             DigitsOnly="True"
+                                             ShowSpinner="False" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="{loc:Loc DialogInsertMouse_LabelY}"
+                               FontSize="12"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}"
+                               Margin="0,0,0,4" />
+                    <wpf:DigitsOnlyNumericBox x:Name="YBox"
+                                             MinHeight="36"
+                                             MinInnerHeight="36"
+                                             InputFontSize="13"
+                                             DigitsOnly="True"
+                                             ShowSpinner="False" />
+                </StackPanel>
             </Grid>
             <StackPanel Grid.Row="4"
                         Orientation="Horizontal"

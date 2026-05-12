@@ -25,7 +25,6 @@ public partial class ShellViewModel : ObservableObject,
     private readonly IUiLocalizer _loc;
     private readonly IUserDialogService _dialogs;
     private readonly InAppInfoMessageChannel _inAppInfo;
-    private readonly ICursorPositionProvider _cursor;
     private readonly List<object> _stack = new();
     private MacroEditorViewModel? _editorTitleSource;
 
@@ -34,15 +33,13 @@ public partial class ShellViewModel : ObservableObject,
         IServiceProvider services,
         IUiLocalizer loc,
         IUserDialogService dialogs,
-        InAppInfoMessageChannel inAppInfo,
-        ICursorPositionProvider cursor)
+        InAppInfoMessageChannel inAppInfo)
     {
         _overview = overview;
         _services = services;
         _loc = loc;
         _dialogs = dialogs;
         _inAppInfo = inAppInfo;
-        _cursor = cursor;
         _inAppInfo.InfoRequested += OnInAppInfoRequested;
         _loc.UiCultureChanged += (_, _) => UpdateShellTitle();
         _stack.Add(overview);
@@ -298,7 +295,7 @@ public partial class ShellViewModel : ObservableObject,
         var ok = RunBlockingContentModal(
             complete =>
             {
-                view = new InsertMouseClickView(_cursor, complete);
+                view = new InsertMouseClickView(complete);
                 return view;
             });
         if (ok && view is not null)

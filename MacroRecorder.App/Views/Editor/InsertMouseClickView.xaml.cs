@@ -1,19 +1,16 @@
 using System.Windows;
 using System.Windows.Controls;
 using MacroRecorder.App.Services;
-using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 
 namespace MacroRecorder.App.Views.Editor;
 
 public partial class InsertMouseClickView : UserControl, IContentModalEscape
 {
-    private readonly ICursorPositionProvider _cursor;
     private readonly Action<bool> _onCompleted;
 
-    public InsertMouseClickView(ICursorPositionProvider cursor, Action<bool> onCompleted)
+    public InsertMouseClickView(Action<bool> onCompleted)
     {
-        _cursor = cursor;
         _onCompleted = onCompleted;
         InitializeComponent();
         ButtonCombo.ItemsSource = Enum.GetValues<MouseButtonKind>();
@@ -30,13 +27,6 @@ public partial class InsertMouseClickView : UserControl, IContentModalEscape
     public void CancelFromHost() => _onCompleted(false);
 
     private void OnCancelClick(object sender, RoutedEventArgs e) => _onCompleted(false);
-
-    private void OnCaptureClick(object sender, RoutedEventArgs e)
-    {
-        var (capturedScreenX, capturedScreenY) = _cursor.GetScreenPosition();
-        XBox.Text = capturedScreenX.ToString();
-        YBox.Text = capturedScreenY.ToString();
-    }
 
     private void OnOkClick(object sender, RoutedEventArgs e) => _onCompleted(true);
 }

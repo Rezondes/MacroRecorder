@@ -2,11 +2,6 @@ using MacroRecorder.Domain;
 
 namespace MacroRecorder.Application.Ports;
 
-public interface ICursorPositionProvider
-{
-    (int X, int Y) GetScreenPosition();
-}
-
 public interface IEditorInsertDialogs
 {
     bool? ShowMouseClickDialog(

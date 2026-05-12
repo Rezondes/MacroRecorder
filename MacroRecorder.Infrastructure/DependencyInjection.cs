@@ -1,5 +1,4 @@
 using MacroRecorder.Application.Ports;
-using MacroRecorder.Infrastructure.Input;
 using MacroRecorder.Infrastructure.Persistence;
 using MacroRecorder.Infrastructure.Playback;
 using MacroRecorder.Infrastructure.Recording;
@@ -14,7 +13,6 @@ public static class DependencyInjection
         services.AddSingleton<IMacroRepository, JsonMacroRepository>();
         services.AddSingleton<IRecordingEngine, LowLevelRecordingEngine>();
         services.AddSingleton<IPlaybackService, SendInputPlaybackService>();
-        services.AddSingleton<ICursorPositionProvider, CursorPositionProvider>();
         return services;
     }
 }
