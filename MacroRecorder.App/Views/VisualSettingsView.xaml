@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              d:DesignHeight="420" d:DesignWidth="640">
     <UserControl.Resources>
-        <conv:LocKeyConverter x:Key="LocKeyConverter" />
+        <conv:LocResxWithPulseMultiConverter x:Key="LocResxWithPulse" />
         <conv:HexStringToColorConverter x:Key="HexToBrush" />
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -73,8 +73,15 @@
                             <StackPanel>
                                 <TextBlock FontWeight="SemiBold"
                                            Foreground="{DynamicResource UiBrush.TextPrimary}"
-                                           Margin="0,0,0,8"
-                                           Text="{Binding DisplayNameKey, Converter={StaticResource LocKeyConverter}}" />
+                                           Margin="0,0,0,8">
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource LocResxWithPulse}">
+                                            <Binding Path="DisplayNameKey" />
+                                            <Binding Path="Tick"
+                                                     Source="{x:Static loc:UiCulturePulse.Instance}" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
                                 <ItemsControl ItemsSource="{Binding SwatchHexes}" Margin="0,0,0,10">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -95,9 +102,16 @@
                                 </ItemsControl>
                                 <Button Style="{DynamicResource UiPrimaryButton}"
                                         HorizontalAlignment="Stretch"
-                                        Content="{loc:Loc Visuals_ApplyTheme}"
                                         Command="{Binding DataContext.SelectAppearanceThemeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding Id}" />
+                                        CommandParameter="{Binding Id}">
+                                    <Button.Content>
+                                        <MultiBinding Converter="{StaticResource LocResxWithPulse}"
+                                                      ConverterParameter="Visuals_ApplyTheme">
+                                            <Binding Path="Tick"
+                                                     Source="{x:Static loc:UiCulturePulse.Instance}" />
+                                        </MultiBinding>
+                                    </Button.Content>
+                                </Button>
                             </StackPanel>
                         </Border>
                     </DataTemplate>
