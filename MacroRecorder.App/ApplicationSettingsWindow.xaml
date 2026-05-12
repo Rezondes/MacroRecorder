@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="clr-namespace:MacroRecorder.App.Localization"
         Title="{loc:Loc Main_Settings_Title}"
-        Width="360"
-        Height="220"
+        Width="380"
+        Height="240"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="#F5F5F5">
@@ -31,16 +31,12 @@
                            FontSize="13"
                            FontWeight="SemiBold"
                            Foreground="#1A1A1A"
-                           Margin="0,0,0,10" />
-                <RadioButton x:Name="RbGerman"
-                             GroupName="UiLanguage"
-                             Content="{loc:Loc Main_Menu_LanguageGerman}"
-                             FontSize="13"
-                             Margin="0,0,0,8" />
-                <RadioButton x:Name="RbEnglish"
-                             GroupName="UiLanguage"
-                             Content="{loc:Loc Main_Menu_LanguageEnglish}"
-                             FontSize="13" />
+                           Margin="0,0,0,8" />
+                <ComboBox x:Name="LanguageCombo"
+                          MinHeight="36"
+                          FontSize="13"
+                          Padding="8,4"
+                          VerticalContentAlignment="Center" />
             </StackPanel>
         </DockPanel>
     </Border>

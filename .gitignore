@@ -1,0 +1,44 @@
+## Build outputs
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+**/bin/
+**/obj/
+
+## Visual Studio / Rider
+.vs/
+.idea/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+## NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+
+## Publish
+publish/
+**/PublishProfiles/*.pubxml.user
+
+## OS / tooling
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## Local / secrets (adjust if you add user secrets to repo intentionally)
+*.pfx
+secrets.json

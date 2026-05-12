@@ -7,19 +7,29 @@ namespace MacroRecorder.App;
 
 public partial class ApplicationSettingsWindow : Window
 {
+    private readonly record struct LanguageOption(string Code, string Display);
+
     public ApplicationSettingsWindow()
     {
         InitializeComponent();
-        Loaded += OnLoaded;
+        PopulateLanguageCombo();
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private void PopulateLanguageCombo()
     {
-        var culture = UiCultureSettings.ResolveUiCulture();
-        if (culture.TwoLetterISOLanguageName.Equals("de", StringComparison.OrdinalIgnoreCase))
-            RbGerman.IsChecked = true;
-        else
-            RbEnglish.IsChecked = true;
+        var loc = UiLocalizerHost.Current;
+        var deLabel = loc?.GetString("Main_Menu_LanguageGerman") ?? "Deutsch";
+        var enLabel = loc?.GetString("Main_Menu_LanguageEnglish") ?? "English";
+        LanguageCombo.ItemsSource = new[]
+        {
+            new LanguageOption("de", deLabel),
+            new LanguageOption("en", enLabel),
+        };
+        LanguageCombo.DisplayMemberPath = nameof(LanguageOption.Display);
+        LanguageCombo.SelectedValuePath = nameof(LanguageOption.Code);
+
+        var code = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
+        LanguageCombo.SelectedValue = code.Equals("de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)
@@ -30,7 +40,10 @@ public partial class ApplicationSettingsWindow : Window
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
-        var selected = RbGerman.IsChecked == true ? "de" : "en";
+        var selected = LanguageCombo.SelectedValue as string;
+        if (string.IsNullOrEmpty(selected))
+            selected = "en";
+
         var current = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
         if (selected.Equals(current, StringComparison.OrdinalIgnoreCase))
         {
