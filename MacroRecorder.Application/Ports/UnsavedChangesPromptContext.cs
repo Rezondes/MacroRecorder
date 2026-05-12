@@ -5,6 +5,6 @@ public enum UnsavedChangesPromptContext
 {
     Editor,
 
-    /// <summary>Appearance preview on the Visuals settings tab.</summary>
-    Appearance,
+    /// <summary>General + Visuals settings (language and/or appearance).</summary>
+    Settings,
 }

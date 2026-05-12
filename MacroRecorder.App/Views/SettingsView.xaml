@@ -21,7 +21,9 @@
                 BorderThickness="1"
                 CornerRadius="12"
                 SnapsToDevicePixels="True">
-            <TabControl SelectedIndex="{Binding SelectedSettingsTabIndex, Mode=TwoWay}"
+            <TabControl x:Name="SettingsTabControl"
+                        SelectedIndex="{Binding SelectedSettingsTabIndex, Mode=OneWay}"
+                        SelectionChanged="SettingsTabControl_OnSelectionChanged"
                         Style="{DynamicResource UiTabControl}"
                         ItemContainerStyle="{DynamicResource UiTabItem}">
                 <TabItem Header="{loc:Loc Main_Settings_TabGeneral}">

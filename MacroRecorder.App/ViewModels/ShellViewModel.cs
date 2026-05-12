@@ -24,7 +24,6 @@ public partial class ShellViewModel : ObservableObject,
     private readonly IServiceProvider _services;
     private readonly IUiLocalizer _loc;
     private readonly IUserDialogService _dialogs;
-    private readonly AppearanceService _appearance;
     private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly ICursorPositionProvider _cursor;
     private readonly List<object> _stack = new();
@@ -35,7 +34,6 @@ public partial class ShellViewModel : ObservableObject,
         IServiceProvider services,
         IUiLocalizer loc,
         IUserDialogService dialogs,
-        AppearanceService appearance,
         InAppInfoMessageChannel inAppInfo,
         ICursorPositionProvider cursor)
     {
@@ -43,7 +41,6 @@ public partial class ShellViewModel : ObservableObject,
         _services = services;
         _loc = loc;
         _dialogs = dialogs;
-        _appearance = appearance;
         _inAppInfo = inAppInfo;
         _cursor = cursor;
         _inAppInfo.InfoRequested += OnInAppInfoRequested;
@@ -139,11 +136,19 @@ public partial class ShellViewModel : ObservableObject,
 
     private void ApplyUnsavedChangesModalContext(UnsavedChangesPromptContext context)
     {
-        if (context == UnsavedChangesPromptContext.Appearance)
+        if (context is UnsavedChangesPromptContext.Settings)
         {
             UnsavedChangesModalIsAppearance = true;
-            UnsavedChangesModalSaveLabel = _loc.GetString("Visuals_UnsavedSave");
-            UnsavedChangesModalDiscardLabel = _loc.GetString("Visuals_UnsavedDiscard");
+            if (context == UnsavedChangesPromptContext.Settings)
+            {
+                UnsavedChangesModalSaveLabel = _loc.GetString("Settings_UnsavedSave");
+                UnsavedChangesModalDiscardLabel = _loc.GetString("Settings_UnsavedDiscard");
+            }
+            else
+            {
+                UnsavedChangesModalSaveLabel = _loc.GetString("Visuals_UnsavedSave");
+                UnsavedChangesModalDiscardLabel = _loc.GetString("Visuals_UnsavedDiscard");
+            }
         }
         else
         {
@@ -557,31 +562,10 @@ public partial class ShellViewModel : ObservableObject,
         if (CurrentPage is MacroEditorViewModel editor)
             return await editor.TryLeaveEditorAsync().ConfigureAwait(true) == EditorLeaveResult.Proceed;
 
-        if (CurrentPage is SettingsViewModel && _appearance.HasPendingChanges)
-            return TryConfirmAppearanceChanges();
+        if (CurrentPage is SettingsViewModel settingsVm && settingsVm.HasUnsavedSettingsChanges)
+            return settingsVm.TryConfirmLeavePendingSettings();
 
         return true;
-    }
-
-    private bool TryConfirmAppearanceChanges()
-    {
-        if (!_appearance.HasPendingChanges)
-            return true;
-        var result = _dialogs.PromptUnsavedChanges(
-            _loc.GetString("Appearance_UnsavedMessage"),
-            _loc.GetString("Appearance_UnsavedTitle"),
-            UnsavedChangesPromptContext.Appearance);
-        switch (result)
-        {
-            case UnsavedChangesPromptResult.Save:
-                _appearance.Persist();
-                return true;
-            case UnsavedChangesPromptResult.Discard:
-                _appearance.RevertToSaved();
-                return true;
-            default:
-                return false;
-        }
     }
 
     partial void OnCurrentPageChanged(object? value)

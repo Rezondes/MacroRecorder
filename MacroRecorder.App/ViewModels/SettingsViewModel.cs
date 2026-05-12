@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Windows.Threading;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Services;
@@ -19,34 +20,25 @@ public partial class SettingsViewModel : ObservableObject
 
     private int _selectedSettingsTabIndex;
 
-    /// <summary>0 = General, 1 = Visuals. TwoWay-bound; leaving Visuals with dirty appearance prompts before the index changes.</summary>
-    public int SelectedSettingsTabIndex
+    /// <summary>0 = General, 1 = Visuals. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
+    public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
+
+    /// <summary>
+    /// Applies a tab switch after optional unsaved prompt. On cancel returns false and the view must reset
+    /// the tab control selection to match <see cref="SelectedSettingsTabIndex"/>.
+    /// </summary>
+    public bool TryChangeSettingsTab(int newIndex)
     {
-        get => _selectedSettingsTabIndex;
-        set
-        {
-            if (value == _selectedSettingsTabIndex)
-                return;
+        if (newIndex < 0 || newIndex > 1)
+            return false;
+        if (newIndex == _selectedSettingsTabIndex)
+            return true;
 
-            if (_selectedSettingsTabIndex == 1 && value != 1 && _appearance.HasPendingChanges)
-            {
-                if (!TryConfirmLeaveAppearance())
-                {
-                    OnPropertyChanged(nameof(SelectedSettingsTabIndex));
-                    var dispatcher = global::System.Windows.Application.Current?.Dispatcher;
-                    if (dispatcher is not null && !dispatcher.HasShutdownStarted)
-                    {
-                        dispatcher.BeginInvoke(
-                            new Action(() => OnPropertyChanged(nameof(SelectedSettingsTabIndex))),
-                            DispatcherPriority.Input);
-                    }
+        if (HasUnsavedSettingsChanges && !TryConfirmLeavePendingSettings())
+            return false;
 
-                    return;
-                }
-            }
-
-            SetProperty(ref _selectedSettingsTabIndex, value);
-        }
+        SetProperty(ref _selectedSettingsTabIndex, newIndex);
+        return true;
     }
 
     public SettingsViewModel(IUiLocalizer loc, AppearanceService appearance, IUserDialogService dialogs)
@@ -62,6 +54,9 @@ public partial class SettingsViewModel : ObservableObject
     public ObservableCollection<LanguageOption> LanguageOptions { get; } = new();
 
     public IReadOnlyList<ThemeCatalogEntry> ThemeEntries => ThemeCatalog.Entries;
+
+    public bool HasUnsavedSettingsChanges =>
+        HasPendingLanguageChange() || _appearance.HasPendingChanges;
 
     public bool IsLightMode
     {
@@ -135,26 +130,100 @@ public partial class SettingsViewModel : ObservableObject
         _appearance.ApplyPreview(themeId.Value, _appearance.PreviewIsDark);
     }
 
-    /// <summary>Used when leaving the Visuals tab or the settings page with unsaved appearance.</summary>
-    public bool TryConfirmLeaveAppearance()
+    /// <summary>Save, discard, or cancel when leaving settings or switching tabs with pending changes.</summary>
+    public bool TryConfirmLeavePendingSettings()
     {
-        if (!_appearance.HasPendingChanges)
+        if (!HasUnsavedSettingsChanges)
             return true;
+
         var result = _dialogs.PromptUnsavedChanges(
-            _loc.GetString("Appearance_UnsavedMessage"),
-            _loc.GetString("Appearance_UnsavedTitle"),
-            UnsavedChangesPromptContext.Appearance);
+            BuildUnsavedSettingsMessage(),
+            _loc.GetString("Settings_UnsavedTitle"),
+            UnsavedChangesPromptContext.Settings);
+
         switch (result)
         {
             case UnsavedChangesPromptResult.Save:
-                _appearance.Persist();
-                OnAppearancePreviewChanged(this, EventArgs.Empty);
+                SaveSettings();
                 return true;
             case UnsavedChangesPromptResult.Discard:
-                _appearance.RevertToSaved();
+                DiscardPendingSettings();
                 return true;
             default:
                 return false;
         }
     }
+
+    private void DiscardPendingSettings()
+    {
+        SelectedLanguageCode = NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName);
+        _appearance.RevertToSaved();
+        OnAppearancePreviewChanged(this, EventArgs.Empty);
+    }
+
+    private string BuildUnsavedSettingsMessage()
+    {
+        var fmt = _loc.GetString("Settings_UnsavedChangeFormat");
+        var lines = new List<string>();
+
+        if (HasPendingLanguageChange())
+        {
+            var fromCode = NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName);
+            var toCode = NormalizeLanguageCode(SelectedLanguageCode);
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Settings_UnsavedCategoryLanguage"),
+                LanguageDisplayName(fromCode),
+                LanguageDisplayName(toCode)));
+        }
+
+        if (_appearance.PreviewIsDark != _appearance.LastPersistedIsDark)
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Settings_UnsavedCategoryAppearanceMode"),
+                AppearanceModeDisplay(_appearance.LastPersistedIsDark),
+                AppearanceModeDisplay(_appearance.PreviewIsDark)));
+        }
+
+        if (_appearance.PreviewTheme != _appearance.LastPersistedTheme)
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Visuals_ColorThemeHeader"),
+                ThemeDisplayName(_appearance.LastPersistedTheme),
+                ThemeDisplayName(_appearance.PreviewTheme)));
+        }
+
+        var intro = _loc.GetString("Settings_UnsavedIntro");
+        var outro = _loc.GetString("Settings_UnsavedOutro");
+        if (lines.Count == 0)
+            return $"{intro}\n\n{outro}";
+
+        var bullet = string.Join("\n", lines.Select(static l => "• " + l));
+        return $"{intro}\n\n{bullet}\n\n{outro}";
+    }
+
+    private bool HasPendingLanguageChange() =>
+        !string.Equals(
+            NormalizeLanguageCode(SelectedLanguageCode),
+            NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName),
+            StringComparison.OrdinalIgnoreCase);
+
+    private static string NormalizeLanguageCode(string? code) =>
+        code?.Trim().ToLowerInvariant() is "de" ? "de" : "en";
+
+    private string LanguageDisplayName(string code) =>
+        NormalizeLanguageCode(code) == "de"
+            ? _loc.GetString("Main_Menu_LanguageGerman")
+            : _loc.GetString("Main_Menu_LanguageEnglish");
+
+    private static ThemeCatalogEntry? EntryFor(ThemeId id) =>
+        ThemeCatalog.Entries.FirstOrDefault(e => e.Id == id);
+
+    private string ThemeDisplayName(ThemeId id)
+    {
+        var entry = EntryFor(id);
+        return entry is null ? id.ToString() : _loc.GetString(entry.DisplayNameKey);
+    }
+
+    private string AppearanceModeDisplay(bool isDark) =>
+        isDark ? _loc.GetString("Visuals_Dark") : _loc.GetString("Visuals_Light");
 }
