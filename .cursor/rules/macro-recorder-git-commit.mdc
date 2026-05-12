@@ -68,3 +68,7 @@ Beim Erstellen von Commits (inkl. von Agenten) diese Konvention **konsequent** e
 
 - **`Co-authored-by: Cursor …`** oder ähnliche automatische **Co-authored-by**-Zeilen **nicht** anhängen, sofern der Nutzer das **nicht ausdrücklich** verlangt.
 - Commit-Nachricht endet nach Body/Footer nur mit den Inhalten, die der Nutzer bzw. die Konvention vorsieht (z. B. `Closes #…`, `BREAKING CHANGE:`).
+
+### Cursor hängt den Trailer trotzdem an
+
+Wenn die IDE den `Co-authored-by`-Block **nach** dem Editieren wieder einfügt: einmalig im Repo-Root **`git config core.hooksPath scripts/git-hooks`** setzen. Dann läuft vor jedem Commit der Hook **`scripts/git-hooks/commit-msg`**, der Zeilen der Form `Co-authored-by: Cursor <…>` aus der Nachricht entfernt (siehe **`strip_cursor_coauthor.py`**). Ohne diese Einstellung nutzt Git nur die Hooks unter **`.git/hooks`**, nicht die versionierten Skripte.

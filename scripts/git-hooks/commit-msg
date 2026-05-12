@@ -1,0 +1,4 @@
+#!/bin/sh
+# Git commit-msg hook: strip Cursor-injected Co-authored-by trailers.
+cd "$(dirname "$0")" || exit 0
+exec python strip_cursor_coauthor.py "$1"
