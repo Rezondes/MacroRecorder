@@ -30,7 +30,7 @@ public sealed class ResxUiLocalizer : IUiLocalizer
     public void ApplyUiCulture(CultureInfo culture)
     {
         var normalized = NormalizeUiCulture(culture);
-        UiCultureSettings.SaveUiCulturePreference(normalized.TwoLetterISOLanguageName);
+        AppSettingsStore.SaveCultureOnly(normalized.TwoLetterISOLanguageName);
         CultureInfo.DefaultThreadCurrentUICulture = normalized;
         CultureInfo.CurrentUICulture = normalized;
         _currentUiCulture = normalized;

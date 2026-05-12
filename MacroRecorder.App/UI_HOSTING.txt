@@ -1,0 +1,5 @@
+UI hosting policy
+-----------------
+Prefer a single main window: confirmations, text prompts, informational messages, unsaved
+changes, macro editor flows (insert mouse/key, rename macro, edit event), and related UI
+are shown as in-window overlays on the shell so navigation and theming stay coherent.

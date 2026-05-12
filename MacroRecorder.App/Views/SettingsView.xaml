@@ -6,10 +6,42 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="400" d:DesignWidth="720">
-    <TabControl Margin="16,8,16,16" Background="Transparent" BorderThickness="0">
-        <TabItem Header="{loc:Loc Main_Settings_TabGeneral}">
-            <views:GeneralSettingsView />
-        </TabItem>
-    </TabControl>
+             d:DesignHeight="400" d:DesignWidth="720"
+             Background="{DynamicResource UiBrush.WindowBackground}">
+    <Grid Margin="16,8,16,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0"
+                Margin="0,0,0,6"
+                Padding="10,10,10,0"
+                Background="{DynamicResource UiBrush.SurfaceElevated}"
+                BorderBrush="{DynamicResource UiBrush.Border}"
+                BorderThickness="1"
+                CornerRadius="12"
+                SnapsToDevicePixels="True">
+            <TabControl SelectedIndex="{Binding SelectedSettingsTabIndex, Mode=TwoWay}"
+                        Style="{DynamicResource UiTabControl}"
+                        ItemContainerStyle="{DynamicResource UiTabItem}">
+                <TabItem Header="{loc:Loc Main_Settings_TabGeneral}">
+                    <views:GeneralSettingsView />
+                </TabItem>
+                <TabItem Header="{loc:Loc Main_Settings_TabVisuals}">
+                    <views:VisualSettingsView />
+                </TabItem>
+            </TabControl>
+        </Border>
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0">
+            <Button Content="{loc:Loc Main_Settings_Save}"
+                    MinWidth="96"
+                    Padding="12,6"
+                    IsDefault="True"
+                    Style="{DynamicResource UiPrimaryButton}"
+                    Command="{Binding SaveSettingsCommand}" />
+        </StackPanel>
+    </Grid>
 </UserControl>

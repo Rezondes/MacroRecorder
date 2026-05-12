@@ -8,5 +8,8 @@ public interface IUserDialogService
 
     bool Confirm(string message);
 
-    UnsavedChangesPromptResult PromptUnsavedChanges(string message, string title);
+    UnsavedChangesPromptResult PromptUnsavedChanges(
+        string message,
+        string title,
+        UnsavedChangesPromptContext context = UnsavedChangesPromptContext.Editor);
 }

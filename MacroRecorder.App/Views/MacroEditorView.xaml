@@ -7,7 +7,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="640" d:DesignWidth="960"
-             Background="#F3F3F3">
+             Background="{DynamicResource UiBrush.WindowBackground}">
     <UserControl.InputBindings>
         <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}" />
         <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}" />
@@ -15,45 +15,15 @@
     </UserControl.InputBindings>
     <UserControl.Resources>
         <local:InverseBooleanConverter x:Key="InverseBool" />
-        <Style x:Key="ToolbarBtn" TargetType="Button">
-            <Setter Property="Padding" Value="12,7" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="MinHeight" Value="32" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="Background" Value="White" />
-            <Setter Property="BorderBrush" Value="#C8C8C8" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-        </Style>
-        <Style x:Key="PrimaryToolbarBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
-            <Setter Property="Background" Value="#0F6CBD" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderBrush" Value="#0F6CBD" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-        <Style x:Key="ToolbarSep" TargetType="Border">
-            <Setter Property="Width" Value="1" />
-            <Setter Property="Height" Value="22" />
-            <Setter Property="Margin" Value="4,0,12,0" />
-            <Setter Property="Background" Value="#D0D0D0" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="SectionLabel" TargetType="TextBlock">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,12,0" />
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Foreground" Value="#555555" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
     </UserControl.Resources>
-    <DockPanel Margin="16">
+    <DockPanel Margin="16,8,16,16">
         <Border DockPanel.Dock="Top"
                 Margin="0,0,0,12"
                 Padding="14,12"
-                Background="White"
-                BorderBrush="#DEDEDE"
+                Background="{DynamicResource UiBrush.Surface}"
+                BorderBrush="{DynamicResource UiBrush.Border}"
                 BorderThickness="1"
-                CornerRadius="6">
+                CornerRadius="8">
             <StackPanel>
                 <DockPanel LastChildFill="False" Margin="0,0,0,10">
                     <TextBlock DockPanel.Dock="Left"
@@ -61,66 +31,130 @@
                                FontSize="15"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
-                               Foreground="#1A1A1A"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
                                Margin="0,0,20,0" />
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                         <Button Content="{Binding RecordingButtonCaption}"
                                 Command="{Binding ToggleRecordingCommand}"
                                 IsEnabled="{Binding EditorHasMacro}"
-                                Style="{StaticResource PrimaryToolbarBtn}" />
-                        <Border Style="{StaticResource ToolbarSep}" />
+                                Style="{DynamicResource UiToolbarPrimaryButton}" />
+                        <Border Width="1"
+                                Height="22"
+                                Margin="4,0,12,0"
+                                Background="{DynamicResource UiBrush.Border}"
+                                VerticalAlignment="Center" />
                         <StackPanel Orientation="Horizontal" IsEnabled="{Binding CanUseCommandsWhileNotRecording}">
                             <Button Content="{loc:Loc Editor_Save}"
-                                    Style="{StaticResource PrimaryToolbarBtn}"
+                                    Style="{DynamicResource UiToolbarPrimaryButton}"
                                     Command="{Binding SaveCommand}" />
-                            <Border Style="{StaticResource ToolbarSep}" />
-                            <Button Content="{loc:Loc Editor_Undo}" Style="{StaticResource ToolbarBtn}" Command="{Binding UndoCommand}" />
-                            <Button Content="{loc:Loc Editor_Redo}" Style="{StaticResource ToolbarBtn}" Command="{Binding RedoCommand}" />
-                            <Border Style="{StaticResource ToolbarSep}" />
-                            <Button Content="{loc:Loc Editor_PlayTest}" Style="{StaticResource ToolbarBtn}" Command="{Binding PlayTestCommand}" />
-                            <Button Content="{loc:Loc Editor_Rename}" Style="{StaticResource ToolbarBtn}" Command="{Binding RenameMacroCommand}" />
+                            <Border Width="1"
+                                    Height="22"
+                                    Margin="4,0,12,0"
+                                    Background="{DynamicResource UiBrush.Border}"
+                                    VerticalAlignment="Center" />
+                            <Button Content="{loc:Loc Editor_Undo}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding UndoCommand}" />
+                            <Button Content="{loc:Loc Editor_Redo}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding RedoCommand}" />
+                            <Border Width="1"
+                                    Height="22"
+                                    Margin="4,0,12,0"
+                                    Background="{DynamicResource UiBrush.Border}"
+                                    VerticalAlignment="Center" />
+                            <Button Content="{loc:Loc Editor_PlayTest}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding PlayTestCommand}" />
+                            <Button Content="{loc:Loc Editor_Rename}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding RenameMacroCommand}" />
                         </StackPanel>
                     </StackPanel>
                 </DockPanel>
                 <DockPanel LastChildFill="False" Margin="0,0,0,10">
-                    <TextBlock DockPanel.Dock="Left" Text="{loc:Loc Editor_SectionSelection}" Style="{StaticResource SectionLabel}" />
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="{loc:Loc Editor_SectionSelection}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}" />
                     <StackPanel DockPanel.Dock="Left"
                                 Orientation="Horizontal"
                                 IsEnabled="{Binding CanUseCommandsWhileNotRecording}">
-                        <Button Content="{loc:Loc Editor_MoveUp}" Style="{StaticResource ToolbarBtn}" Command="{Binding MoveRowUpCommand}" />
-                        <Button Content="{loc:Loc Editor_MoveDown}" Style="{StaticResource ToolbarBtn}" Command="{Binding MoveRowDownCommand}" />
-                        <Button Content="{loc:Loc Editor_Duplicate}" Style="{StaticResource ToolbarBtn}" Command="{Binding DuplicateSelectedCommand}" />
-                        <Button Content="{loc:Loc Editor_EditRow}" Style="{StaticResource ToolbarBtn}" Command="{Binding EditSelectedCommand}" />
-                        <Button Content="{loc:Loc Editor_Delete}" Style="{StaticResource ToolbarBtn}" Command="{Binding DeleteSelectedCommand}" />
+                        <Button Content="{loc:Loc Editor_MoveUp}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding MoveRowUpCommand}" />
+                        <Button Content="{loc:Loc Editor_MoveDown}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding MoveRowDownCommand}" />
+                        <Button Content="{loc:Loc Editor_Duplicate}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding DuplicateSelectedCommand}" />
+                        <Button Content="{loc:Loc Editor_EditRow}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding EditSelectedCommand}" />
+                        <Button Content="{loc:Loc Editor_Delete}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding DeleteSelectedCommand}" />
                     </StackPanel>
                 </DockPanel>
                 <DockPanel LastChildFill="False">
-                    <TextBlock DockPanel.Dock="Left" Text="{loc:Loc Editor_SectionInsert}" Style="{StaticResource SectionLabel}" />
-                    <Menu Background="Transparent"
-                          VerticalAlignment="Center"
-                          IsEnabled="{Binding CanUseCommandsWhileNotRecording}">
-                        <MenuItem Header="{loc:Loc Editor_MenuInsertStep}" FontSize="12" Padding="8,4">
-                            <MenuItem Header="{loc:Loc Editor_MenuWaitBefore}"
-                                      Command="{Binding InsertWaitBeforeCommand}" />
-                            <MenuItem Header="{loc:Loc Editor_MenuWaitAfter}"
-                                      Command="{Binding InsertWaitAfterCommand}" />
-                            <Separator />
-                            <MenuItem Header="{loc:Loc Editor_MenuMouseBefore}"
-                                      Command="{Binding InsertMouseClickBeforeCommand}" />
-                            <MenuItem Header="{loc:Loc Editor_MenuMouseAfter}"
-                                      Command="{Binding InsertMouseClickAfterCommand}" />
-                            <Separator />
-                            <MenuItem Header="{loc:Loc Editor_MenuKeyBefore}"
-                                      Command="{Binding InsertKeyBeforeCommand}" />
-                            <MenuItem Header="{loc:Loc Editor_MenuKeyAfter}"
-                                      Command="{Binding InsertKeyAfterCommand}" />
-                        </MenuItem>
-                    </Menu>
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="{loc:Loc Editor_SectionInsert}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}" />
+                    <StackPanel DockPanel.Dock="Left"
+                                Orientation="Horizontal">
+                    <ToggleButton x:Name="InsertStepMenuToggle"
+                                  Style="{DynamicResource UiToolbarDropDownToggle}"
+                                  Content="{loc:Loc Editor_MenuInsertStep}"
+                                  IsEnabled="{Binding CanUseCommandsWhileNotRecording}" />
+                    <Popup PlacementTarget="{Binding ElementName=InsertStepMenuToggle}"
+                           Placement="Bottom"
+                           VerticalOffset="4"
+                           StaysOpen="False"
+                           AllowsTransparency="True"
+                           PopupAnimation="Fade"
+                           IsOpen="{Binding IsChecked, ElementName=InsertStepMenuToggle, Mode=TwoWay}">
+                        <Border MinWidth="260"
+                                Background="{DynamicResource UiBrush.SurfaceElevated}"
+                                BorderBrush="{DynamicResource UiBrush.Border}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="4,6">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16"
+                                                  ShadowDepth="2"
+                                                  Opacity="0.22"
+                                                  Direction="270" />
+                            </Border.Effect>
+                            <StackPanel>
+                                <Button Style="{DynamicResource UiInsertStepMenuItemButton}"
+                                        Content="{loc:Loc Editor_MenuWaitBefore}"
+                                        Command="{Binding InsertWaitBeforeCommand}"
+                                        Click="OnInsertStepMenuItemClick" />
+                                <Button Style="{DynamicResource UiInsertStepMenuItemButton}"
+                                        Content="{loc:Loc Editor_MenuWaitAfter}"
+                                        Command="{Binding InsertWaitAfterCommand}"
+                                        Click="OnInsertStepMenuItemClick" />
+                                <Border Height="1"
+                                        Margin="10,6"
+                                        Background="{DynamicResource UiBrush.Border}" />
+                                <Button Style="{DynamicResource UiInsertStepMenuItemButton}"
+                                        Content="{loc:Loc Editor_MenuMouseBefore}"
+                                        Command="{Binding InsertMouseClickBeforeCommand}"
+                                        Click="OnInsertStepMenuItemClick" />
+                                <Button Style="{DynamicResource UiInsertStepMenuItemButton}"
+                                        Content="{loc:Loc Editor_MenuMouseAfter}"
+                                        Command="{Binding InsertMouseClickAfterCommand}"
+                                        Click="OnInsertStepMenuItemClick" />
+                                <Border Height="1"
+                                        Margin="10,6"
+                                        Background="{DynamicResource UiBrush.Border}" />
+                                <Button Style="{DynamicResource UiInsertStepMenuItemButton}"
+                                        Content="{loc:Loc Editor_MenuKeyBefore}"
+                                        Command="{Binding InsertKeyBeforeCommand}"
+                                        Click="OnInsertStepMenuItemClick" />
+                                <Button Style="{DynamicResource UiInsertStepMenuItemButton}"
+                                        Content="{loc:Loc Editor_MenuKeyAfter}"
+                                        Command="{Binding InsertKeyAfterCommand}"
+                                        Click="OnInsertStepMenuItemClick" />
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                    </StackPanel>
                     <TextBlock DockPanel.Dock="Left"
                                VerticalAlignment="Center"
                                Margin="16,0,0,0"
                                FontSize="11"
-                               Foreground="#777777"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}"
                                TextWrapping="Wrap"
                                Text="{loc:Loc Editor_HintInsertDrag}" />
                 </DockPanel>
@@ -128,14 +162,14 @@
         </Border>
         <TextBlock DockPanel.Dock="Bottom"
                    Margin="0,8,0,0"
-                   Foreground="#666666"
+                   Foreground="{DynamicResource UiBrush.TextSecondary}"
                    FontSize="12"
                    TextWrapping="Wrap"
                    Text="{Binding StatusText}" />
-        <Border Background="White"
-                BorderBrush="#DEDEDE"
+        <Border Background="{DynamicResource UiBrush.Surface}"
+                BorderBrush="{DynamicResource UiBrush.Border}"
                 BorderThickness="1"
-                CornerRadius="6"
+                CornerRadius="8"
                 Padding="0"
                 ClipToBounds="True">
             <Grid ClipToBounds="True">
@@ -154,10 +188,73 @@
                           Loaded="OnLoaded"
                           Unloaded="OnUnloaded"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView.Resources>
+                        <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource UiGridViewColumnHeader}" />
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource UiScrollBar}" />
+                    </ListView.Resources>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="4,2" />
+                            <Setter Property="MinHeight" Value="40" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListViewItem">
+                                        <Border x:Name="RowBd"
+                                                Background="{TemplateBinding Background}"
+                                                BorderThickness="0"
+                                                Padding="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="False">
+                                            <GridViewRowPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                  Content="{TemplateBinding Content}"
+                                                                  Columns="{Binding View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="RowBd" Property="Background" Value="{DynamicResource UiBrush.SurfaceHover}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="RowBd" Property="Background" Value="{DynamicResource UiBrush.SurfaceSelected}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="{loc:Loc Editor_GridAction}" DisplayMemberBinding="{Binding ActionLabel}" Width="240" />
-                            <GridViewColumn Header="{loc:Loc Editor_GridValue}" DisplayMemberBinding="{Binding ValueText}" Width="640" />
+                            <GridViewColumn Header="{loc:Loc Editor_GridAction}" Width="260">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ActionLabel}"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource UiBrush.TextPrimary}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap"
+                                                   Padding="10,8"
+                                                   VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="{loc:Loc Editor_GridValue}" Width="640">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ValueText}"
+                                                   FontSize="14"
+                                                   Foreground="{DynamicResource UiBrush.TextPrimary}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap"
+                                                   Padding="10,8"
+                                                   VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
@@ -166,7 +263,7 @@
                         Background="Transparent">
                     <Rectangle x:Name="DropInsertIndicator"
                                Height="3"
-                               Fill="#0F6CBD"
+                               Fill="{DynamicResource UiBrush.Primary}"
                                RadiusX="1"
                                RadiusY="1"
                                Visibility="Collapsed"

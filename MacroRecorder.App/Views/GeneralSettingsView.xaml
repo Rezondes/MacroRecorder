@@ -5,39 +5,28 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="220" d:DesignWidth="560">
+             d:DesignHeight="220" d:DesignWidth="560"
+             Background="Transparent">
     <Border Margin="0,12,0,0"
-            Background="White"
-            BorderBrush="#E0E0E0"
+            Background="{DynamicResource UiBrush.Surface}"
+            BorderBrush="{DynamicResource UiBrush.Border}"
             BorderThickness="1"
             CornerRadius="8"
             Padding="20">
-        <DockPanel>
-            <StackPanel DockPanel.Dock="Bottom"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="0,20,0,0">
-                <Button Content="{loc:Loc Main_Settings_Save}"
-                        MinWidth="96"
-                        Padding="12,6"
-                        IsDefault="True"
-                        Command="{Binding SaveGeneralCommand}" />
-            </StackPanel>
-            <StackPanel>
-                <TextBlock Text="{loc:Loc Main_Settings_LanguageHeader}"
-                           FontSize="13"
-                           FontWeight="SemiBold"
-                           Foreground="#1A1A1A"
-                           Margin="0,0,0,8" />
-                <ComboBox MinHeight="36"
-                          FontSize="13"
-                          Padding="8,4"
-                          VerticalContentAlignment="Center"
-                          ItemsSource="{Binding LanguageOptions}"
-                          DisplayMemberPath="DisplayName"
-                          SelectedValuePath="Code"
-                          SelectedValue="{Binding SelectedLanguageCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
-        </DockPanel>
+        <StackPanel>
+            <TextBlock Text="{loc:Loc Main_Settings_LanguageHeader}"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource UiBrush.TextPrimary}"
+                       Margin="0,0,0,8" />
+            <ComboBox Style="{DynamicResource UiComboBox}"
+                      MinHeight="40"
+                      FontSize="13"
+                      VerticalContentAlignment="Center"
+                      ItemsSource="{Binding LanguageOptions}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedValuePath="Code"
+                      SelectedValue="{Binding SelectedLanguageCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        </StackPanel>
     </Border>
 </UserControl>

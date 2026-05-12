@@ -11,7 +11,7 @@
         Title="{Binding ShellTitle}"
         Height="640" Width="960"
         MinHeight="400" MinWidth="640"
-        Background="#F5F5F5"
+        Background="{DynamicResource UiBrush.WindowBackground}"
         Closing="OnMainWindowClosing"
         PreviewKeyDown="OnPreviewKeyDown">
     <Window.Resources>
@@ -42,7 +42,7 @@
                     Command="{Binding GoBackCommand}"
                     Content="{loc:Loc Shell_Back}">
                 <Button.Style>
-                    <Style TargetType="Button">
+                    <Style TargetType="Button" BasedOn="{StaticResource UiButtonChrome}">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding ShowBackButton}" Value="True">
@@ -58,20 +58,139 @@
                         Content="{Binding CurrentPage}" />
         <Grid Grid.Row="0"
               Grid.RowSpan="2"
-              Panel.ZIndex="101"
-              Background="#99000000"
+              Panel.ZIndex="114"
+              Background="{DynamicResource UiBrush.OverlayScrim}"
+              Visibility="{Binding IsContentModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border MaxWidth="480"
+                    MaxHeight="560"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="Transparent"
+                    MouseDown="OnContentModalInnerMouseDown">
+                <ContentControl Content="{Binding ContentModalContent}" />
+            </Border>
+        </Grid>
+        <Grid Grid.Row="0"
+              Grid.RowSpan="2"
+              Panel.ZIndex="116"
+              Background="{DynamicResource UiBrush.OverlayScrim}"
+              Visibility="{Binding IsConfirmModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border MaxWidth="440"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="{DynamicResource UiBrush.Surface}"
+                    CornerRadius="8"
+                    Padding="20"
+                    MouseDown="OnConfirmModalInnerMouseDown">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold"
+                               FontSize="15"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
+                               Margin="0,0,0,10"
+                               Text="{Binding ConfirmModalTitle}" />
+                    <TextBlock Text="{Binding ConfirmModalMessage}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
+                               FontSize="13"
+                               Margin="0,0,0,16" />
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button MinWidth="88"
+                                Margin="0,0,8,0"
+                                Padding="12,6"
+                                Style="{DynamicResource UiButtonChrome}"
+                                Content="{loc:Loc Common_No}"
+                                Command="{Binding ConfirmModalNoCommand}" />
+                        <Button MinWidth="88"
+                                Padding="12,6"
+                                IsDefault="True"
+                                Style="{DynamicResource UiPrimaryButton}"
+                                Content="{loc:Loc Common_Yes}"
+                                Command="{Binding ConfirmModalYesCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Grid Grid.Row="0"
+              Grid.RowSpan="2"
+              Panel.ZIndex="118"
+              Background="{DynamicResource UiBrush.OverlayScrim}"
+              Visibility="{Binding IsUnsavedChangesModalOpen, Converter={StaticResource BoolToVis}}">
+            <Border VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Background="{DynamicResource UiBrush.Surface}"
+                    Padding="22"
+                    MouseDown="OnUnsavedModalInnerMouseDown">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="MaxWidth" Value="440" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource UiBrush.Border}" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="8" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding UnsavedChangesModalIsAppearance}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource UiBrush.Primary}" />
+                                <Setter Property="CornerRadius" Value="12" />
+                                <Setter Property="MaxWidth" Value="480" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold"
+                               FontSize="16"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
+                               Margin="0,0,0,8"
+                               Text="{Binding UnsavedChangesModalTitle}" />
+                    <TextBlock Text="{Binding UnsavedChangesModalMessage}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}"
+                               FontSize="13"
+                               LineHeight="20"
+                               Margin="0,0,0,20" />
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+                        <Button MinWidth="100"
+                                Margin="0,0,8,0"
+                                Padding="12,7"
+                                IsDefault="True"
+                                Style="{DynamicResource UiPrimaryButton}"
+                                Content="{Binding UnsavedChangesModalSaveLabel}"
+                                Command="{Binding UnsavedChangesModalSaveCommand}" />
+                        <Button MinWidth="100"
+                                Margin="0,0,8,0"
+                                Padding="12,7"
+                                Style="{DynamicResource UiButtonChrome}"
+                                Content="{Binding UnsavedChangesModalDiscardLabel}"
+                                Command="{Binding UnsavedChangesModalDiscardCommand}" />
+                        <Button MinWidth="100"
+                                Margin="0,0,0,0"
+                                Padding="12,7"
+                                IsCancel="True"
+                                Style="{DynamicResource UiButtonChrome}"
+                                Content="{loc:Loc Common_Cancel}"
+                                Command="{Binding UnsavedChangesModalCancelCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Grid Grid.Row="0"
+              Grid.RowSpan="2"
+              Panel.ZIndex="120"
+              Background="{DynamicResource UiBrush.OverlayScrim}"
               Visibility="{Binding IsInfoModalOpen, Converter={StaticResource BoolToVis}}"
               MouseDown="OnInfoOverlayBackgroundMouseDown">
             <Border MaxWidth="440"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    Background="White"
+                    Background="{DynamicResource UiBrush.Surface}"
                     CornerRadius="8"
                     Padding="20"
                     MouseDown="OnInfoModalInnerMouseDown">
                 <StackPanel>
                     <TextBlock FontWeight="SemiBold"
                                FontSize="15"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
                                Margin="0,0,0,10"
                                Text="{Binding InfoModalTitle}">
                         <TextBlock.Style>
@@ -87,11 +206,14 @@
                     </TextBlock>
                     <TextBlock Text="{Binding InfoModalMessage}"
                                TextWrapping="Wrap"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
+                               FontSize="13"
                                Margin="0,0,0,16" />
                     <Button MinWidth="88"
                             HorizontalAlignment="Right"
                             Padding="12,6"
                             IsDefault="True"
+                            Style="{DynamicResource UiPrimaryButton}"
                             Content="{loc:Loc Common_Ok}"
                             Command="{Binding CloseInfoModalCommand}" />
                 </StackPanel>

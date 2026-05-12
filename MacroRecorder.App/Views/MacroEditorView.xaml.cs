@@ -47,6 +47,9 @@ public partial class MacroEditorView : UserControl
         }, DispatcherPriority.Loaded);
     }
 
+    private void OnInsertStepMenuItemClick(object sender, RoutedEventArgs e) =>
+        InsertStepMenuToggle.IsChecked = false;
+
     private void OnTimelineDoubleClick(object sender, MouseButtonEventArgs mouseButtonEventArgs)
     {
         if (DataContext is MacroEditorViewModel editorViewModel && editorViewModel.EditSelectedCommand.CanExecute(null))

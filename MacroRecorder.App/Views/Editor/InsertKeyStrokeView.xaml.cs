@@ -1,25 +1,34 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Infrastructure.Input;
 
 namespace MacroRecorder.App.Views.Editor;
 
-public partial class InsertKeyStrokeDialog : Window
+public partial class InsertKeyStrokeView : UserControl, IContentModalEscape
 {
     private readonly IUiLocalizer _loc;
+    private readonly Action<string> _showValidation;
+    private readonly Action<bool> _onCompleted;
     private ushort _capturedVirtualKey;
     private ushort _capturedScanCode;
     private bool _isExtendedKey;
 
-    public InsertKeyStrokeDialog(IUiLocalizer loc)
+    public InsertKeyStrokeView(IUiLocalizer loc, Action<string> showValidation, Action<bool> onCompleted)
     {
         _loc = loc;
+        _showValidation = showValidation;
+        _onCompleted = onCompleted;
         InitializeComponent();
         StatusText.Text = _loc.GetString("DialogInsertKey_PressKeyHint");
-        Focusable = true;
-        Loaded += (_, _) => Focus();
+        Loaded += (_, _) =>
+        {
+            Focus();
+            Keyboard.Focus(this);
+        };
     }
 
     public ushort CapturedVk => _capturedVirtualKey;
@@ -27,6 +36,10 @@ public partial class InsertKeyStrokeDialog : Window
     public ushort CapturedScan => _capturedScanCode;
 
     public bool CapturedExtended => _isExtendedKey;
+
+    public void CancelFromHost() => _onCompleted(false);
+
+    private void OnCancelClick(object sender, RoutedEventArgs e) => _onCompleted(false);
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs keyEventArgs)
     {
@@ -58,15 +71,14 @@ public partial class InsertKeyStrokeDialog : Window
             or Key.RWin or Key.LWin or Key.RightAlt or Key.RightCtrl;
     }
 
-    private void OnOk(object sender, RoutedEventArgs routedEventArgs)
+    private void OnOkClick(object sender, RoutedEventArgs e)
     {
         if (_capturedVirtualKey == 0 && _capturedScanCode == 0)
         {
-            MessageBox.Show(this, _loc.GetString("DialogKeyStroke_EnterKeyFirst"), Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            _showValidation(_loc.GetString("DialogKeyStroke_EnterKeyFirst"));
             return;
         }
 
-        DialogResult = true;
-        Close();
+        _onCompleted(true);
     }
 }

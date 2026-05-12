@@ -41,7 +41,7 @@ alwaysApply: true
 ## Sprache UI
 
 - Nutzer sichtbare Texte: **Lokalisierung DE/EN** über `IUiLocalizer`, RESX und XAML `{loc:Loc …}`; Details und Schichtenregeln siehe [macro-recorder-localization.mdc](macro-recorder-localization.mdc).
-- Eigene Dialoge (`WpfUserDialogService.PromptText`): Schaltflächen aus RESX (`Common_Ok` / `Common_Cancel`).
+- Text-Prompts (`IUserDialogService.PromptText`): im Shell-Overlay; Schaltflächen aus RESX (`Common_Ok` / `Common_Cancel`).
 
 ## Git-Commits
 
