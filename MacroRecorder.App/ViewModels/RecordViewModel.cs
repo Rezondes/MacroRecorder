@@ -39,7 +39,8 @@ public partial class RecordViewModel : ObservableObject
     {
         if (IsRecording)
             return;
-        _recording.StartRecording();
+        var minMouseMovePixels = AppSettingsStore.Load().RecordingMouseMoveMinPixels;
+        _recording.StartRecording(recordMouseMoves: true, mouseMoveMinPixelDelta: minMouseMovePixels);
         IsRecording = true;
     }
 

@@ -16,6 +16,10 @@ public sealed class AppSettings
 
     [JsonPropertyName("appearanceIsDark")]
     public bool AppearanceIsDark { get; set; }
+
+    /// <summary>Minimum Euclidean pixel delta between consecutive stored mouse moves (recording).</summary>
+    [JsonPropertyName("recordingMouseMoveMinPixels")]
+    public int RecordingMouseMoveMinPixels { get; set; } = 5;
 }
 
 public static class AppSettingsStore
@@ -78,6 +82,10 @@ public static class AppSettingsStore
             s.AppearanceTheme = ThemeCatalog.ToStorageString(ThemeId.BlueGrey);
         else
             s.AppearanceTheme = ThemeCatalog.ToStorageString(ThemeCatalog.ParseThemeId(s.AppearanceTheme));
+        if (s.RecordingMouseMoveMinPixels < 1)
+            s.RecordingMouseMoveMinPixels = 1;
+        if (s.RecordingMouseMoveMinPixels > 10_000)
+            s.RecordingMouseMoveMinPixels = 10_000;
         return s;
     }
 
@@ -86,6 +94,6 @@ public static class AppSettingsStore
         var ui = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("de", StringComparison.OrdinalIgnoreCase)
             ? "de"
             : "en";
-        return new AppSettings { UiCulture = ui };
+        return new AppSettings { UiCulture = ui, RecordingMouseMoveMinPixels = 5 };
     }
 }

@@ -19,8 +19,9 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IUserDialogService _dialogs;
 
     private int _selectedSettingsTabIndex;
+    private int _savedRecordingMouseMoveMinPixels = 5;
 
-    /// <summary>0 = General, 1 = Visuals. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
+    /// <summary>0 = General, 1 = Visuals, 2 = Macro. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
     public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
 
     /// <summary>
@@ -29,7 +30,7 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public bool TryChangeSettingsTab(int newIndex)
     {
-        if (newIndex < 0 || newIndex > 1)
+        if (newIndex < 0 || newIndex > 2)
             return false;
         if (newIndex == _selectedSettingsTabIndex)
             return true;
@@ -56,7 +57,7 @@ public partial class SettingsViewModel : ObservableObject
     public IReadOnlyList<ThemeCatalogEntry> ThemeEntries => ThemeCatalog.Entries;
 
     public bool HasUnsavedSettingsChanges =>
-        HasPendingLanguageChange() || _appearance.HasPendingChanges;
+        HasPendingLanguageChange() || _appearance.HasPendingChanges || HasPendingMacroRecordingChange();
 
     public bool IsLightMode
     {
@@ -83,11 +84,21 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string selectedLanguageCode = "en";
 
+    /// <summary>Digits for <see cref="MacroRecorder.Wpf.Controls.DigitsOnlyNumericBox"/> (mouse move min pixels).</summary>
+    [ObservableProperty]
+    private string mouseMoveRecordingMinPixelsText = "5";
+
+    partial void OnMouseMoveRecordingMinPixelsTextChanged(string value) =>
+        OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
+
     public void LoadStateFromPreferences()
     {
         var code = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
         SelectedLanguageCode = code.Equals("de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
         RebuildLanguageOptions();
+        var prefs = AppSettingsStore.Load();
+        _savedRecordingMouseMoveMinPixels = prefs.RecordingMouseMoveMinPixels;
+        MouseMoveRecordingMinPixelsText = prefs.RecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -119,6 +130,12 @@ public partial class SettingsViewModel : ObservableObject
             _loc.ApplyUiCulture(cult);
         RebuildLanguageOptions();
         _appearance.Persist();
+        var app = AppSettingsStore.Load();
+        app.RecordingMouseMoveMinPixels = ParseRecordingMinPixelsForSave();
+        AppSettingsStore.Save(app);
+        var reloaded = AppSettingsStore.Load();
+        _savedRecordingMouseMoveMinPixels = reloaded.RecordingMouseMoveMinPixels;
+        MouseMoveRecordingMinPixelsText = reloaded.RecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -158,6 +175,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         SelectedLanguageCode = NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName);
         _appearance.RevertToSaved();
+        MouseMoveRecordingMinPixelsText = _savedRecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -192,6 +210,14 @@ public partial class SettingsViewModel : ObservableObject
                 ThemeDisplayName(_appearance.PreviewTheme)));
         }
 
+        if (HasPendingMacroRecordingChange())
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Settings_UnsavedCategoryMacro"),
+                _savedRecordingMouseMoveMinPixels.ToString(_loc.CurrentUiCulture),
+                MacroMinPixelsPendingDisplay()));
+        }
+
         var intro = _loc.GetString("Settings_UnsavedIntro");
         var outro = _loc.GetString("Settings_UnsavedOutro");
         if (lines.Count == 0)
@@ -206,6 +232,36 @@ public partial class SettingsViewModel : ObservableObject
             NormalizeLanguageCode(SelectedLanguageCode),
             NormalizeLanguageCode(_loc.CurrentUiCulture.TwoLetterISOLanguageName),
             StringComparison.OrdinalIgnoreCase);
+
+    private bool HasPendingMacroRecordingChange()
+    {
+        if (!TryParseRecordingMinPixels(MouseMoveRecordingMinPixelsText, out var parsed))
+            return true;
+        return parsed != _savedRecordingMouseMoveMinPixels;
+    }
+
+    private string MacroMinPixelsPendingDisplay() =>
+        TryParseRecordingMinPixels(MouseMoveRecordingMinPixelsText, out var parsed)
+            ? parsed.ToString(_loc.CurrentUiCulture)
+            : (MouseMoveRecordingMinPixelsText ?? string.Empty).Trim();
+
+    private int ParseRecordingMinPixelsForSave()
+    {
+        if (TryParseRecordingMinPixels(MouseMoveRecordingMinPixelsText, out var parsed))
+            return parsed;
+        return _savedRecordingMouseMoveMinPixels;
+    }
+
+    private static bool TryParseRecordingMinPixels(string? text, out int value)
+    {
+        value = 5;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+            return false;
+        value = Math.Clamp(n, 1, 10_000);
+        return true;
+    }
 
     private static string NormalizeLanguageCode(string? code) =>
         code?.Trim().ToLowerInvariant() is "de" ? "de" : "en";

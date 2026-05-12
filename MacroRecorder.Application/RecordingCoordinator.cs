@@ -7,8 +7,8 @@ public sealed class RecordingCoordinator(IRecordingEngine engine)
 {
     public bool IsRecording => engine.IsRunning;
 
-    public void StartRecording(Action<RecordedInputEvent>? onEventRecorded = null, bool recordMouseMoves = true) =>
-        engine.Start(onEventRecorded, recordMouseMoves);
+    public void StartRecording(Action<RecordedInputEvent>? onEventRecorded = null, bool recordMouseMoves = true, int mouseMoveMinPixelDelta = 5) =>
+        engine.Start(onEventRecorded, recordMouseMoves, mouseMoveMinPixelDelta);
 
     /// <summary>Stops the engine and returns this session's events (throws if not running).</summary>
     public RecordingEngineResult StopRecording() => engine.Stop();

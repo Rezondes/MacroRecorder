@@ -31,6 +31,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private int _lastRecordedMouseMoveY;
     private Action<RecordedInputEvent>? _onEventRecorded;
     private bool _recordMouseMoves = true;
+    private int _mouseMoveMinPixelDelta = 5;
     private bool _haveAnchor;
     private TimeSpan _lastAnchorElapsed;
 
@@ -42,10 +43,12 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
     public bool IsRunning => _running;
 
-    public void Start(Action<RecordedInputEvent>? onEventRecorded = null, bool recordMouseMoves = true)
+    public void Start(Action<RecordedInputEvent>? onEventRecorded = null, bool recordMouseMoves = true, int mouseMoveMinPixelDelta = 5)
     {
         if (_running)
             throw new InvalidOperationException("Recording already running.");
+
+        var clampedMinPixels = Math.Clamp(mouseMoveMinPixelDelta, 1, 10_000);
 
         lock (_lock)
         {
@@ -53,6 +56,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             Interlocked.Exchange(ref _sequence, 0);
             _haveLastRecordedMouseMove = false;
             _recordMouseMoves = recordMouseMoves;
+            _mouseMoveMinPixelDelta = clampedMinPixels;
             _haveAnchor = false;
             _lastAnchorElapsed = TimeSpan.Zero;
         }
@@ -284,14 +288,18 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
             if (eventTemplate is MouseMoveRecordedEvent mouseMoveEvent && _recordMouseMoves)
             {
-                if (_haveLastRecordedMouseMove &&
-                    mouseMoveEvent.ScreenX == _lastRecordedMouseMoveX &&
-                    mouseMoveEvent.ScreenY == _lastRecordedMouseMoveY)
-                    return;
+                if (_haveLastRecordedMouseMove)
+                {
+                    if (mouseMoveEvent.ScreenX == _lastRecordedMouseMoveX &&
+                        mouseMoveEvent.ScreenY == _lastRecordedMouseMoveY)
+                        return;
 
-                _lastRecordedMouseMoveX = mouseMoveEvent.ScreenX;
-                _lastRecordedMouseMoveY = mouseMoveEvent.ScreenY;
-                _haveLastRecordedMouseMove = true;
+                    var dx = mouseMoveEvent.ScreenX - _lastRecordedMouseMoveX;
+                    var dy = mouseMoveEvent.ScreenY - _lastRecordedMouseMoveY;
+                    var minSq = (long)_mouseMoveMinPixelDelta * _mouseMoveMinPixelDelta;
+                    if ((long)dx * dx + (long)dy * dy < minSq)
+                        return;
+                }
             }
 
             var elapsed = _stopwatch?.Elapsed ?? TimeSpan.Zero;
@@ -320,6 +328,13 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             var stampedEvent = Stamp(eventTemplate, elapsed, nextSequence);
             _events.Add(stampedEvent);
             pendingCallbacks.Add(stampedEvent);
+
+            if (stampedEvent is MouseMoveRecordedEvent storedMove && _recordMouseMoves)
+            {
+                _lastRecordedMouseMoveX = storedMove.ScreenX;
+                _lastRecordedMouseMoveY = storedMove.ScreenY;
+                _haveLastRecordedMouseMove = true;
+            }
 
             if (!_recordMouseMoves && IsAnchorEvent(eventTemplate))
             {

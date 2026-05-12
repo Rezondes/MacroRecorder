@@ -32,6 +32,9 @@
                 <TabItem Header="{loc:Loc Main_Settings_TabVisuals}">
                     <views:VisualSettingsView />
                 </TabItem>
+                <TabItem Header="{loc:Loc Main_Settings_TabMacro}">
+                    <views:MacroSettingsView />
+                </TabItem>
             </TabControl>
         </Border>
         <StackPanel Grid.Row="1"

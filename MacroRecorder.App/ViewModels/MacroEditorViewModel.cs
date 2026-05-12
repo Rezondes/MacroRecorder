@@ -697,7 +697,8 @@ public partial class MacroEditorViewModel : ObservableObject
             _redo.Clear();
             IsRecording = true;
             RefreshCommandStates();
-            _recording.StartRecording(OnLiveRecordedEvent, RecordMouseMoves);
+            var minMouseMovePixels = AppSettingsStore.Load().RecordingMouseMoveMinPixels;
+            _recording.StartRecording(OnLiveRecordedEvent, RecordMouseMoves, minMouseMovePixels);
         }
         catch (Exception exception)
         {
