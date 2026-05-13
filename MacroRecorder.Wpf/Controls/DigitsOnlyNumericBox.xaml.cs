@@ -260,6 +260,23 @@ public partial class DigitsOnlyNumericBox : UserControl
 
     private void PART_TextBox_OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (DigitsOnly && ShowSpinner)
+        {
+            if (e.Key == Key.Up)
+            {
+                Bump(+1);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.Down)
+            {
+                Bump(-1);
+                e.Handled = true;
+                return;
+            }
+        }
+
         if (!DigitsOnly)
             return;
         if (e.Key == Key.Space)

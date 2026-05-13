@@ -217,6 +217,35 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         _fields[fieldKey] = box;
     }
 
+    private void AddWaitMillisecondsField(string label, string fieldKey, string value)
+    {
+        var labelBlock = new TextBlock
+        {
+            Text = label,
+            FontSize = 12,
+            Margin = new Thickness(0, 10, 0, 4)
+        };
+        labelBlock.SetResourceReference(TextBlock.ForegroundProperty, "UiBrush.TextSecondary");
+        FieldsPanel.Children.Add(labelBlock);
+
+        var box = new DigitsOnlyNumericBox
+        {
+            Text = value,
+            Tag = fieldKey,
+            DigitsOnly = true,
+            ShowSpinner = true,
+            InputFontSize = 13,
+            MinInnerHeight = 40,
+            SpinnerStep = 1,
+            MinimumValue = 1,
+            MaximumValue = int.MaxValue,
+            SpinUpToolTip = _loc.GetString("Editor_PromptWaitSpinUp"),
+            SpinDownToolTip = _loc.GetString("Editor_PromptWaitSpinDown")
+        };
+        FieldsPanel.Children.Add(box);
+        _fields[fieldKey] = box;
+    }
+
     private void AddMouseButtonField(string label, MouseButtonKind selected)
     {
         var labelBlock = new TextBlock
@@ -427,7 +456,10 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                 AddBoolCheckboxField(_loc.GetString("DialogEdit_Field_Horizontal"), "horiz", mouseWheel.IsHorizontal);
                 break;
             case SyntheticWaitRecordedEvent syntheticWait:
-                AddField(_loc.GetString("DialogEdit_Field_WaitMs"), "ms", syntheticWait.AdditionalDelay.TotalMilliseconds.ToString("0"));
+                AddWaitMillisecondsField(
+                    _loc.GetString("DialogEdit_Field_WaitMs"),
+                    "ms",
+                    syntheticWait.AdditionalDelay.TotalMilliseconds.ToString("0"));
                 break;
             case FocusChangedRecordedEvent focusChanged:
                 AddField(_loc.GetString("DialogEdit_Field_WindowTitle"), "title", focusChanged.WindowTitle);
