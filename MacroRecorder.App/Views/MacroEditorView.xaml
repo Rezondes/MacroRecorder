@@ -146,7 +146,7 @@
                                   Foreground="{DynamicResource UiBrush.TextPrimary}" />
                     </StackPanel>
                 </DockPanel>
-                <DockPanel LastChildFill="False" Margin="0,0,0,10">
+                <DockPanel LastChildFill="True" Margin="0,0,0,10">
                     <TextBlock DockPanel.Dock="Left"
                                Text="{loc:Loc Editor_SectionSelection}"
                                VerticalAlignment="Center"
@@ -154,13 +154,16 @@
                                FontSize="11"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource UiBrush.TextSecondary}" />
-                    <StackPanel DockPanel.Dock="Left"
-                                Orientation="Horizontal"
+                    <Button DockPanel.Dock="Right"
+                            Content="{loc:Loc Editor_EditRow}"
+                            Style="{DynamicResource UiToolbarChromeButton}"
+                            Command="{Binding EditSelectedCommand}"
+                            IsEnabled="{Binding CanUseCommandsWhileNotRecording}" />
+                    <StackPanel Orientation="Horizontal"
                                 IsEnabled="{Binding CanUseCommandsWhileNotRecording}">
                         <Button Content="{loc:Loc Editor_MoveUp}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding MoveRowUpCommand}" />
                         <Button Content="{loc:Loc Editor_MoveDown}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding MoveRowDownCommand}" />
                         <Button Content="{loc:Loc Editor_Duplicate}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding DuplicateSelectedCommand}" />
-                        <Button Content="{loc:Loc Editor_EditRow}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding EditSelectedCommand}" />
                         <Button Content="{loc:Loc Editor_Delete}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding DeleteSelectedCommand}" />
                     </StackPanel>
                 </DockPanel>
@@ -261,7 +264,8 @@
                           VirtualizingPanel.IsVirtualizing="False"
                           AllowDrop="{Binding IsRecording, Converter={StaticResource InverseBool}}"
                           ItemsSource="{Binding Rows}"
-                          SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                          SelectionMode="Extended"
+                          SelectionChanged="OnTimelineSelectionChanged"
                           MouseDoubleClick="OnTimelineDoubleClick"
                           PreviewMouseLeftButtonDown="OnTimelinePreviewMouseLeftButtonDown"
                           PreviewMouseMove="OnTimelinePreviewMouseMove"
@@ -271,6 +275,12 @@
                           Loaded="OnLoaded"
                           Unloaded="OnUnloaded"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListView.InputBindings>
+                        <KeyBinding Key="Delete" Command="{Binding DeleteSelectedCommand}" />
+                        <KeyBinding Key="D" Modifiers="Control" Command="{Binding DuplicateSelectedCommand}" />
+                        <KeyBinding Key="Up" Modifiers="Alt" Command="{Binding MoveRowUpCommand}" />
+                        <KeyBinding Key="Down" Modifiers="Alt" Command="{Binding MoveRowDownCommand}" />
+                    </ListView.InputBindings>
                     <ListView.Resources>
                         <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource UiGridViewColumnHeader}" />
                     </ListView.Resources>

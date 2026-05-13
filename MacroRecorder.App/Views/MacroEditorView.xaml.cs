@@ -1,18 +1,23 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using MacroRecorder.App.Editor;
 using MacroRecorder.App.ViewModels;
 
 namespace MacroRecorder.App.Views;
 
 public partial class MacroEditorView : UserControl
 {
-    private const string RowDragFormat = "MacroRecorder.MacroEditor.RowIndex";
+    /// <summary>Payload: int[2] { minRowIndex, maxRowIndex } inclusive (single row uses same twice).</summary>
+    private const string RowDragFormat = "MacroRecorder.MacroEditor.RowIndexRange";
 
     private Point _dragStart;
     private int? _dragSourceRowIndex;
+    private bool _timelineSelectionSyncFromViewModel;
 
     public MacroEditorView()
     {
@@ -23,7 +28,10 @@ public partial class MacroEditorView : UserControl
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is MacroEditorViewModel editorViewModel)
+        {
             editorViewModel.RequestTimelineScrollToEnd -= OnScrollTimelineToEnd;
+            editorViewModel.RequestTimelineSetSelection -= OnTimelineSetSelectionFromViewModel;
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
@@ -34,6 +42,34 @@ public partial class MacroEditorView : UserControl
             if (owner is not null)
                 editorViewModel.AttachOwner(owner);
             editorViewModel.RequestTimelineScrollToEnd += OnScrollTimelineToEnd;
+            editorViewModel.RequestTimelineSetSelection += OnTimelineSetSelectionFromViewModel;
+        }
+    }
+
+    private void OnTimelineSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_timelineSelectionSyncFromViewModel)
+            return;
+        if (DataContext is not MacroEditorViewModel editorViewModel)
+            return;
+        if (sender is not ListView listView)
+            return;
+        var rows = listView.SelectedItems.Cast<EditorTimelineRow>().ToList();
+        editorViewModel.ApplyTimelineSelectionFromView(rows);
+    }
+
+    private void OnTimelineSetSelectionFromViewModel(IReadOnlyList<EditorTimelineRow> rows)
+    {
+        _timelineSelectionSyncFromViewModel = true;
+        try
+        {
+            TimelineList.SelectedItems.Clear();
+            foreach (var row in rows)
+                TimelineList.SelectedItems.Add(row);
+        }
+        finally
+        {
+            _timelineSelectionSyncFromViewModel = false;
         }
     }
 
@@ -68,6 +104,15 @@ public partial class MacroEditorView : UserControl
         var rowIndexFromHitItem = listView.ItemContainerGenerator.IndexFromContainer(item);
         if (rowIndexFromHitItem < 0)
             return;
+
+        // ListView collapses multi-selection on mouse down on a selected row before drag starts. Keep the
+        // selection so drag can move the whole block; Ctrl/Shift still use default selection behavior.
+        var modifiers = Keyboard.Modifiers;
+        if ((modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == 0 &&
+            listView.SelectedItems.Count > 1 &&
+            item.IsSelected)
+            mouseButtonEventArgs.Handled = true;
+
         _dragSourceRowIndex = rowIndexFromHitItem;
         _dragStart = mouseButtonEventArgs.GetPosition(null);
     }
@@ -78,12 +123,15 @@ public partial class MacroEditorView : UserControl
             return;
         if (sender is not ListView listView)
             return;
+        if (DataContext is not MacroEditorViewModel editorViewModel)
+            return;
         var delta = mouseEventArgs.GetPosition(null) - _dragStart;
         if (Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance &&
             Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance)
             return;
 
-        var dragData = new DataObject(RowDragFormat, sourceRowIndex);
+        var (dragMin, dragMax) = editorViewModel.GetDragSourceIndexRangeForHit(sourceRowIndex);
+        var dragData = new DataObject(RowDragFormat, new[] { dragMin, dragMax });
         try
         {
             DragDrop.DoDragDrop(listView, dragData, DragDropEffects.Move);
@@ -106,7 +154,19 @@ public partial class MacroEditorView : UserControl
         if (sender is not ListView listView)
             return;
 
-        if (!dragEventArgs.Data.GetDataPresent(RowDragFormat))
+        if (!dragEventArgs.Data.GetDataPresent(RowDragFormat) ||
+            dragEventArgs.Data.GetData(RowDragFormat) is not int[] range ||
+            range.Length != 2)
+        {
+            dragEventArgs.Effects = DragDropEffects.None;
+            dragEventArgs.Handled = true;
+            ClearDropIndicator();
+            return;
+        }
+
+        var pointerPositionInListView = dragEventArgs.GetPosition(listView);
+        var insertBefore = GetInsertIndexBeforeRow(listView, pointerPositionInListView);
+        if (DropIsNoOp(range[0], range[1], insertBefore))
         {
             dragEventArgs.Effects = DragDropEffects.None;
             dragEventArgs.Handled = true;
@@ -117,8 +177,6 @@ public partial class MacroEditorView : UserControl
         dragEventArgs.Effects = DragDropEffects.Move;
         dragEventArgs.Handled = true;
 
-        var pointerPositionInListView = dragEventArgs.GetPosition(listView);
-        var insertBefore = GetInsertIndexBeforeRow(listView, pointerPositionInListView);
         UpdateDropIndicator(listView, insertBefore);
     }
 
@@ -130,11 +188,22 @@ public partial class MacroEditorView : UserControl
             return;
         if (sender is not ListView listView)
             return;
-        if (!dragEventArgs.Data.GetDataPresent(RowDragFormat))
+        if (!dragEventArgs.Data.GetDataPresent(RowDragFormat) ||
+            dragEventArgs.Data.GetData(RowDragFormat) is not int[] range ||
+            range.Length != 2)
             return;
-        var sourceRowIndex = (int)dragEventArgs.Data.GetData(RowDragFormat)!;
         var insertBefore = GetInsertIndexBeforeRow(listView, dragEventArgs.GetPosition(listView));
-        editorViewModel.ReorderRowDrag(sourceRowIndex, insertBefore);
+        if (DropIsNoOp(range[0], range[1], insertBefore))
+            return;
+        editorViewModel.ReorderRowDragBlock(range[0], range[1], insertBefore);
+    }
+
+    /// <summary>Dropping inside the dragged block (or directly adjacent without moving) is a no-op.</summary>
+    private static bool DropIsNoOp(int dragMin, int dragMax, int insertBefore)
+    {
+        if (dragMin > dragMax)
+            (dragMin, dragMax) = (dragMax, dragMin);
+        return insertBefore >= dragMin && insertBefore <= dragMax + 1;
     }
 
     private void ClearDropIndicator()

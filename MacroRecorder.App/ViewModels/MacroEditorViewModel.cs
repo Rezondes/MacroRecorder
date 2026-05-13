@@ -38,6 +38,10 @@ public partial class MacroEditorViewModel : ObservableObject
 
     public event Action? RequestTimelineScrollToEnd;
 
+    public event Action<IReadOnlyList<EditorTimelineRow>>? RequestTimelineSetSelection;
+
+    private readonly List<EditorTimelineRow> _selectedTimelineRows = new();
+
     public MacroEditorViewModel(
         MacroWorkspaceService workspace,
         IUserDialogService dialogs,
@@ -281,6 +285,7 @@ public partial class MacroEditorViewModel : ObservableObject
         foreach (var row in EditorTimelineGrouper.BuildRows(_flatEvents, _loc))
             Rows.Add(row);
         UpdateStatusText();
+        ClearTimelineSelectionAfterRebuild();
     }
 
     private void UpdateStatusText()
@@ -382,7 +387,6 @@ public partial class MacroEditorViewModel : ObservableObject
         action();
         TimelineNormalizer.NormalizeInPlace(_flatEvents);
         RebuildRows();
-        SelectedRow = null;
         _isDirty = true;
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
@@ -418,46 +422,45 @@ public partial class MacroEditorViewModel : ObservableObject
         return false;
     }
 
-    private int GetInsertIndex(bool afterSelection)
+    private void ClearTimelineSelectionAfterRebuild()
     {
-        if (SelectedRow is null || !TryGetFlatSpan(SelectedRow, out var selectedFlatStart, out var selectedFlatLength))
-            return afterSelection ? _flatEvents.Count : 0;
-        return afterSelection ? selectedFlatStart + selectedFlatLength : selectedFlatStart;
+        _selectedTimelineRows.Clear();
+        SelectedRow = null;
+        RequestTimelineSetSelection?.Invoke(Array.Empty<EditorTimelineRow>());
+        NotifySelectionCommands();
     }
 
-    [RelayCommand(CanExecute = nameof(CanDelete))]
-    private void DeleteSelected()
+    public void ApplyTimelineSelectionFromView(IReadOnlyList<EditorTimelineRow> rows)
     {
-        if (SelectedRow is null)
-            return;
-
-        Mutate(() =>
+        _selectedTimelineRows.Clear();
+        foreach (var row in rows.Where(r => r is not null).OrderBy(r => Rows.IndexOf(r)))
         {
-            if (!TryGetFlatSpan(SelectedRow, out var flatStart, out var flatLength))
-                return;
+            if (Rows.Contains(row))
+                _selectedTimelineRows.Add(row);
+        }
 
-            var flatEnd = flatStart + flatLength - 1;
-            var gap = TimelinePlaybackGapCollapse.ComputeGapToSubtractBeforeRemovingRange(_flatEvents, flatStart, flatEnd);
-
-            switch (SelectedRow)
-            {
-                case EditorMousePathRow path:
-                    foreach (var m in path.Moves)
-                        _flatEvents.RemoveAll(e => ReferenceEquals(e, m));
-                    break;
-                case EditorSingleEventRow single:
-                    _flatEvents.RemoveAll(e => ReferenceEquals(e, single.Event));
-                    break;
-            }
-
-            if (gap > TimeSpan.Zero && flatStart < _flatEvents.Count)
-                TimelinePlaybackGapCollapse.ShiftElapsedEarlierFromIndex(_flatEvents, flatStart, gap);
-        });
+        var primary = _selectedTimelineRows.FirstOrDefault();
+        if (!ReferenceEquals(SelectedRow, primary))
+            SelectedRow = primary;
+        else
+            NotifySelectionCommands();
     }
 
-    private bool CanDelete() => !IsRecording && SelectedRow is not null;
+    private void SetTimelineSelectionByRowIndices(int minInclusive, int maxInclusive)
+    {
+        if (minInclusive < 0 || maxInclusive >= Rows.Count || minInclusive > maxInclusive)
+            return;
+        var slice = new List<EditorTimelineRow>();
+        for (var i = minInclusive; i <= maxInclusive; i++)
+            slice.Add(Rows[i]);
+        _selectedTimelineRows.Clear();
+        _selectedTimelineRows.AddRange(slice);
+        SelectedRow = _selectedTimelineRows[0];
+        RequestTimelineSetSelection?.Invoke(_selectedTimelineRows);
+        NotifySelectionCommands();
+    }
 
-    partial void OnSelectedRowChanged(EditorTimelineRow? value)
+    private void NotifySelectionCommands()
     {
         DeleteSelectedCommand.NotifyCanExecuteChanged();
         MoveRowUpCommand.NotifyCanExecuteChanged();
@@ -466,68 +469,169 @@ public partial class MacroEditorViewModel : ObservableObject
         EditSelectedCommand.NotifyCanExecuteChanged();
     }
 
-    private bool TryGetSelectedRowIndex(out int index)
+    private bool TryGetContiguousSelectionBlock(out int minIndex, out int maxIndex)
     {
-        index = SelectedRow is null ? -1 : Rows.IndexOf(SelectedRow);
-        return index >= 0;
+        minIndex = 0;
+        maxIndex = 0;
+        if (_selectedTimelineRows.Count == 0)
+            return false;
+
+        var indices = _selectedTimelineRows.Select(r => Rows.IndexOf(r)).Where(i => i >= 0).OrderBy(i => i).ToList();
+        if (indices.Count != _selectedTimelineRows.Count)
+            return false;
+
+        minIndex = indices[0];
+        maxIndex = indices[^1];
+        return maxIndex - minIndex + 1 == indices.Count;
     }
 
-    private void SelectRowByIndex(int index)
+    private void RemoveTimelineRowFromFlat(EditorTimelineRow row)
     {
-        if (index >= 0 && index < Rows.Count)
-            SelectedRow = Rows[index];
+        if (!TryGetFlatSpan(row, out var flatStart, out var flatLength))
+            return;
+
+        var flatEnd = flatStart + flatLength - 1;
+        var gap = TimelinePlaybackGapCollapse.ComputeGapToSubtractBeforeRemovingRange(_flatEvents, flatStart, flatEnd);
+
+        switch (row)
+        {
+            case EditorMousePathRow path:
+                foreach (var m in path.Moves)
+                    _flatEvents.RemoveAll(e => ReferenceEquals(e, m));
+                break;
+            case EditorSingleEventRow single:
+                _flatEvents.RemoveAll(e => ReferenceEquals(e, single.Event));
+                break;
+        }
+
+        if (gap > TimeSpan.Zero && flatStart < _flatEvents.Count)
+            TimelinePlaybackGapCollapse.ShiftElapsedEarlierFromIndex(_flatEvents, flatStart, gap);
+    }
+
+    private int GetInsertIndex(bool afterSelection)
+    {
+        if (_selectedTimelineRows.Count > 0)
+        {
+            var minFlat = int.MaxValue;
+            var maxFlatExclusive = int.MinValue;
+            foreach (var row in _selectedTimelineRows)
+            {
+                if (!TryGetFlatSpan(row, out var flatStart, out var flatLength))
+                    continue;
+                minFlat = Math.Min(minFlat, flatStart);
+                maxFlatExclusive = Math.Max(maxFlatExclusive, flatStart + flatLength);
+            }
+
+            if (minFlat != int.MaxValue)
+                return afterSelection ? maxFlatExclusive : minFlat;
+        }
+
+        if (SelectedRow is null || !TryGetFlatSpan(SelectedRow, out var selectedFlatStart, out var selectedFlatLength))
+            return afterSelection ? _flatEvents.Count : 0;
+        return afterSelection ? selectedFlatStart + selectedFlatLength : selectedFlatStart;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanDelete))]
+    private void DeleteSelected()
+    {
+        if (_selectedTimelineRows.Count == 0)
+            return;
+
+        var orderedByFlatStartDesc = _selectedTimelineRows
+            .Where(row => TryGetFlatSpan(row, out _, out _))
+            .OrderByDescending(row =>
+            {
+                TryGetFlatSpan(row, out var start, out _);
+                return start;
+            })
+            .ToList();
+
+        if (orderedByFlatStartDesc.Count == 0)
+            return;
+
+        Mutate(() =>
+        {
+            foreach (var row in orderedByFlatStartDesc)
+                RemoveTimelineRowFromFlat(row);
+        });
+    }
+
+    private bool CanDelete() => !IsRecording && _selectedTimelineRows.Count > 0;
+
+    partial void OnSelectedRowChanged(EditorTimelineRow? value)
+    {
+        NotifySelectionCommands();
     }
 
     [RelayCommand(CanExecute = nameof(CanMoveUp))]
     private void MoveRowUp()
     {
-        if (!TryGetSelectedRowIndex(out var selectedRowIndex) || selectedRowIndex == 0)
+        if (!TryGetContiguousSelectionBlock(out var minIndex, out var maxIndex) || minIndex == 0)
             return;
-        var selectedAfterMove = selectedRowIndex - 1;
+
+        var selectedAfterMoveMin = minIndex - 1;
         Mutate(() =>
         {
-            if (!TryGetFlatSpan(Rows[selectedRowIndex - 1], out var aboveRowFlatStart, out var aboveRowFlatLength))
+            if (!TryGetFlatSpan(Rows[minIndex - 1], out var aboveRowFlatStart, out _))
                 return;
-            if (!TryGetFlatSpan(Rows[selectedRowIndex], out var selectedRowFlatStart, out var selectedRowFlatLength))
+            if (!TryGetFlatSpan(Rows[minIndex], out var blockStart, out _))
                 return;
-            if (selectedRowFlatStart < aboveRowFlatStart)
+            if (blockStart < aboveRowFlatStart)
                 return;
-            var movedBlock = _flatEvents.Skip(selectedRowFlatStart).Take(selectedRowFlatLength).Select(CloneEvent).ToList();
-            _flatEvents.RemoveRange(selectedRowFlatStart, selectedRowFlatLength);
+            if (!TryGetFlatSpan(Rows[maxIndex], out var blockEndRowStart, out var blockEndRowLength))
+                return;
+            var blockLength = blockEndRowStart + blockEndRowLength - blockStart;
+            if (blockLength <= 0)
+                return;
+            var movedBlock = _flatEvents.Skip(blockStart).Take(blockLength).Select(CloneEvent).ToList();
+            _flatEvents.RemoveRange(blockStart, blockLength);
             _flatEvents.InsertRange(aboveRowFlatStart, movedBlock);
         });
-        SelectRowByIndex(selectedAfterMove);
+        SetTimelineSelectionByRowIndices(selectedAfterMoveMin, selectedAfterMoveMin + (maxIndex - minIndex));
     }
 
-    private bool CanMoveUp() => !IsRecording && TryGetSelectedRowIndex(out var selectedRowIndex) && selectedRowIndex > 0;
+    private bool CanMoveUp() =>
+        !IsRecording &&
+        TryGetContiguousSelectionBlock(out var minIndex, out _) &&
+        minIndex > 0;
 
     [RelayCommand(CanExecute = nameof(CanMoveDown))]
     private void MoveRowDown()
     {
-        if (!TryGetSelectedRowIndex(out var selectedRowIndex) || selectedRowIndex >= Rows.Count - 1)
+        if (!TryGetContiguousSelectionBlock(out var minIndex, out var maxIndex) || maxIndex >= Rows.Count - 1)
             return;
-        var selectedAfterMove = selectedRowIndex + 1;
+
+        var selectedAfterMoveMin = minIndex + 1;
         Mutate(() =>
         {
-            if (!TryGetFlatSpan(Rows[selectedRowIndex], out var selectedRowFlatStart, out var selectedRowFlatLength))
+            if (!TryGetFlatSpan(Rows[minIndex], out var blockStart, out _))
                 return;
-            if (!TryGetFlatSpan(Rows[selectedRowIndex + 1], out var belowRowFlatStart, out var belowRowFlatLength))
+            if (!TryGetFlatSpan(Rows[maxIndex], out var blockEndRowStart, out var blockEndRowLength))
                 return;
-            if (belowRowFlatStart < selectedRowFlatStart)
+            if (!TryGetFlatSpan(Rows[maxIndex + 1], out var belowRowFlatStart, out var belowRowFlatLength))
                 return;
-            var movedBlock = _flatEvents.Skip(selectedRowFlatStart).Take(selectedRowFlatLength).Select(CloneEvent).ToList();
-            _flatEvents.RemoveRange(selectedRowFlatStart, selectedRowFlatLength);
-            _flatEvents.InsertRange(selectedRowFlatStart + belowRowFlatLength, movedBlock);
+            if (belowRowFlatStart < blockStart)
+                return;
+            var blockLength = blockEndRowStart + blockEndRowLength - blockStart;
+            if (blockLength <= 0)
+                return;
+            var movedBlock = _flatEvents.Skip(blockStart).Take(blockLength).Select(CloneEvent).ToList();
+            _flatEvents.RemoveRange(blockStart, blockLength);
+            _flatEvents.InsertRange(blockStart + belowRowFlatLength, movedBlock);
         });
-        SelectRowByIndex(selectedAfterMove);
+        SetTimelineSelectionByRowIndices(selectedAfterMoveMin, selectedAfterMoveMin + (maxIndex - minIndex));
     }
 
-    private bool CanMoveDown() => !IsRecording && TryGetSelectedRowIndex(out var selectedRowIndex) && selectedRowIndex < Rows.Count - 1;
+    private bool CanMoveDown() =>
+        !IsRecording &&
+        TryGetContiguousSelectionBlock(out _, out var maxIndex) &&
+        maxIndex < Rows.Count - 1;
 
     [RelayCommand(CanExecute = nameof(CanDuplicate))]
     private void DuplicateSelected()
     {
-        if (SelectedRow is null || !TryGetFlatSpan(SelectedRow, out var duplicateFlatStart, out var duplicateFlatLength))
+        if (_selectedTimelineRows.Count != 1 ||
+            !TryGetFlatSpan(_selectedTimelineRows[0], out var duplicateFlatStart, out var duplicateFlatLength))
             return;
         Mutate(() =>
         {
@@ -536,27 +640,48 @@ public partial class MacroEditorViewModel : ObservableObject
         });
     }
 
-    private bool CanDuplicate() => !IsRecording && SelectedRow is not null;
+    private bool CanDuplicate() => !IsRecording && _selectedTimelineRows.Count == 1;
 
     /// <summary>
-    /// Moves the timeline row at <paramref name="fromIndex"/> so it sits directly before the row
-    /// that currently has index <paramref name="insertBeforeRowIndex"/> (0 = before first row).
-    /// Use <see cref="Rows"/>.Count to append after the last row.
+    /// When dragging the row under the pointer, returns the contiguous selected row index range if the hit row
+    /// is inside that selection; otherwise a single-row range.
     /// </summary>
-    public void ReorderRowDrag(int fromIndex, int insertBeforeRowIndex)
+    public (int minIndex, int maxIndex) GetDragSourceIndexRangeForHit(int hitRowIndex)
+    {
+        if (hitRowIndex < 0 || hitRowIndex >= Rows.Count)
+            return (0, 0);
+        if (TryGetContiguousSelectionBlock(out var selMin, out var selMax) &&
+            hitRowIndex >= selMin &&
+            hitRowIndex <= selMax)
+            return (selMin, selMax);
+        return (hitRowIndex, hitRowIndex);
+    }
+
+    /// <summary>
+    /// Moves rows <paramref name="minRowIndex"/>..<paramref name="maxRowIndex"/> so they sit directly before the row
+    /// at <paramref name="insertBeforeRowIndex"/> (or appends when <paramref name="insertBeforeRowIndex"/> equals <see cref="Rows"/>.Count).
+    /// </summary>
+    public void ReorderRowDragBlock(int minRowIndex, int maxRowIndex, int insertBeforeRowIndex)
     {
         if (IsRecording)
             return;
-        if (fromIndex < 0 || fromIndex >= Rows.Count)
+        if (minRowIndex > maxRowIndex)
+            (minRowIndex, maxRowIndex) = (maxRowIndex, minRowIndex);
+        if (minRowIndex < 0 || maxRowIndex >= Rows.Count)
             return;
         if (insertBeforeRowIndex < 0 || insertBeforeRowIndex > Rows.Count)
             return;
-        if (insertBeforeRowIndex == fromIndex || insertBeforeRowIndex == fromIndex + 1)
+        if (insertBeforeRowIndex >= minRowIndex && insertBeforeRowIndex <= maxRowIndex + 1)
             return;
 
         Mutate(() =>
         {
-            if (!TryGetFlatSpan(Rows[fromIndex], out var fromRowFlatStart, out var fromRowFlatLength))
+            if (!TryGetFlatSpan(Rows[minRowIndex], out var blockStart, out _))
+                return;
+            if (!TryGetFlatSpan(Rows[maxRowIndex], out var lastRowStart, out var lastLen))
+                return;
+            var blockLength = lastRowStart + lastLen - blockStart;
+            if (blockLength <= 0)
                 return;
 
             int targetRowFlatStart;
@@ -565,19 +690,26 @@ public partial class MacroEditorViewModel : ObservableObject
             else if (!TryGetFlatSpan(Rows[insertBeforeRowIndex], out targetRowFlatStart, out _))
                 return;
 
-            var movedBlock = _flatEvents.Skip(fromRowFlatStart).Take(fromRowFlatLength).Select(CloneEvent).ToList();
-            _flatEvents.RemoveRange(fromRowFlatStart, fromRowFlatLength);
+            var movedBlock = _flatEvents.Skip(blockStart).Take(blockLength).Select(CloneEvent).ToList();
+            _flatEvents.RemoveRange(blockStart, blockLength);
 
             int flatInsertIndex;
             if (insertBeforeRowIndex >= Rows.Count)
                 flatInsertIndex = _flatEvents.Count;
-            else if (fromIndex < insertBeforeRowIndex)
-                flatInsertIndex = targetRowFlatStart - fromRowFlatLength;
+            else if (maxRowIndex < insertBeforeRowIndex)
+                flatInsertIndex = targetRowFlatStart - blockLength;
             else
                 flatInsertIndex = targetRowFlatStart;
 
             _flatEvents.InsertRange(flatInsertIndex, movedBlock);
         });
+
+        var span = maxRowIndex - minRowIndex;
+        var newMin = insertBeforeRowIndex <= minRowIndex
+            ? insertBeforeRowIndex
+            : insertBeforeRowIndex - span - 1;
+        if (newMin >= 0 && newMin + span < Rows.Count)
+            SetTimelineSelectionByRowIndices(newMin, newMin + span);
     }
 
     [RelayCommand(CanExecute = nameof(CanInsertWhileNotRecording))]
@@ -922,13 +1054,16 @@ public partial class MacroEditorViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanEditOrInform))]
     private void EditSelected()
     {
-        if (SelectedRow is EditorMousePathRow)
+        if (_selectedTimelineRows.Count != 1)
+            return;
+        var selectedOnly = _selectedTimelineRows[0];
+        if (selectedOnly is EditorMousePathRow)
         {
             _dialogs.ShowInfo(_loc.GetString("Editor_EditMousePathNotSupported"));
             return;
         }
 
-        if (SelectedRow is not EditorSingleEventRow single)
+        if (selectedOnly is not EditorSingleEventRow single)
             return;
 
         var owner = _ownerWindow ?? global::System.Windows.Application.Current?.MainWindow;
@@ -945,7 +1080,7 @@ public partial class MacroEditorViewModel : ObservableObject
         });
     }
 
-    private bool CanEditOrInform() => !IsRecording && SelectedRow is not null;
+    private bool CanEditOrInform() => !IsRecording && _selectedTimelineRows.Count == 1;
 
     private bool HasUnsavedEditorState()
     {
