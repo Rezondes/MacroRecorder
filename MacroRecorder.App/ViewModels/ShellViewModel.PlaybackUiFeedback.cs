@@ -9,6 +9,11 @@ namespace MacroRecorder.App.ViewModels;
 
 public partial class ShellViewModel
 {
+    /// <summary>After the last injected input, keep overlay visible this long before dismiss + cursor restore.</summary>
+    private static readonly TimeSpan PlaybackPostPlayTailDelay = TimeSpan.FromMilliseconds(500);
+
+    private DispatcherTimer? _playbackPostPlayTailTimer;
+
     [ObservableProperty]
     private bool isPlaybackOverlayVisible;
 
@@ -27,6 +32,7 @@ public partial class ShellViewModel
         _ = estimatedPlayDuration;
         RunOnUi(DispatcherPriority.Normal, () =>
         {
+            CancelPlaybackPostPlayTailTimer();
             PlaybackOverlayTitle = _loc.GetString("Playback_Overlay_WarningTitle");
             PlaybackOverlayBody = _loc.GetString("Playback_Overlay_WarningBody");
             PlaybackOverlayCountdown = "";
@@ -54,19 +60,43 @@ public partial class ShellViewModel
         if (d is null)
             return;
 
-        void Clear()
+        void SchedulePostPlayTail()
         {
-            IsPlaybackOverlayVisible = false;
-            PlaybackOverlayTitle = "";
-            PlaybackOverlayBody = "";
-            PlaybackOverlayCountdown = "";
-            PlaybackCursorRestoreSession.TryRestoreAndClear();
+            CancelPlaybackPostPlayTailTimer();
+            var timer = new DispatcherTimer
+            {
+                Interval = PlaybackPostPlayTailDelay
+            };
+            _playbackPostPlayTailTimer = timer;
+            timer.Tick += OnPlaybackPostPlayTailTimerTick;
+            timer.Start();
         }
 
         if (d.CheckAccess())
-            Clear();
+            SchedulePostPlayTail();
         else
-            d.Invoke(Clear, DispatcherPriority.Normal);
+            d.Invoke(SchedulePostPlayTail, DispatcherPriority.Normal);
+    }
+
+    private void CancelPlaybackPostPlayTailTimer()
+    {
+        if (_playbackPostPlayTailTimer is null)
+            return;
+        _playbackPostPlayTailTimer.Stop();
+        _playbackPostPlayTailTimer.Tick -= OnPlaybackPostPlayTailTimerTick;
+        _playbackPostPlayTailTimer = null;
+    }
+
+    private void OnPlaybackPostPlayTailTimerTick(object? sender, EventArgs e)
+    {
+        if (sender is not DispatcherTimer timer || !ReferenceEquals(timer, _playbackPostPlayTailTimer))
+            return;
+        CancelPlaybackPostPlayTailTimer();
+        IsPlaybackOverlayVisible = false;
+        PlaybackOverlayTitle = "";
+        PlaybackOverlayBody = "";
+        PlaybackOverlayCountdown = "";
+        PlaybackCursorRestoreSession.TryRestoreAndClear();
     }
 
     private void RunOnUi(DispatcherPriority priority, Action action)
