@@ -113,6 +113,7 @@ public partial class ShellViewModel
     [RelayCommand]
     private void CancelPlaybackFromOverlay()
     {
+        PlaybackCursorRestoreSession.Disarm();
         _services.GetRequiredService<IPlaybackService>().RequestUserCancel();
     }
 

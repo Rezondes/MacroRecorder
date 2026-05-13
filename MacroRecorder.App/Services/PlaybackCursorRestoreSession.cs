@@ -34,4 +34,10 @@ public static class PlaybackCursorRestoreSession
         _armed = false;
         CursorInterop.SetScreenPosition(_screenX, _screenY);
     }
+
+    /// <summary>Clears a pending restore without moving the cursor (e.g. user cancelled playback from the overlay).</summary>
+    public static void Disarm()
+    {
+        _armed = false;
+    }
 }

@@ -855,6 +855,10 @@ public partial class MacroEditorViewModel : ObservableObject
             var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
             await _playback.PlayAsync(test, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
         }
+        catch (PlaybackAbortedByUserRequestException)
+        {
+            // User cancelled from overlay during start delay; no toast or cursor restore.
+        }
         catch (PlaybackInterruptedByUserException)
         {
             _inAppInfo.RequestInfo(

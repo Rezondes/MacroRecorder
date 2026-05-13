@@ -16,11 +16,15 @@ public sealed class SendInputPlaybackService : IPlaybackService
     /// visible seconds to about once per second.</summary>
     private const int PlayingUiThrottleMs = 1000;
 
+    /// <summary>Throttle start-delay overlay updates; avoids flooding the UI dispatcher while the grace loop runs.</summary>
+    private const int StartDelayUiThrottleMs = 250;
+
     private readonly object _playLock = new();
     private readonly NativeMethods.LowLevelProc _interruptKbProc;
     private readonly NativeMethods.LowLevelProc _interruptMsProc;
     private readonly Func<IPlaybackUiFeedback?> _resolveFeedback;
     private CancellationTokenSource? _interruptCts;
+    private volatile bool _explicitPlaybackAbortFromHost;
     private nint _interruptKeyboardHook;
     private nint _interruptMouseHook;
     private Stopwatch? _userInterruptGraceStopwatch;
@@ -40,7 +44,14 @@ public sealed class SendInputPlaybackService : IPlaybackService
                 RunPlayLocked(macro, cancellationToken, userInputInterruptGraceMilliseconds);
         }, cancellationToken);
 
-    public void RequestUserCancel() => _interruptCts?.Cancel();
+    public void RequestUserCancel()
+    {
+        if (_interruptCts is { IsCancellationRequested: false })
+        {
+            _explicitPlaybackAbortFromHost = true;
+            _interruptCts.Cancel();
+        }
+    }
 
     private void RunPlayLocked(Macro macro, CancellationToken cancellationToken, int userInputInterruptGraceMilliseconds)
     {
@@ -50,23 +61,11 @@ public sealed class SendInputPlaybackService : IPlaybackService
         using var userInterrupt = new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, userInterrupt.Token);
         _interruptCts = userInterrupt;
-        var module = NativeMethods.GetModuleHandle(null);
-        _interruptKeyboardHook = NativeMethods.SetWindowsHookEx(
-            NativeMethods.WH_KEYBOARD_LL, _interruptKbProc, module, 0);
-        _interruptMouseHook = NativeMethods.SetWindowsHookEx(
-            NativeMethods.WH_MOUSE_LL, _interruptMsProc, module, 0);
-
-        if (_interruptKeyboardHook == nint.Zero || _interruptMouseHook == nint.Zero)
-        {
-            CleanupInterruptHooks();
-            _interruptCts = null;
-            throw new InvalidOperationException(
-                "Playback: failed to install low-level keyboard or mouse hooks for user-interrupt detection.");
-        }
 
         _userInterruptGraceMs = Math.Clamp(userInputInterruptGraceMilliseconds, 0, 300_000);
         _userInterruptGraceStopwatch = Stopwatch.StartNew();
 
+        var module = NativeMethods.GetModuleHandle(null);
         var ordered = macro.Events.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
         var estimatedPlay = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(ordered);
         var overlayBegan = false;
@@ -77,16 +76,25 @@ public sealed class SendInputPlaybackService : IPlaybackService
             feedback?.Begin(macro, _userInterruptGraceMs, estimatedPlay);
             overlayBegan = true;
 
+            // Low-level hooks are installed only after the start delay. WH_MOUSE_LL / WH_KEYBOARD_LL run on this
+            // thread and would otherwise delay system input during grace; user cancel during grace uses CTS only.
             if (_userInterruptGraceMs > 0)
             {
                 var graceSw = Stopwatch.StartNew();
+                var lastStartDelayUiMs = Environment.TickCount64 - StartDelayUiThrottleMs;
                 while (graceSw.ElapsedMilliseconds < _userInterruptGraceMs)
                 {
                     linked.Token.ThrowIfCancellationRequested();
                     var remMs = _userInterruptGraceMs - graceSw.ElapsedMilliseconds;
                     if (remMs < 0)
                         remMs = 0;
-                    feedback?.UpdateStartDelayRemaining(TimeSpan.FromMilliseconds(remMs));
+                    var nowUi = Environment.TickCount64;
+                    if (nowUi - lastStartDelayUiMs >= StartDelayUiThrottleMs)
+                    {
+                        lastStartDelayUiMs = nowUi;
+                        feedback?.UpdateStartDelayRemaining(TimeSpan.FromMilliseconds(remMs));
+                    }
+
                     var chunk = (int)Math.Min(100, remMs);
                     if (chunk <= 0)
                         break;
@@ -98,6 +106,8 @@ public sealed class SendInputPlaybackService : IPlaybackService
             else
                 feedback?.UpdatePlayingRemaining(estimatedPlay);
 
+            TryInstallInterruptHooks(module);
+
             PlayCore(ordered, estimatedPlay, linked.Token, feedback);
         }
         catch (OperationCanceledException)
@@ -105,10 +115,14 @@ public sealed class SendInputPlaybackService : IPlaybackService
             if (cancellationToken.IsCancellationRequested)
                 throw;
 
+            if (_explicitPlaybackAbortFromHost)
+                throw new PlaybackAbortedByUserRequestException();
+
             throw new PlaybackInterruptedByUserException();
         }
         finally
         {
+            _explicitPlaybackAbortFromHost = false;
             if (overlayBegan)
                 feedback?.End();
 
@@ -117,6 +131,24 @@ public sealed class SendInputPlaybackService : IPlaybackService
             _userInterruptGraceStopwatch = null;
             _userInterruptGraceMs = 0;
         }
+    }
+
+    private void TryInstallInterruptHooks(nint module)
+    {
+        if (_interruptKeyboardHook != nint.Zero || _interruptMouseHook != nint.Zero)
+            return;
+
+        _interruptKeyboardHook = NativeMethods.SetWindowsHookEx(
+            NativeMethods.WH_KEYBOARD_LL, _interruptKbProc, module, 0);
+        _interruptMouseHook = NativeMethods.SetWindowsHookEx(
+            NativeMethods.WH_MOUSE_LL, _interruptMsProc, module, 0);
+
+        if (_interruptKeyboardHook != nint.Zero && _interruptMouseHook != nint.Zero)
+            return;
+
+        CleanupInterruptHooks();
+        throw new InvalidOperationException(
+            "Playback: failed to install low-level keyboard or mouse hooks for user-interrupt detection.");
     }
 
     private void CleanupInterruptHooks()

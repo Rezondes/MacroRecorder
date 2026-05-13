@@ -72,6 +72,10 @@ public partial class MainViewModel : ObservableObject
             var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
             await _playback.PlayAsync(macro, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
         }
+        catch (PlaybackAbortedByUserRequestException)
+        {
+            // User cancelled from overlay during start delay; no toast or cursor restore.
+        }
         catch (PlaybackInterruptedByUserException)
         {
             _inAppInfo.RequestInfo(
