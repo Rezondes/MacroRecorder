@@ -1,5 +1,6 @@
 using System.Windows;
 using MacroRecorder.Wpf;
+using MacroRecorder.Wpf.Controls;
 
 namespace MacroRecorder.App.Services;
 
@@ -31,6 +32,7 @@ public sealed class AppearanceService
 
     public void Initialize(global::System.Windows.Application app)
     {
+        UiToolTip.ConfigureToolTipService();
         var controls = ThemeResourceBuilder.LoadAppControls();
         app.Resources.MergedDictionaries.Add(controls);
         _themeDictionary = ThemeResourceBuilder.Build(PreviewTheme, PreviewIsDark);

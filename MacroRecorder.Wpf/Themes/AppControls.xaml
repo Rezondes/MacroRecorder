@@ -1,7 +1,55 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
                     xmlns:swc="clr-namespace:System.Windows.Controls;assembly=PresentationFramework">
     <swc:BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+    <!-- Implicit: all ToolTip instances (string, loc markup, bindings) get themed chrome. -->
+    <Style TargetType="ToolTip">
+        <Style.Resources>
+            <DataTemplate DataType="{x:Type sys:String}">
+                <TextBlock Text="{Binding}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource UiBrush.TextPrimary}"
+                           FontSize="13" />
+            </DataTemplate>
+        </Style.Resources>
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="MaxWidth" Value="320" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToolTip">
+                    <Border Padding="0"
+                            Background="Transparent"
+                            SnapsToDevicePixels="True">
+                        <Border Margin="0,0,4,4"
+                                CornerRadius="8"
+                                Background="{DynamicResource UiBrush.SurfaceElevated}"
+                                BorderBrush="{DynamicResource UiBrush.Border}"
+                                BorderThickness="1"
+                                Padding="10,8"
+                                MaxWidth="{TemplateBinding MaxWidth}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="14"
+                                                  ShadowDepth="1"
+                                                  Direction="270"
+                                                  Opacity="0.22"
+                                                  Color="Black" />
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}" />
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <!-- Shared flat template: Background comes from the Button (Style triggers update it). -->
     <ControlTemplate x:Key="UiFlatButtonTemplate" TargetType="Button">

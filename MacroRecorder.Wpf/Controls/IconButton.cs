@@ -2,6 +2,10 @@ using System.Windows;
 
 namespace MacroRecorder.Wpf.Controls;
 
+/// <summary>
+/// Attached properties for MDL2 icon chrome on <see cref="System.Windows.Controls.Button"/>.
+/// Tooltips use the shared <see cref="UiToolTip"/> styling (implicit <c>ToolTip</c> style in AppControls).
+/// </summary>
 public static class IconButton
 {
     public static readonly DependencyProperty IconGlyphProperty = DependencyProperty.RegisterAttached(
