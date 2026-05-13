@@ -6,7 +6,9 @@ public sealed record RecordingMetadata(
     long StopwatchFrequency,
     RecordingEnvironment? Environment = null,
     bool UseFocusBoundMouseCoordinates = false,
-    MousePlaybackAnchor? MouseAnchor = null)
+    MousePlaybackAnchor? MouseAnchor = null,
+    /// <summary>Editor preference: record low-level mouse moves when recording in the macro editor (persisted in macro JSON).</summary>
+    bool RecordMouseMoves = true)
 {
     public const int CurrentSchemaVersion = 2;
 
@@ -17,8 +19,9 @@ public sealed record RecordingMetadata(
             System.Diagnostics.Stopwatch.Frequency,
             environment,
             UseFocusBoundMouseCoordinates: false,
-            MouseAnchor: null);
+            MouseAnchor: null,
+            RecordMouseMoves: true);
 
     public static RecordingMetadata Empty() =>
-        new(CurrentSchemaVersion, DateTimeOffset.MinValue, System.Diagnostics.Stopwatch.Frequency, null, false, null);
+        new(CurrentSchemaVersion, DateTimeOffset.MinValue, System.Diagnostics.Stopwatch.Frequency, null, false, null, true);
 }

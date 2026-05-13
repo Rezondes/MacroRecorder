@@ -263,6 +263,19 @@ public partial class MacroEditorViewModel : ObservableObject
         if (_macro is null)
             return;
         UseFocusBoundMousePositions = _macro.Metadata.UseFocusBoundMouseCoordinates;
+        RecordMouseMoves = _macro.Metadata.RecordMouseMoves;
+    }
+
+    partial void OnRecordMouseMovesChanged(bool value)
+    {
+        if (_macro is null || IsRecording)
+            return;
+        var meta = _macro.Metadata;
+        if (meta.RecordMouseMoves == value)
+            return;
+        _macro.SetMetadata(meta with { RecordMouseMoves = value });
+        _isDirty = true;
+        NotifySaveCanExecute();
     }
 
     partial void OnUseFocusBoundMousePositionsChanged(bool value)
@@ -968,7 +981,8 @@ public partial class MacroEditorViewModel : ObservableObject
         var meta = RecordingMetadata.ForNewSession(result.Environment) with
         {
             UseFocusBoundMouseCoordinates = result.UseFocusBoundMouseCoordinates,
-            MouseAnchor = null
+            MouseAnchor = null,
+            RecordMouseMoves = RecordMouseMoves
         };
         var newSessionEvents = result.Events.ToList();
         RecordingStopArtifactTrimmer.TrimTrailingHostStopArtifacts(

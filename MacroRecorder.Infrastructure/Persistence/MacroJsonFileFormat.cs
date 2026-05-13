@@ -60,8 +60,7 @@ public static class MacroJsonFileFormat
         var idString = ReadIdString(root.GetProperty("id"));
         var name = root.GetProperty("name").GetString() ?? "";
         var metadata = root.TryGetProperty("metadata", out var metaElement)
-            ? JsonSerializer.Deserialize<RecordingMetadata>(metaElement.GetRawText(), JsonOptions)
-              ?? RecordingMetadata.Empty()
+            ? DeserializeMetadata(metaElement)
             : RecordingMetadata.Empty();
         var wasModified = root.TryGetProperty("wasModifiedAfterRecording", out var w) &&
                           w.ValueKind == JsonValueKind.True;
@@ -109,6 +108,19 @@ public static class MacroJsonFileFormat
             documentVersion,
             createdAtUtc,
             lastModifiedAtUtc);
+    }
+
+    /// <summary>JSON deserializer sets missing booleans to false; <see cref="RecordingMetadata.RecordMouseMoves"/> defaults to true when absent.</summary>
+    private static RecordingMetadata DeserializeMetadata(JsonElement metaElement)
+    {
+        var metadata = JsonSerializer.Deserialize<RecordingMetadata>(metaElement.GetRawText(), JsonOptions)
+            ?? RecordingMetadata.Empty();
+        var recordMouseMoves = true;
+        if (metaElement.TryGetProperty("recordMouseMoves", out var recordMouseMovesElement) &&
+            (recordMouseMovesElement.ValueKind == JsonValueKind.True ||
+             recordMouseMovesElement.ValueKind == JsonValueKind.False))
+            recordMouseMoves = recordMouseMovesElement.GetBoolean();
+        return metadata with { RecordMouseMoves = recordMouseMoves };
     }
 
     private static string ReadIdString(JsonElement idElement)
