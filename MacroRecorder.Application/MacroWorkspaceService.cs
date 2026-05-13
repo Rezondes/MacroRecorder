@@ -16,4 +16,7 @@ public sealed class MacroWorkspaceService(IMacroRepository repository)
 
     public Task DeleteAsync(MacroId id, CancellationToken cancellationToken = default) =>
         repository.DeleteAsync(id, cancellationToken);
+
+    public Task SaveMacroDisplayOrderAsync(IReadOnlyList<MacroId> orderedIds, CancellationToken cancellationToken = default) =>
+        repository.SaveDisplayOrderAsync(orderedIds, cancellationToken);
 }

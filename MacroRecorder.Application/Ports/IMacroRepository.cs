@@ -11,6 +11,9 @@ public interface IMacroRepository
     Task SaveAsync(Macro macro, CancellationToken cancellationToken = default);
 
     Task DeleteAsync(MacroId id, CancellationToken cancellationToken = default);
+
+    /// <summary>Persists overview list order (top to bottom). Unknown files on disk are still merged by <see cref="ListAsync"/>.</summary>
+    Task SaveDisplayOrderAsync(IReadOnlyList<MacroId> orderedIds, CancellationToken cancellationToken = default);
 }
 
 public sealed record MacroSummary(

@@ -17,9 +17,18 @@
                 BorderThickness="1"
                 CornerRadius="6"
                 Padding="0,4">
-            <ListView ItemsSource="{Binding Macros}"
+            <Grid ClipToBounds="True">
+            <ListView x:Name="MacroOverviewList"
+                      ItemsSource="{Binding Macros}"
                       BorderThickness="0"
                       Background="Transparent"
+                      AllowDrop="True"
+                      PreviewMouseLeftButtonDown="OnPreviewMouseLeftButtonDown"
+                      PreviewMouseLeftButtonUp="OnPreviewMouseLeftButtonUp"
+                      PreviewMouseMove="OnPreviewMouseMove"
+                      DragOver="OnMacroListDragOver"
+                      DragLeave="OnMacroListDragLeave"
+                      Drop="OnMacroListDrop"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
@@ -132,6 +141,18 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+            <Canvas x:Name="DropIndicatorCanvas"
+                    IsHitTestVisible="False"
+                    Background="Transparent">
+                <Rectangle x:Name="DropInsertIndicator"
+                           Height="3"
+                           Fill="{DynamicResource UiBrush.Primary}"
+                           RadiusX="1"
+                           RadiusY="1"
+                           Visibility="Collapsed"
+                           IsHitTestVisible="False" />
+            </Canvas>
+            </Grid>
         </Border>
     </DockPanel>
 </UserControl>

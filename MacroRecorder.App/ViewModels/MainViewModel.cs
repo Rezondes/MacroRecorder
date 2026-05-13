@@ -56,6 +56,25 @@ public partial class MainViewModel : ObservableObject
             Macros.Add(macroSummary);
     }
 
+    /// <summary>Reorders the overview list and persists order for the next <see cref="RefreshAsync"/>.</summary>
+    public async Task ApplyMacroReorderAsync(int oldIndex, int newIndex)
+    {
+        if (oldIndex == newIndex)
+            return;
+        if (oldIndex < 0 || oldIndex >= Macros.Count || newIndex < 0 || newIndex >= Macros.Count)
+            return;
+
+        Macros.Move(oldIndex, newIndex);
+        try
+        {
+            await _workspace.SaveMacroDisplayOrderAsync(Macros.Select(static m => m.Id).ToList()).ConfigureAwait(true);
+        }
+        catch
+        {
+            await RefreshAsync().ConfigureAwait(true);
+        }
+    }
+
     [RelayCommand]
     private async Task PlayAsync(MacroSummary? item)
     {
