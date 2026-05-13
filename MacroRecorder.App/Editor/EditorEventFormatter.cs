@@ -30,6 +30,7 @@ public static class EditorEventFormatter
             MouseButtonUpRecordedEvent mouseButtonUp =>
                 loc.GetString("Event_Action_MouseButtonUpFormat", ButtonLabel(mouseButtonUp.Button, loc)),
             MouseWheelRecordedEvent => loc.GetString("Event_Action_MouseWheel"),
+            FocusChangedRecordedEvent { Hwnd: null } => loc.GetString("Event_Action_FocusLost"),
             FocusChangedRecordedEvent => loc.GetString("Event_Action_FocusChanged"),
             SyntheticWaitRecordedEvent => loc.GetString("Event_Action_SyntheticWait"),
             _ => recordedEvent.GetType().Name
@@ -58,6 +59,7 @@ public static class EditorEventFormatter
                     mouseWheel.ScreenY,
                     mouseWheel.WheelDelta,
                     mouseWheel.IsHorizontal ? loc.GetString("Editor_Value_MouseWheelHorizontalSuffix") : ""),
+            FocusChangedRecordedEvent { Hwnd: null } => loc.GetString("Editor_Value_FocusLost"),
             FocusChangedRecordedEvent focusChanged =>
                 loc.GetString(
                     "Editor_Value_FocusFormat",

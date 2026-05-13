@@ -113,7 +113,9 @@ internal static class MacroJsonEventsArrayDeserializer
                 ProcessName = ReadString(el, "processName"),
                 ProcessId = el.TryGetProperty("processId", out var pid) && pid.ValueKind == JsonValueKind.Number
                     ? pid.GetUInt32()
-                    : null
+                    : null,
+                ReferenceClientWidth = ReadNullableInt32(el, "referenceClientWidth"),
+                ReferenceClientHeight = ReadNullableInt32(el, "referenceClientHeight")
             }, waitUntil),
             "syntheticWait" => (new SyntheticWaitRecordedEvent
             {
@@ -142,6 +144,13 @@ internal static class MacroJsonEventsArrayDeserializer
 
     private static int ReadInt32(JsonElement el, string name) =>
         el.TryGetProperty(name, out var p) ? p.GetInt32() : 0;
+
+    private static int? ReadNullableInt32(JsonElement el, string name)
+    {
+        if (!el.TryGetProperty(name, out var p) || p.ValueKind == JsonValueKind.Null)
+            return null;
+        return p.GetInt32();
+    }
 
     private static ushort ReadUInt16(JsonElement el, string name) =>
         (ushort)(el.TryGetProperty(name, out var p) ? p.GetInt32() : 0);

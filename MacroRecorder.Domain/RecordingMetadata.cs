@@ -4,7 +4,9 @@ public sealed record RecordingMetadata(
     int SchemaVersion,
     DateTimeOffset RecordedAtUtc,
     long StopwatchFrequency,
-    RecordingEnvironment? Environment = null)
+    RecordingEnvironment? Environment = null,
+    bool UseFocusBoundMouseCoordinates = false,
+    MousePlaybackAnchor? MouseAnchor = null)
 {
     public const int CurrentSchemaVersion = 2;
 
@@ -13,8 +15,10 @@ public sealed record RecordingMetadata(
             CurrentSchemaVersion,
             DateTimeOffset.UtcNow,
             System.Diagnostics.Stopwatch.Frequency,
-            environment);
+            environment,
+            UseFocusBoundMouseCoordinates: false,
+            MouseAnchor: null);
 
     public static RecordingMetadata Empty() =>
-        new(CurrentSchemaVersion, DateTimeOffset.MinValue, System.Diagnostics.Stopwatch.Frequency, null);
+        new(CurrentSchemaVersion, DateTimeOffset.MinValue, System.Diagnostics.Stopwatch.Frequency, null, false, null);
 }

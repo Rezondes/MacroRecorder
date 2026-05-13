@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
+using MacroRecorder.App.Localization;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Persistence;
 
@@ -81,6 +82,10 @@ public partial class MainViewModel : ObservableObject
             _inAppInfo.RequestInfo(
                 _loc.GetString("Main_Play_InterruptedByUser"),
                 _loc.GetString("Main_PlaybackInterruptedModalTitle"));
+        }
+        catch (PlaybackFocusTargetException focusTargetException)
+        {
+            _dialogs.ShowInfo(PlaybackFocusTargetUi.FormatMessage(_loc, focusTargetException));
         }
         catch (OperationCanceledException)
         {

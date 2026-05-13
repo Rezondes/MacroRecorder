@@ -35,6 +35,8 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private bool _haveAnchor;
     private TimeSpan _lastAnchorElapsed;
     private TimeSpan _playbackTimelineEnd;
+    private bool _useFocusBoundMouseCoordinates;
+    private bool _useClientSpaceForMouse;
 
     public LowLevelRecordingEngine()
     {
@@ -44,7 +46,11 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
     public bool IsRunning => _running;
 
-    public void Start(Action<RecordedInputEvent>? onEventRecorded = null, bool recordMouseMoves = true, int mouseMoveMinPixelDelta = 5)
+    public void Start(
+        Action<RecordedInputEvent>? onEventRecorded = null,
+        bool recordMouseMoves = true,
+        int mouseMoveMinPixelDelta = 5,
+        bool useFocusBoundMouseCoordinates = false)
     {
         if (_running)
             throw new InvalidOperationException("Recording already running.");
@@ -61,6 +67,8 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _haveAnchor = false;
             _lastAnchorElapsed = TimeSpan.Zero;
             _playbackTimelineEnd = TimeSpan.Zero;
+            _useFocusBoundMouseCoordinates = useFocusBoundMouseCoordinates;
+            _useClientSpaceForMouse = false;
         }
 
         _onEventRecorded = onEventRecorded;
@@ -134,7 +142,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         }
 
         _hooksReady = false;
-        return new RecordingEngineResult(copy, env);
+        return new RecordingEngineResult(copy, env, _useFocusBoundMouseCoordinates);
     }
 
     public void Dispose() => Stop();
@@ -146,18 +154,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             try
             {
                 Thread.Sleep(120);
-                var foregroundWindow = NativeMethods.GetForegroundWindow();
-                if (foregroundWindow == nint.Zero || foregroundWindow == _lastForeground)
-                    continue;
-
-                var previousForegroundWindow = _lastForeground;
-                _lastForeground = foregroundWindow;
-                if (previousForegroundWindow == nint.Zero)
-                    continue;
-
-                var focusEvent = BuildFocusEvent(foregroundWindow);
-                if (focusEvent is not null)
-                    AppendStamped(focusEvent);
+                RecordForegroundDelta(NativeMethods.GetForegroundWindow());
             }
             catch
             {
@@ -166,7 +163,47 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         }
     }
 
-    private static FocusChangedRecordedEvent? BuildFocusEvent(nint windowHandle)
+    private void RecordForegroundDelta(nint newForegroundWindow)
+    {
+        if (newForegroundWindow == _lastForeground)
+            return;
+
+        var previousForegroundWindow = _lastForeground;
+        if (previousForegroundWindow == nint.Zero)
+        {
+            _lastForeground = newForegroundWindow;
+            if (newForegroundWindow == nint.Zero)
+                return;
+
+            AppendStamped(BuildFocusEvent(newForegroundWindow));
+            return;
+        }
+
+        if (newForegroundWindow == nint.Zero)
+        {
+            AppendStamped(BuildFocusLostEvent());
+            _lastForeground = nint.Zero;
+            return;
+        }
+
+        _lastForeground = newForegroundWindow;
+        AppendStamped(BuildFocusEvent(newForegroundWindow));
+    }
+
+    private static FocusChangedRecordedEvent BuildFocusLostEvent() =>
+        new()
+        {
+            DelayBefore = default,
+            Sequence = 0,
+            Hwnd = null,
+            WindowTitle = "",
+            ProcessName = "",
+            ProcessId = null,
+            ReferenceClientWidth = null,
+            ReferenceClientHeight = null
+        };
+
+    private FocusChangedRecordedEvent BuildFocusEvent(nint windowHandle)
     {
         var windowTitleBuilder = new StringBuilder(512);
         _ = NativeMethods.GetWindowText(windowHandle, windowTitleBuilder, windowTitleBuilder.Capacity);
@@ -183,6 +220,15 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             processName = "";
         }
 
+        int? referenceClientWidth = null;
+        int? referenceClientHeight = null;
+        if (_useFocusBoundMouseCoordinates
+            && NativeMethods.GetClientRect(windowHandle, out var clientRect))
+        {
+            referenceClientWidth = clientRect.Width;
+            referenceClientHeight = clientRect.Height;
+        }
+
         return new FocusChangedRecordedEvent
         {
             DelayBefore = default,
@@ -190,7 +236,9 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             Hwnd = (ulong)windowHandle,
             WindowTitle = windowTitle,
             ProcessName = processName,
-            ProcessId = processId
+            ProcessId = processId,
+            ReferenceClientWidth = referenceClientWidth,
+            ReferenceClientHeight = referenceClientHeight
         };
     }
 
@@ -273,8 +321,30 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
 
+    private static bool ShouldRecordForegroundChangeBeforeEvent(RecordedInputEvent eventTemplate) =>
+        eventTemplate is MouseMoveRecordedEvent
+            or MouseButtonDownRecordedEvent
+            or MouseButtonUpRecordedEvent
+            or MouseWheelRecordedEvent
+            or KeyDownRecordedEvent
+            or KeyUpRecordedEvent;
+
+    /// <summary>When focus-bound, inserts a <see cref="FocusChangedRecordedEvent"/> before input if
+    /// <see cref="NativeMethods.GetForegroundWindow"/> changed (avoids losing focus vs. mouse order vs. the 120 ms poll).</summary>
+    private void EnsureForegroundFocusChangeRecorded()
+    {
+        if (!_running)
+            return;
+
+        RecordForegroundDelta(NativeMethods.GetForegroundWindow());
+    }
+
     private void AppendStamped(RecordedInputEvent eventTemplate)
     {
+        if (_useFocusBoundMouseCoordinates && ShouldRecordForegroundChangeBeforeEvent(eventTemplate))
+            EnsureForegroundFocusChangeRecorded();
+
+        eventTemplate = ConvertMouseScreenToClientIfNeeded(eventTemplate);
         Action<RecordedInputEvent>? live;
         List<RecordedInputEvent> pendingCallbacks = new(2);
         lock (_lock)
@@ -338,6 +408,9 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             var nextSequence = (ulong)Interlocked.Increment(ref _sequence);
             var stampedEvent = Stamp(eventTemplate, delayBefore, nextSequence);
             _events.Add(stampedEvent);
+            if (_useFocusBoundMouseCoordinates && stampedEvent is FocusChangedRecordedEvent appendedFocus)
+                _useClientSpaceForMouse = appendedFocus.Hwnd is not null;
+
             pendingCallbacks.Add(stampedEvent);
             _playbackTimelineEnd += delayBefore;
             if (stampedEvent is SyntheticWaitRecordedEvent syntheticAfterMain)
@@ -402,6 +475,63 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             SyntheticWaitRecordedEvent syntheticWait => syntheticWait with { },
             _ => recordedEvent
         };
+
+    /// <summary>When focus-bound recording is on, mouse X/Y are global screen coordinates until a window focus row;
+    /// after that they are client coordinates relative to <see cref="NativeMethods.GetForegroundWindow"/> at capture time
+    /// (after any inserted focus row).</summary>
+    private RecordedInputEvent ConvertMouseScreenToClientIfNeeded(RecordedInputEvent eventTemplate)
+    {
+        if (!_useFocusBoundMouseCoordinates || !_useClientSpaceForMouse)
+            return eventTemplate;
+
+        var foregroundHwnd = NativeMethods.GetForegroundWindow();
+        if (foregroundHwnd == nint.Zero)
+            return eventTemplate;
+
+        return eventTemplate switch
+        {
+            MouseMoveRecordedEvent mouseMove => ApplyClient(foregroundHwnd, mouseMove, mouseMove.ScreenX, mouseMove.ScreenY),
+            MouseButtonDownRecordedEvent mouseButtonDown =>
+                ApplyClient(foregroundHwnd, mouseButtonDown, mouseButtonDown.ScreenX, mouseButtonDown.ScreenY),
+            MouseButtonUpRecordedEvent mouseButtonUp =>
+                ApplyClient(foregroundHwnd, mouseButtonUp, mouseButtonUp.ScreenX, mouseButtonUp.ScreenY),
+            MouseWheelRecordedEvent mouseWheel =>
+                ApplyClient(foregroundHwnd, mouseWheel, mouseWheel.ScreenX, mouseWheel.ScreenY),
+            _ => eventTemplate
+        };
+    }
+
+    private static MouseMoveRecordedEvent ApplyClient(nint hwnd, MouseMoveRecordedEvent mouseMove, int screenX, int screenY)
+    {
+        var (cx, cy) = ScreenToClientOrScreen(hwnd, screenX, screenY);
+        return mouseMove with { ScreenX = cx, ScreenY = cy };
+    }
+
+    private static MouseButtonDownRecordedEvent ApplyClient(nint hwnd, MouseButtonDownRecordedEvent e, int screenX, int screenY)
+    {
+        var (cx, cy) = ScreenToClientOrScreen(hwnd, screenX, screenY);
+        return e with { ScreenX = cx, ScreenY = cy };
+    }
+
+    private static MouseButtonUpRecordedEvent ApplyClient(nint hwnd, MouseButtonUpRecordedEvent e, int screenX, int screenY)
+    {
+        var (cx, cy) = ScreenToClientOrScreen(hwnd, screenX, screenY);
+        return e with { ScreenX = cx, ScreenY = cy };
+    }
+
+    private static MouseWheelRecordedEvent ApplyClient(nint hwnd, MouseWheelRecordedEvent e, int screenX, int screenY)
+    {
+        var (cx, cy) = ScreenToClientOrScreen(hwnd, screenX, screenY);
+        return e with { ScreenX = cx, ScreenY = cy };
+    }
+
+    private static (int X, int Y) ScreenToClientOrScreen(nint hwnd, int screenX, int screenY)
+    {
+        var point = new NativeMethods.POINT { X = screenX, Y = screenY };
+        if (!NativeMethods.ScreenToClient(hwnd, ref point))
+            return (screenX, screenY);
+        return (point.X, point.Y);
+    }
 
     private static RecordedInputEvent Stamp(RecordedInputEvent recordedEvent, TimeSpan delayBefore, ulong sequence) =>
         recordedEvent switch

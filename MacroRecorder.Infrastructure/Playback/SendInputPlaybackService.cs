@@ -53,6 +53,11 @@ public sealed class SendInputPlaybackService : IPlaybackService
         }
     }
 
+    private sealed class FocusBoundPlaybackState
+    {
+        public nint CurrentHwnd;
+    }
+
     private void RunPlayLocked(Macro macro, CancellationToken cancellationToken, int userInputInterruptGraceMilliseconds)
     {
         if (macro.Events.Count == 0)
@@ -70,6 +75,16 @@ public sealed class SendInputPlaybackService : IPlaybackService
         var estimatedPlay = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(ordered);
         var overlayBegan = false;
         var feedback = _resolveFeedback();
+
+        FocusBoundPlaybackState? focusBoundState = null;
+        if (macro.Metadata.UseFocusBoundMouseCoordinates)
+        {
+            FocusWindowMatcher.ValidateFocusBoundTimeline(macro, ordered);
+            focusBoundState = new FocusBoundPlaybackState
+            {
+                CurrentHwnd = FocusWindowMatcher.ResolveInitialFocusBoundHwnd(macro, ordered)
+            };
+        }
 
         try
         {
@@ -108,7 +123,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
 
             TryInstallInterruptHooks(module);
 
-            PlayCore(ordered, estimatedPlay, linked.Token, feedback);
+            PlayCore(ordered, estimatedPlay, linked.Token, feedback, focusBoundState);
         }
         catch (OperationCanceledException)
         {
@@ -205,11 +220,19 @@ public sealed class SendInputPlaybackService : IPlaybackService
         }
     }
 
+    private static (int screenX, int screenY) ClientCoordsToScreen(nint hwnd, int clientX, int clientY)
+    {
+        var p = new NativeMethods.POINT { X = clientX, Y = clientY };
+        _ = NativeMethods.ClientToScreen(hwnd, ref p);
+        return (p.X, p.Y);
+    }
+
     private void PlayCore(
         IReadOnlyList<RecordedInputEvent> ordered,
         TimeSpan totalEstimated,
         CancellationToken cancellationToken,
-        IPlaybackUiFeedback? feedback)
+        IPlaybackUiFeedback? feedback,
+        FocusBoundPlaybackState? focusBoundState)
     {
         var sw = Stopwatch.StartNew();
         feedback?.UpdatePlayingRemaining(ClampRemaining(totalEstimated, sw.Elapsed));
@@ -223,6 +246,8 @@ public sealed class SendInputPlaybackService : IPlaybackService
             WaitUntil(sw, playbackCursor, cancellationToken, totalEstimated, ref lastUiMs, feedback);
             MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
 
+            var focusHwnd = focusBoundState?.CurrentHwnd ?? nint.Zero;
+
             switch (recordedEvent)
             {
                 case KeyDownRecordedEvent keyDown:
@@ -232,20 +257,47 @@ public sealed class SendInputPlaybackService : IPlaybackService
                     SendKey(keyUp.ScanCode, keyUp.IsExtendedKey, true);
                     break;
                 case MouseMoveRecordedEvent mouseMove:
-                    SendMouseMoveAbsolute(mouseMove.ScreenX, mouseMove.ScreenY);
+                {
+                    var (sx, sy) = focusHwnd != nint.Zero
+                        ? ClientCoordsToScreen(focusHwnd, mouseMove.ScreenX, mouseMove.ScreenY)
+                        : (mouseMove.ScreenX, mouseMove.ScreenY);
+                    SendMouseMoveAbsolute(sx, sy);
                     break;
+                }
                 case MouseButtonDownRecordedEvent mouseButtonDown:
-                    SendMouseButton(mouseButtonDown.Button, true, mouseButtonDown.ScreenX, mouseButtonDown.ScreenY);
+                {
+                    var (sx, sy) = focusHwnd != nint.Zero
+                        ? ClientCoordsToScreen(focusHwnd, mouseButtonDown.ScreenX, mouseButtonDown.ScreenY)
+                        : (mouseButtonDown.ScreenX, mouseButtonDown.ScreenY);
+                    SendMouseButton(mouseButtonDown.Button, true, sx, sy);
                     break;
+                }
                 case MouseButtonUpRecordedEvent mouseButtonUp:
-                    SendMouseButton(mouseButtonUp.Button, false, mouseButtonUp.ScreenX, mouseButtonUp.ScreenY);
+                {
+                    var (sx, sy) = focusHwnd != nint.Zero
+                        ? ClientCoordsToScreen(focusHwnd, mouseButtonUp.ScreenX, mouseButtonUp.ScreenY)
+                        : (mouseButtonUp.ScreenX, mouseButtonUp.ScreenY);
+                    SendMouseButton(mouseButtonUp.Button, false, sx, sy);
                     break;
+                }
                 case MouseWheelRecordedEvent mouseWheel:
-                    SendMouseMoveAbsolute(mouseWheel.ScreenX, mouseWheel.ScreenY);
+                {
+                    var (sx, sy) = focusHwnd != nint.Zero
+                        ? ClientCoordsToScreen(focusHwnd, mouseWheel.ScreenX, mouseWheel.ScreenY)
+                        : (mouseWheel.ScreenX, mouseWheel.ScreenY);
+                    SendMouseMoveAbsolute(sx, sy);
                     SendWheel(mouseWheel.WheelDelta, mouseWheel.IsHorizontal);
                     break;
+                }
                 case FocusChangedRecordedEvent focusChanged:
                     TryFocus(focusChanged);
+                    if (focusBoundState is not null)
+                    {
+                        focusBoundState.CurrentHwnd = focusChanged.Hwnd is null
+                            ? nint.Zero
+                            : FocusWindowMatcher.ResolveForPlayback(focusChanged);
+                    }
+
                     break;
                 case SyntheticWaitRecordedEvent syntheticWait:
                     SleepCancellable(

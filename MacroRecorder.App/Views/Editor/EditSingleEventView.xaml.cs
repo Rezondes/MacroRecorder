@@ -114,6 +114,8 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                     ProcessName = Str("proc"),
                     Hwnd = ULongOrNull("hwnd"),
                     ProcessId = UIntOrNull("pid"),
+                    ReferenceClientWidth = IntOrNull("refW"),
+                    ReferenceClientHeight = IntOrNull("refH"),
                     DelayBefore = ReadDelayBeforeFromField()
                 },
                 _ => null
@@ -498,6 +500,14 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                 AddField(_loc.GetString("DialogEdit_Field_ProcessName"), "proc", focusChanged.ProcessName);
                 AddField(_loc.GetString("DialogEdit_Field_Hwnd"), "hwnd", focusChanged.Hwnd?.ToString() ?? "");
                 AddField(_loc.GetString("DialogEdit_Field_Pid"), "pid", focusChanged.ProcessId?.ToString() ?? "");
+                AddField(
+                    _loc.GetString("DialogEdit_Field_ReferenceClientWidth"),
+                    "refW",
+                    focusChanged.ReferenceClientWidth?.ToString(CultureInfo.InvariantCulture) ?? "");
+                AddField(
+                    _loc.GetString("DialogEdit_Field_ReferenceClientHeight"),
+                    "refH",
+                    focusChanged.ReferenceClientHeight?.ToString(CultureInfo.InvariantCulture) ?? "");
                 AddDelayBeforeMillisecondsField();
                 break;
             default:
@@ -549,5 +559,11 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
     {
         var trimmedText = Str(fieldKey);
         return string.IsNullOrEmpty(trimmedText) ? null : uint.Parse(trimmedText, CultureInfo.InvariantCulture);
+    }
+
+    private int? IntOrNull(string fieldKey)
+    {
+        var trimmedText = Str(fieldKey);
+        return string.IsNullOrEmpty(trimmedText) ? null : int.Parse(trimmedText, CultureInfo.InvariantCulture);
     }
 }

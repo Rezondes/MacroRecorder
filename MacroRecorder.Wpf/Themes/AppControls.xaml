@@ -756,6 +756,58 @@
         </Setter>
     </Style>
 
+    <Style x:Key="UiCheckBoxModern" TargetType="CheckBox">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="Box"
+                                Width="20"
+                                Height="20"
+                                CornerRadius="4"
+                                Background="{DynamicResource UiBrush.Surface}"
+                                BorderBrush="{DynamicResource UiBrush.Border}"
+                                BorderThickness="1"
+                                SnapsToDevicePixels="True">
+                            <Path x:Name="CheckMark"
+                                  Data="M 3.5 10 L 7.5 14 L 15.5 4"
+                                  Stroke="{DynamicResource UiBrush.OnPrimary}"
+                                  StrokeThickness="2"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Visibility="Collapsed"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Margin="1" />
+                        </Border>
+                        <ContentPresenter Margin="10,0,0,0"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True" />
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource UiBrush.Primary}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource UiBrush.PrimaryDark}" />
+                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource UiBrush.Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="UiInsertStepMenuItemButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />

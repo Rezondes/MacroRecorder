@@ -214,5 +214,34 @@ internal static class NativeMethods
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool IsWindow(nint hWnd);
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+
+        public int Width => Right - Left;
+        public int Height => Bottom - Top;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool GetClientRect(nint hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ScreenToClient(nint hWnd, ref POINT lpPoint);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ClientToScreen(nint hWnd, ref POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(nint hWnd);
+
+    public delegate bool EnumWindowsProc(nint hWnd, nint lParam);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, nint lParam);
+
     public const uint WM_QUIT = 0x0012;
 }

@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Editor;
+using MacroRecorder.App.Localization;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
@@ -135,6 +136,9 @@ public partial class MacroEditorViewModel : ObservableObject
     [ObservableProperty]
     private bool recordMouseMoves = true;
 
+    [ObservableProperty]
+    private bool useFocusBoundMousePositions;
+
     public void AttachOwner(Window owner) => _ownerWindow = owner;
 
     internal bool TryAbortRecordingForClose()
@@ -219,6 +223,7 @@ public partial class MacroEditorViewModel : ObservableObject
         UpdateRecordingCaption();
         NotifySaveCanExecute();
         RefreshCommandStates();
+        SyncEditorOptionsFromMacroMetadata();
     }
 
     private async Task LoadAsync()
@@ -244,6 +249,30 @@ public partial class MacroEditorViewModel : ObservableObject
         UpdateRecordingCaption();
         NotifySaveCanExecute();
         RefreshCommandStates();
+        SyncEditorOptionsFromMacroMetadata();
+    }
+
+    private void SyncEditorOptionsFromMacroMetadata()
+    {
+        if (_macro is null)
+            return;
+        UseFocusBoundMousePositions = _macro.Metadata.UseFocusBoundMouseCoordinates;
+    }
+
+    partial void OnUseFocusBoundMousePositionsChanged(bool value)
+    {
+        if (_macro is null || IsRecording)
+            return;
+        var meta = _macro.Metadata;
+        if (meta.UseFocusBoundMouseCoordinates == value && meta.MouseAnchor is null)
+            return;
+        _macro.SetMetadata(meta with
+        {
+            UseFocusBoundMouseCoordinates = value,
+            MouseAnchor = null
+        });
+        _isDirty = true;
+        NotifySaveCanExecute();
     }
 
     private void RebuildRows()
@@ -737,7 +766,11 @@ public partial class MacroEditorViewModel : ObservableObject
             IsRecording = true;
             RefreshCommandStates();
             var minMouseMovePixels = AppSettingsStore.Load().RecordingMouseMoveMinPixels;
-            _recording.StartRecording(OnLiveRecordedEvent, RecordMouseMoves, minMouseMovePixels);
+            _recording.StartRecording(
+                OnLiveRecordedEvent,
+                RecordMouseMoves,
+                minMouseMovePixels,
+                UseFocusBoundMousePositions);
         }
         catch (Exception exception)
         {
@@ -798,7 +831,11 @@ public partial class MacroEditorViewModel : ObservableObject
 
         IsRecording = false;
 
-        var meta = RecordingMetadata.ForNewSession(result.Environment);
+        var meta = RecordingMetadata.ForNewSession(result.Environment) with
+        {
+            UseFocusBoundMouseCoordinates = result.UseFocusBoundMouseCoordinates,
+            MouseAnchor = null
+        };
         var merged = new List<RecordedInputEvent>();
         if (_recordingSnapshot is not null)
             merged.AddRange(_recordingSnapshot.Select(CloneEvent));
@@ -808,6 +845,7 @@ public partial class MacroEditorViewModel : ObservableObject
         _flatEvents.Clear();
         _flatEvents.AddRange(merged);
         _macro!.ApplyRecordingMerge(merged, meta);
+        SyncEditorOptionsFromMacroMetadata();
         _recordingSnapshot = null;
         _isDirty = true;
         RebuildRows();
@@ -864,6 +902,10 @@ public partial class MacroEditorViewModel : ObservableObject
             _inAppInfo.RequestInfo(
                 _loc.GetString("Editor_PlayTestInterrupted"),
                 _loc.GetString("Main_PlaybackInterruptedModalTitle"));
+        }
+        catch (PlaybackFocusTargetException focusTargetException)
+        {
+            _dialogs.ShowInfo(PlaybackFocusTargetUi.FormatMessage(_loc, focusTargetException));
         }
         catch (InvalidOperationException)
         {

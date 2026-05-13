@@ -65,12 +65,19 @@ public sealed record MouseWheelRecordedEvent : RecordedInputEvent
     public required bool IsHorizontal { get; init; }
 }
 
+/// <summary><see cref="Hwnd"/> null marks focus lost (no foreground): subsequent mouse uses global screen coordinates when focus-bound.</summary>
 public sealed record FocusChangedRecordedEvent : RecordedInputEvent
 {
     public ulong? Hwnd { get; init; }
     public required string WindowTitle { get; init; }
     public required string ProcessName { get; init; }
     public uint? ProcessId { get; init; }
+
+    /// <summary>Client area size of the newly focused window when recorded with focus-bound mouse (null for legacy macros).</summary>
+    public int? ReferenceClientWidth { get; init; }
+
+    /// <summary>Client area size of the newly focused window when recorded with focus-bound mouse (null for legacy macros).</summary>
+    public int? ReferenceClientHeight { get; init; }
 }
 
 public sealed record SyntheticWaitRecordedEvent : RecordedInputEvent

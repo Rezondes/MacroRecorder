@@ -125,6 +125,29 @@
                 </DockPanel>
                 <DockPanel LastChildFill="False" Margin="0,0,0,10">
                     <TextBlock DockPanel.Dock="Left"
+                               Text="{loc:Loc Editor_SectionRecording}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource UiBrush.TextSecondary}" />
+                    <StackPanel DockPanel.Dock="Left"
+                                Orientation="Horizontal"
+                                IsEnabled="{Binding CanUseCommandsWhileNotRecording}">
+                        <CheckBox Margin="0,0,16,0"
+                                  Style="{DynamicResource UiCheckBoxModern}"
+                                  Content="{loc:Loc Editor_RecordMouseMoves}"
+                                  IsChecked="{Binding RecordMouseMoves, Mode=TwoWay}"
+                                  Foreground="{DynamicResource UiBrush.TextPrimary}" />
+                        <CheckBox Style="{DynamicResource UiCheckBoxModern}"
+                                  Content="{loc:Loc Editor_UseFocusBoundMousePositions}"
+                                  ToolTip="{loc:Loc Editor_UseFocusBoundMousePositions_ToolTip}"
+                                  IsChecked="{Binding UseFocusBoundMousePositions, Mode=TwoWay}"
+                                  Foreground="{DynamicResource UiBrush.TextPrimary}" />
+                    </StackPanel>
+                </DockPanel>
+                <DockPanel LastChildFill="False" Margin="0,0,0,10">
+                    <TextBlock DockPanel.Dock="Left"
                                Text="{loc:Loc Editor_SectionSelection}"
                                VerticalAlignment="Center"
                                Margin="0,0,12,0"
@@ -216,21 +239,6 @@
                                Foreground="{DynamicResource UiBrush.TextSecondary}"
                                TextWrapping="Wrap"
                                Text="{loc:Loc Editor_HintInsertDrag}" />
-                </DockPanel>
-                <DockPanel LastChildFill="False" Margin="0,8,0,0">
-                    <TextBlock DockPanel.Dock="Left"
-                               Text="{loc:Loc Editor_SectionRecording}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,12,0"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource UiBrush.TextSecondary}" />
-                    <CheckBox DockPanel.Dock="Left"
-                              VerticalAlignment="Center"
-                              Content="{loc:Loc Editor_RecordMouseMoves}"
-                              IsChecked="{Binding RecordMouseMoves, Mode=TwoWay}"
-                              IsEnabled="{Binding CanUseCommandsWhileNotRecording}"
-                              Foreground="{DynamicResource UiBrush.TextPrimary}" />
                 </DockPanel>
             </StackPanel>
         </Border>
