@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-US" Language="1033" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+  <String Id="Installer_ProductName" Value="Macro Recorder by Rezondes" />
+  <String Id="Installer_Manufacturer" Value="Rezondes" />
+  <String Id="Installer_DowngradeError" Value="A newer version is already installed." />
+  <String Id="Installer_FeatureMainTitle" Value="Application" />
+  <String Id="Installer_LicenseRtf" Value="Localization\License.en.rtf" />
+
+  <String Id="Installer_OptionsDlgTitle" Value="Additional options" />
+  <String Id="Installer_OptionsDlgHeading" Value="Options" />
+  <String Id="Installer_OptionsDlgDescription" Value="Choose whether to start Macro Recorder when setup finishes and whether to create a shortcut on the public desktop (both on by default)." />
+  <String Id="Installer_OptionsLaunchCheckbox" Value="Start Macro Recorder after setup completes" />
+  <String Id="Installer_OptionsDesktopCheckbox" Value="Create a shortcut on the public desktop" />
+</WixLocalization>

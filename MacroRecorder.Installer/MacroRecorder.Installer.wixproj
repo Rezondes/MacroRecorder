@@ -1,0 +1,40 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+  <PropertyGroup>
+    <OutputName>MacroRecorderSetup</OutputName>
+    <OutputType>Package</OutputType>
+    <!-- SDK globs **/*.wxl as EmbeddedResource; disable so only Installer.$(InstallerWixCulture).wxl is linked (avoids WIX0100). -->
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <!-- WiX defaults to x86 when Platform is AnyCPU; self-contained publish is x64-only (ICE80 / wrong template otherwise). -->
+    <InstallerPlatform>x64</InstallerPlatform>
+    <!-- One wxl per link: WiX passes all EmbeddedResource wxl files to every culture batch (WIX0100 if both are included). -->
+    <InstallerWixCulture Condition="'$(InstallerWixCulture)'==''">en-US</InstallerWixCulture>
+    <Cultures>$(InstallerWixCulture)</Cultures>
+    <!-- Heat tries to reflect many publish outputs; .NET 10 / single-file layout triggers HEAT5151 noise without affecting the MSI. -->
+    <HarvestSuppressSpecificWarnings>5151;5149</HarvestSuppressSpecificWarnings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MacroRecorder.App\MacroRecorder.App.csproj" Publish="true" Properties="RuntimeIdentifier=win-x64;SelfContained=true" />
+  </ItemGroup>
+  <ItemGroup>
+    <HarvestDirectory Include="obj\$(Configuration)\publish\MacroRecorder.App">
+      <ComponentGroupName>HarvestedComponents</ComponentGroupName>
+      <DirectoryRefId>INSTALLFOLDER</DirectoryRefId>
+      <SuppressRootDirectory>true</SuppressRootDirectory>
+    </HarvestDirectory>
+    <BindPath Include="obj\$(Configuration)\publish\MacroRecorder.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Localization\Installer.$(InstallerWixCulture).wxl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Localization\Installer.de-DE.wxl" />
+    <None Include="Localization\Installer.en-US.wxl" />
+    <None Include="Localization\License.de.rtf" />
+    <None Include="Localization\License.en.rtf" />
+    <None Include="MacroRecorder.WixUI_InstallDir.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Heat" Version="6.0.2" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="6.0.2" />
+  </ItemGroup>
+</Project>

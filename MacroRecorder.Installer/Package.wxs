@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+    Name="!(loc.Installer_ProductName)"
+    Manufacturer="!(loc.Installer_Manufacturer)"
+    Version="0.0.1.0"
+    UpgradeCode="A7F8E9D0-1234-5678-9ABC-DEF012345678"
+    Scope="perMachine">
+    <WixVariable Id="WixUILicenseRtf" Value="!(loc.Installer_LicenseRtf)" />
+
+    <MajorUpgrade DowngradeErrorMessage="!(loc.Installer_DowngradeError)" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="LAUNCH_AFTER_INSTALL" Value="1" />
+    <Property Id="DESKTOP_SHORTCUT" Value="1" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="Macro Recorder by Rezondes" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="!(loc.Installer_FeatureMainTitle)" Level="1">
+      <ComponentGroupRef Id="HarvestedComponents" />
+    </Feature>
+
+    <UIRef Id="MacroRecorderOptionsUiFragment" />
+
+    <ui:WixUI Id="MacroRecorder_WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+  </Package>
+</Wix>
