@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
+using MacroRecorder.App.Views;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -49,9 +51,13 @@ public partial class ShellViewModel : ObservableObject,
         CurrentPage = overview;
         UpdateShellTitle();
         UpdateShowEditorMacroHeaderActions();
+        OnPropertyChanged(nameof(ShowOverviewHeaderChrome));
     }
 
     public MainViewModel Overview => _overview;
+
+    /// <summary>Caption row: New recording, queue, and settings are shown only on the macro overview page.</summary>
+    public bool ShowOverviewHeaderChrome => CurrentPage is MainViewModel;
 
     [ObservableProperty]
     private object? currentPage;
@@ -430,6 +436,14 @@ public partial class ShellViewModel : ObservableObject,
         PushPage(vm);
     }
 
+    [RelayCommand]
+    private async Task OpenQueueCreator()
+    {
+        var vm = _services.GetRequiredService<QueueCreatorViewModel>();
+        await vm.InitializeAsync().ConfigureAwait(true);
+        PushPage(vm);
+    }
+
     [RelayCommand(CanExecute = nameof(CanGoBack))]
     private async Task GoBackAsync()
     {
@@ -480,6 +494,9 @@ public partial class ShellViewModel : ObservableObject,
         if (CurrentPage is SettingsViewModel settingsVm && settingsVm.HasUnsavedSettingsChanges)
             return settingsVm.TryConfirmLeavePendingSettings();
 
+        if (CurrentPage is QueueCreatorViewModel queueVm && !queueVm.TryConfirmLeaveIfRunning())
+            return false;
+
         return true;
     }
 
@@ -491,6 +508,7 @@ public partial class ShellViewModel : ObservableObject,
             DetachEditorTitleListener(_editorTitleSource);
         UpdateShellTitle();
         UpdateShowEditorMacroHeaderActions();
+        OnPropertyChanged(nameof(ShowOverviewHeaderChrome));
     }
 
     private void AttachEditorTitleListener(MacroEditorViewModel editor)
@@ -526,6 +544,7 @@ public partial class ShellViewModel : ObservableObject,
             MacroEditorViewModel ed => ed.WindowTitle,
             RecordViewModel => _loc.GetString("Record_WindowTitle"),
             SettingsViewModel => _loc.GetString("Main_Settings_PageTitle"),
+            QueueCreatorViewModel => _loc.GetString("QueueCreator_WindowTitle"),
             _ => _loc.GetString("Main_WindowTitle")
         };
     }

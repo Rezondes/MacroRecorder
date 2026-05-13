@@ -362,6 +362,54 @@
         </Setter>
     </Style>
 
+    <!-- Themed single-line TextBox (forms, queue delays). -->
+    <ControlTemplate x:Key="UiTextBoxTemplate" TargetType="TextBox">
+        <Border x:Name="OuterBd"
+                CornerRadius="8"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                SnapsToDevicePixels="True">
+            <ScrollViewer x:Name="PART_ContentHost"
+                          Margin="{TemplateBinding Padding}"
+                          Focusable="False"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Hidden" />
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="OuterBd" Property="BorderBrush" Value="{DynamicResource UiBrush.Primary}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter TargetName="OuterBd" Property="BorderBrush" Value="{DynamicResource UiBrush.Primary}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="OuterBd" Property="Opacity" Value="0.55" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="UiTextBox" TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource UiBrush.SurfaceElevated}" />
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource UiBrush.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CaretBrush" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource UiBrush.Primary}" />
+        <Setter Property="SelectionTextBrush" Value="{DynamicResource UiBrush.OnPrimary}" />
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template" Value="{StaticResource UiTextBoxTemplate}" />
+    </Style>
+
+    <Style x:Key="UiTextBoxCompact" TargetType="TextBox" BasedOn="{StaticResource UiTextBox}">
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
     <!-- Non-editable ComboBox (e.g. language picker): rounded, themed popup -->
     <ControlTemplate x:Key="UiComboBoxTemplate" TargetType="ComboBox">
         <Grid SnapsToDevicePixels="True">

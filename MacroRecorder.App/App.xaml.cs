@@ -28,6 +28,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<Lazy<INavigationService>>(static sp =>
             new Lazy<INavigationService>(() => sp.GetRequiredService<INavigationService>()));
         builder.Services.AddSingleton<MainViewModel>();
+        builder.Services.AddTransient<QueueCreatorViewModel>();
         builder.Services.AddSingleton<ShellViewModel>();
         builder.Services.AddSingleton<IPlaybackUiFeedback>(sp => sp.GetRequiredService<ShellViewModel>());
         builder.Services.AddSingleton(sp =>

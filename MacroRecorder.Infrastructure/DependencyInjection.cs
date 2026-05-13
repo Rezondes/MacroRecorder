@@ -11,6 +11,7 @@ public static class DependencyInjection
     public static IServiceCollection AddMacroRecorderInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton<IMacroRepository, JsonMacroRepository>();
+        services.AddSingleton<MacroQueueFileStore>();
         services.AddSingleton<IRecordingEngine, LowLevelRecordingEngine>();
         services.AddSingleton<IPlaybackService>(sp =>
             new SendInputPlaybackService(() => sp.GetService<IPlaybackUiFeedback>()));

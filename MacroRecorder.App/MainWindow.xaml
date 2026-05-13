@@ -29,6 +29,9 @@
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:QueueCreatorViewModel}">
+            <views:QueueCreatorView />
+        </DataTemplate>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -43,6 +46,36 @@
                           IsChecked="{Binding IsPinnedTopmost, Mode=TwoWay}"
                           ToolTip="{loc:Loc Shell_PinTopmost_ToolTip}"
                           AutomationProperties.Name="{loc:Loc Shell_PinTopmost_A11y}" />
+            <Button DockPanel.Dock="Right"
+                    VerticalAlignment="Center"
+                    Margin="4,0,0,0"
+                    Style="{DynamicResource UiIconButton}"
+                    ToolTip="{loc:Loc Main_Settings_GearToolTip}"
+                    Command="{Binding OpenSettingsCommand}"
+                    AutomationProperties.Name="{loc:Loc Main_Settings_GearToolTip}"
+                    Visibility="{Binding ShowOverviewHeaderChrome, Converter={StaticResource BoolToVis}}">
+                <TextBlock FontFamily="Segoe MDL2 Assets"
+                           Text="&#xE713;"
+                           FontSize="18"
+                           Foreground="{DynamicResource UiBrush.TextPrimary}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center" />
+            </Button>
+            <Button DockPanel.Dock="Right"
+                    VerticalAlignment="Center"
+                    Margin="4,0,0,0"
+                    Style="{DynamicResource UiIconButton}"
+                    ToolTip="{loc:Loc Main_QueueCreator_ToolTip}"
+                    Command="{Binding OpenQueueCreatorCommand}"
+                    AutomationProperties.Name="{loc:Loc Main_QueueCreator_ToolTip}"
+                    Visibility="{Binding ShowOverviewHeaderChrome, Converter={StaticResource BoolToVis}}">
+                <TextBlock FontFamily="Segoe MDL2 Assets"
+                           Text="&#xE8FD;"
+                           FontSize="18"
+                           Foreground="{DynamicResource UiBrush.TextPrimary}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center" />
+            </Button>
             <Button DockPanel.Dock="Right"
                     VerticalAlignment="Center"
                     Margin="4,0,0,0"
@@ -105,6 +138,15 @@
                     </Style>
                 </Button.Style>
             </Button>
+            <Button DockPanel.Dock="Left"
+                    HorizontalAlignment="Left"
+                    Margin="8,0,0,0"
+                    Padding="14,8"
+                    FontSize="13"
+                    Style="{DynamicResource UiPrimaryButton}"
+                    Command="{Binding Overview.NewRecordingCommand}"
+                    Content="{loc:Loc Main_NewRecording}"
+                    Visibility="{Binding ShowOverviewHeaderChrome, Converter={StaticResource BoolToVis}}" />
             <Grid Background="Transparent" />
         </DockPanel>
         <ContentControl Grid.Row="1"

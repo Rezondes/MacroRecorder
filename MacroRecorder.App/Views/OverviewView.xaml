@@ -12,32 +12,6 @@
         <local:MacroListSummaryLineConverter x:Key="MacroSummaryLine" />
     </UserControl.Resources>
     <DockPanel Margin="16">
-        <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="0"
-                    HorizontalAlignment="Left"
-                    Content="{loc:Loc Main_NewRecording}"
-                    Padding="14,8"
-                    FontSize="13"
-                    Style="{DynamicResource UiPrimaryButton}"
-                    Command="{Binding NewRecordingCommand}" />
-            <Button Grid.Column="1"
-                    HorizontalAlignment="Right"
-                    Style="{DynamicResource UiIconButton}"
-                    ToolTip="{loc:Loc Main_Settings_GearToolTip}"
-                    Command="{Binding DataContext.OpenSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                    AutomationProperties.Name="{loc:Loc Main_Settings_GearToolTip}">
-                <TextBlock FontFamily="Segoe MDL2 Assets"
-                           Text="&#xE713;"
-                           FontSize="18"
-                           Foreground="{DynamicResource UiBrush.TextPrimary}"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Center" />
-            </Button>
-        </Grid>
         <Border Background="{DynamicResource UiBrush.Surface}"
                 BorderBrush="{DynamicResource UiBrush.Border}"
                 BorderThickness="1"

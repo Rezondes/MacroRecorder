@@ -11,6 +11,7 @@ alwaysApply: true
 - **Application** (`MacroRecorder.Application`): Orchestrierung, **Ports** (`IPlaybackService`, `IRecordingEngine`, Dialog-Ports), `RecordingCoordinator`, `TimelineNormalizer`.
 - **Infrastructure** (`MacroRecorder.Infrastructure`): Port-Implementierungen (Low-Level-Hooks, `SendInput`, Dateispeicher).
 - **App** (`MacroRecorder.App`): WPF, **MVVM** — Logik in ViewModels/Services, nicht in XAML Code-behind duplizieren.
+- **Ein Hauptfenster:** Hauptfunktionen im **einen** Hauptfenster über Shell-`CurrentPage` / DataTemplates; **keine** zusätzlichen Top-Level-`Window`-Features ohne triftigen Grund (modale Spezialfälle ausgenommen).
 - **WPF-Bibliothek** (`MacroRecorder.Wpf`): gemeinsame UI-Bausteine; Konventionen im Abschnitt **WPF-UI (`MacroRecorder.Wpf`)** unten.
 
 ## WPF-UI (`MacroRecorder.Wpf`)
