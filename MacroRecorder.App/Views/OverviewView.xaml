@@ -101,6 +101,7 @@
                                     <TextBlock.Text>
                                         <MultiBinding Converter="{StaticResource MacroSummaryLine}">
                                             <Binding Path="ActionCount" />
+                                            <Binding Path="TotalPlaybackDuration" />
                                             <Binding Path="LastModifiedUtc" />
                                         </MultiBinding>
                                     </TextBlock.Text>

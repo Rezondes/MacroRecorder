@@ -13,4 +13,9 @@ public interface IMacroRepository
     Task DeleteAsync(MacroId id, CancellationToken cancellationToken = default);
 }
 
-public sealed record MacroSummary(MacroId Id, string Name, int ActionCount, DateTimeOffset LastModifiedUtc);
+public sealed record MacroSummary(
+    MacroId Id,
+    string Name,
+    int ActionCount,
+    DateTimeOffset LastModifiedUtc,
+    TimeSpan TotalPlaybackDuration);

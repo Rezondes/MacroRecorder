@@ -57,11 +57,13 @@ public sealed class JsonMacroRepository : IMacroRepository
                     var macro = MacroJsonFileFormat.ParseMacro(document.RootElement, lastWriteUtc);
                     if (macro is null)
                         continue;
+                    var playbackDuration = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(macro.Events);
                     summaries.Add(new MacroSummary(
                         macro.Id,
                         macro.Name,
                         TimelineActionRowCount.Count(macro.Events),
-                        macro.LastModifiedAtUtc));
+                        macro.LastModifiedAtUtc,
+                        playbackDuration));
                 }
                 catch
                 {
