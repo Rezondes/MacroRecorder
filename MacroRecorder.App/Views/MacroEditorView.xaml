@@ -273,7 +273,6 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListView.Resources>
                         <Style TargetType="GridViewColumnHeader" BasedOn="{StaticResource UiGridViewColumnHeader}" />
-                        <Style TargetType="ScrollBar" BasedOn="{StaticResource UiScrollBar}" />
                     </ListView.Resources>
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">

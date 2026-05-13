@@ -22,7 +22,8 @@
                     BorderThickness="1"
                     CornerRadius="6"
                     Padding="0">
-                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                <ScrollViewer Style="{DynamicResource UiScrollViewerChrome}"
+                              HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
                     <TextBox x:Name="JsonBox"
                              AcceptsReturn="True"

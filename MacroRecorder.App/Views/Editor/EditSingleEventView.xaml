@@ -28,8 +28,7 @@
                         Style="{DynamicResource UiPrimaryButton}"
                         Click="OnOkClick" />
             </StackPanel>
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          Padding="0,0,4,0">
+            <ScrollViewer Style="{DynamicResource UiSettingsFormScrollViewer}">
                 <StackPanel x:Name="FieldsPanel" />
             </ScrollViewer>
         </DockPanel>

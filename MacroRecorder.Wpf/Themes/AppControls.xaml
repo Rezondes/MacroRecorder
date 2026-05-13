@@ -473,9 +473,13 @@
     </Style>
 
     <!-- Settings page + dialog typography and chrome (MacroRecorder.App and other hosts) -->
-    <Style x:Key="UiSettingsFormScrollViewer" TargetType="ScrollViewer">
-        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Style x:Key="UiScrollViewerChrome" TargetType="ScrollViewer">
         <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="0,0,4,0" />
+    </Style>
+
+    <Style x:Key="UiSettingsFormScrollViewer" TargetType="ScrollViewer" BasedOn="{StaticResource UiScrollViewerChrome}">
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
     </Style>
 
     <Style x:Key="UiSettingsFormStackPanel" TargetType="StackPanel">
@@ -589,83 +593,159 @@
         </Setter>
     </Style>
 
-    <!-- Vertical scrollbar (ListView / ScrollViewer); themed track + thumb -->
+    <!-- Themed scrollbars (vertical + horizontal); implicit applies app-wide when AppControls is merged. -->
+    <ControlTemplate x:Key="UiScrollBarVerticalTemplate" TargetType="ScrollBar">
+        <Border x:Name="TrackHost"
+                Width="16"
+                Margin="2,6,3,6"
+                CornerRadius="6"
+                Background="{DynamicResource UiBrush.SurfaceElevated}"
+                BorderBrush="{DynamicResource UiBrush.Border}"
+                BorderThickness="1"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <RepeatButton Grid.Row="0"
+                              Height="10"
+                              Opacity="0"
+                              Focusable="False"
+                              Command="{x:Static ScrollBar.PageUpCommand}" />
+                <Track x:Name="PART_Track"
+                       Grid.Row="1"
+                       Focusable="False"
+                       IsDirectionReversed="True">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Height="0"
+                                      Command="{x:Static ScrollBar.LineUpCommand}"
+                                      Focusable="False"
+                                      Opacity="0" />
+                    </Track.DecreaseRepeatButton>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Height="0"
+                                      Command="{x:Static ScrollBar.LineDownCommand}"
+                                      Focusable="False"
+                                      Opacity="0" />
+                    </Track.IncreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb x:Name="Thumb">
+                            <Thumb.Template>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Border x:Name="ThumbBd"
+                                            Margin="2,2"
+                                            CornerRadius="4"
+                                            Background="{DynamicResource UiBrush.Border}"
+                                            SnapsToDevicePixels="True" />
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource UiBrush.Primary}" />
+                                        </Trigger>
+                                        <Trigger Property="IsDragging" Value="True">
+                                            <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource UiBrush.PrimaryDark}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Thumb.Template>
+                        </Thumb>
+                    </Track.Thumb>
+                </Track>
+                <RepeatButton Grid.Row="2"
+                              Height="10"
+                              Opacity="0"
+                              Focusable="False"
+                              Command="{x:Static ScrollBar.PageDownCommand}" />
+            </Grid>
+        </Border>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="UiScrollBarHorizontalTemplate" TargetType="ScrollBar">
+        <Border x:Name="TrackHost"
+                Height="16"
+                Margin="6,2,6,3"
+                CornerRadius="6"
+                Background="{DynamicResource UiBrush.SurfaceElevated}"
+                BorderBrush="{DynamicResource UiBrush.Border}"
+                BorderThickness="1"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <RepeatButton Grid.Column="0"
+                              Width="10"
+                              Opacity="0"
+                              Focusable="False"
+                              Command="{x:Static ScrollBar.PageLeftCommand}" />
+                <Track x:Name="PART_Track"
+                       Grid.Column="1"
+                       Focusable="False"
+                       IsDirectionReversed="False">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Width="0"
+                                      Command="{x:Static ScrollBar.LineLeftCommand}"
+                                      Focusable="False"
+                                      Opacity="0" />
+                    </Track.DecreaseRepeatButton>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Width="0"
+                                      Command="{x:Static ScrollBar.LineRightCommand}"
+                                      Focusable="False"
+                                      Opacity="0" />
+                    </Track.IncreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb x:Name="Thumb">
+                            <Thumb.Template>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Border x:Name="ThumbBd"
+                                            Margin="2,2"
+                                            CornerRadius="4"
+                                            Background="{DynamicResource UiBrush.Border}"
+                                            SnapsToDevicePixels="True" />
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource UiBrush.Primary}" />
+                                        </Trigger>
+                                        <Trigger Property="IsDragging" Value="True">
+                                            <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource UiBrush.PrimaryDark}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Thumb.Template>
+                        </Thumb>
+                    </Track.Thumb>
+                </Track>
+                <RepeatButton Grid.Column="2"
+                              Width="10"
+                              Opacity="0"
+                              Focusable="False"
+                              Command="{x:Static ScrollBar.PageRightCommand}" />
+            </Grid>
+        </Border>
+    </ControlTemplate>
+
     <Style x:Key="UiScrollBar" TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Width" Value="16" />
-        <Setter Property="MinWidth" Value="16" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ScrollBar">
-                    <Border x:Name="TrackHost"
-                            Width="16"
-                            Margin="2,6,3,6"
-                            CornerRadius="6"
-                            Background="{DynamicResource UiBrush.SurfaceElevated}"
-                            BorderBrush="{DynamicResource UiBrush.Border}"
-                            BorderThickness="1"
-                            SnapsToDevicePixels="True">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <RepeatButton Grid.Row="0"
-                                          Height="10"
-                                          Opacity="0"
-                                          Focusable="False"
-                                          Command="{x:Static ScrollBar.PageUpCommand}" />
-                            <Track x:Name="PART_Track"
-                                   Grid.Row="1"
-                                   Focusable="False"
-                                   IsDirectionReversed="True">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Height="0"
-                                                  Command="{x:Static ScrollBar.LineUpCommand}"
-                                                  Focusable="False"
-                                                  Opacity="0" />
-                                </Track.DecreaseRepeatButton>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Height="0"
-                                                  Command="{x:Static ScrollBar.LineDownCommand}"
-                                                  Focusable="False"
-                                                  Opacity="0" />
-                                </Track.IncreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb x:Name="Thumb">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="Thumb">
-                                                <Border x:Name="ThumbBd"
-                                                        Margin="2,2"
-                                                        CornerRadius="4"
-                                                        Background="{DynamicResource UiBrush.Border}"
-                                                        SnapsToDevicePixels="True" />
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource UiBrush.Primary}" />
-                                                    </Trigger>
-                                                    <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="ThumbBd" Property="Background" Value="{DynamicResource UiBrush.PrimaryDark}" />
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                            <RepeatButton Grid.Row="2"
-                                          Height="10"
-                                          Opacity="0"
-                                          Focusable="False"
-                                          Command="{x:Static ScrollBar.PageDownCommand}" />
-                        </Grid>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Vertical">
+                <Setter Property="Width" Value="16" />
+                <Setter Property="MinWidth" Value="16" />
+                <Setter Property="Template" Value="{StaticResource UiScrollBarVerticalTemplate}" />
+            </Trigger>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Height" Value="16" />
+                <Setter Property="MinHeight" Value="16" />
+                <Setter Property="Template" Value="{StaticResource UiScrollBarHorizontalTemplate}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
+
+    <Style TargetType="ScrollBar" BasedOn="{StaticResource UiScrollBar}" />
 
     <Style x:Key="UiSegmentedAppearanceRadioLeft" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
