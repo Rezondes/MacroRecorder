@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using MacroRecorder.App.Services;
 using MacroRecorder.App.ViewModels;
 
 namespace MacroRecorder.App.Views;
@@ -46,12 +45,6 @@ public partial class MacroEditorView : UserControl
             if (TimelineList.Items.Count > 0)
                 TimelineList.ScrollIntoView(TimelineList.Items[^1]);
         }, DispatcherPriority.Loaded);
-    }
-
-    private void OnPlayMacroPreviewMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is Button button)
-            PlaybackCursorRestoreSession.ArmFromButton(button);
     }
 
     private void OnInsertStepMenuItemClick(object sender, RoutedEventArgs e) =>

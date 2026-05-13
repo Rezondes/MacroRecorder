@@ -76,6 +76,16 @@
         <Setter Property="Foreground" Value="{DynamicResource UiBrush.Error}" />
     </Style>
 
+    <!-- MDL2 / icon glyph: success / play (fixed green per theme light/dark). -->
+    <Style x:Key="UiIconButtonSuccessGlyph" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.Success}" />
+    </Style>
+
+    <!-- MDL2 / icon glyph: secondary accent (e.g. edit). -->
+    <Style x:Key="UiIconButtonSecondaryGlyph" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.Secondary}" />
+    </Style>
+
     <ControlTemplate x:Key="UiFlatToggleButtonTemplate" TargetType="ToggleButton">
         <Border x:Name="Bd"
                 Background="{TemplateBinding Background}"

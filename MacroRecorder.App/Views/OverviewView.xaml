@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MacroRecorder.App"
+             xmlns:controls="clr-namespace:MacroRecorder.App.Controls"
              xmlns:loc="clr-namespace:MacroRecorder.App.Localization"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -109,21 +110,22 @@
                                         Orientation="Horizontal"
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Right">
-                                <Button Content="{loc:Loc Main_Play}"
-                                        Margin="4,0,0,0"
-                                        MinWidth="88"
-                                        Style="{DynamicResource UiToolbarChromeButton}"
-                                        PreviewMouseLeftButtonDown="OnOverviewPlayPreviewMouseDown"
-                                        Command="{Binding DataContext.Overview.PlayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}" />
-                                <Button Content="{loc:Loc Main_Edit}"
-                                        Margin="8,0,0,0"
-                                        Padding="12,6"
-                                        MinWidth="96"
-                                        FontSize="12"
-                                        Style="{DynamicResource UiButtonChrome}"
+                                <controls:PlayMacroGlyphButton Margin="4,0,0,0"
+                                                               Command="{Binding DataContext.Overview.PlayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                               CommandParameter="{Binding}" />
+                                <Button Margin="4,0,0,0"
+                                        Style="{DynamicResource UiIconButtonSecondaryGlyph}"
+                                        ToolTip="{loc:Loc Main_Edit}"
+                                        AutomationProperties.Name="{loc:Loc Main_Edit}"
                                         Command="{Binding DataContext.Overview.EditCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}" />
+                                        CommandParameter="{Binding}">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               Text="&#xE70F;"
+                                               FontSize="18"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center" />
+                                </Button>
                                 <Button Margin="4,0,0,0"
                                         Style="{DynamicResource UiIconButtonPrimaryGlyph}"
                                         ToolTip="{loc:Loc Main_Export_ToolTip}"

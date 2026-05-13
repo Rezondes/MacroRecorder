@@ -22,6 +22,7 @@ public static class ThemeResourceBuilder
         Add(dict, "UiBrush.OnSecondary", c.OnSecondary);
         Add(dict, "UiBrush.Error", c.Error);
         Add(dict, "UiBrush.OnError", c.OnError);
+        Add(dict, "UiBrush.Success", SuccessGreen(isDark));
         Add(dict, "UiBrush.PrimaryHover", Lerp(c.Primary, Color.FromRgb(255, 255, 255), isDark ? 0.14 : 0.12));
         Add(dict, "UiBrush.OverlayScrim", Color.FromArgb(0x99, 0, 0, 0));
         Add(dict, "UiBrush.SurfaceHover", Lerp(c.Surface, c.Primary, isDark ? 0.12 : 0.06));
@@ -47,6 +48,9 @@ public static class ThemeResourceBuilder
         brush.Freeze();
         dict[key] = brush;
     }
+
+    private static Color SuccessGreen(bool isDark) =>
+        isDark ? Color.FromRgb(0x66, 0xBB, 0x6A) : Color.FromRgb(0x2E, 0x7D, 0x32);
 
     public static ResourceDictionary LoadAppControls()
     {
