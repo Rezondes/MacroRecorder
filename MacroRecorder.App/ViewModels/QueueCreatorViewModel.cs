@@ -398,8 +398,13 @@ public partial class QueueCreatorViewModel : ObservableObject
         try
         {
             var runner = new MacroQueueRunner(_workspace, _playback, _pause);
-            var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
-            await runner.RunAsync(document, graceMs, token).ConfigureAwait(true);
+            var prefs = AppSettingsStore.Load();
+            await runner.RunAsync(
+                document,
+                prefs.PlaybackUserInterruptGraceMs,
+                prefs.PlaybackFocusBringWindowToForeground,
+                prefs.PlaybackFocusRestoreIfMinimized,
+                token).ConfigureAwait(true);
         }
         catch (PlaybackAbortedByUserRequestException)
         {

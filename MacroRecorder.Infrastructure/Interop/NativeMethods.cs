@@ -174,6 +174,14 @@ internal static class NativeMethods
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool SetForegroundWindow(nint hWnd);
 
+    public const int SW_RESTORE = 9;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ShowWindow(nint hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(nint hWnd);
+
     [DllImport("user32.dll")]
     public static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
 

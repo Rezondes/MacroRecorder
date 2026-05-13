@@ -21,6 +21,8 @@ public partial class SettingsViewModel : ObservableObject
     private int _selectedSettingsTabIndex;
     private int _savedRecordingMouseMoveMinPixels = 10;
     private int _savedPlaybackInterruptGraceMs = 1000;
+    private bool _savedPlaybackFocusBringWindowToForeground = true;
+    private bool _savedPlaybackFocusRestoreIfMinimized = true;
 
     /// <summary>0 = General, 1 = Visuals, 2 = Macro. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
     public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
@@ -59,7 +61,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool HasUnsavedSettingsChanges =>
         HasPendingLanguageChange() || _appearance.HasPendingChanges || HasPendingMacroRecordingChange()
-        || HasPendingPlaybackGraceChange();
+        || HasPendingPlaybackGraceChange() || HasPendingPlaybackFocusChange();
 
     public bool IsLightMode
     {
@@ -100,6 +102,18 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnPlaybackInterruptGraceMsTextChanged(string value) =>
         OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
 
+    [ObservableProperty]
+    private bool playbackFocusBringWindowToForeground = true;
+
+    partial void OnPlaybackFocusBringWindowToForegroundChanged(bool value) =>
+        OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
+
+    [ObservableProperty]
+    private bool playbackFocusRestoreIfMinimized = true;
+
+    partial void OnPlaybackFocusRestoreIfMinimizedChanged(bool value) =>
+        OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
+
     public void LoadStateFromPreferences()
     {
         var code = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
@@ -110,6 +124,10 @@ public partial class SettingsViewModel : ObservableObject
         MouseMoveRecordingMinPixelsText = prefs.RecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
         _savedPlaybackInterruptGraceMs = prefs.PlaybackUserInterruptGraceMs;
         PlaybackInterruptGraceMsText = prefs.PlaybackUserInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
+        _savedPlaybackFocusBringWindowToForeground = prefs.PlaybackFocusBringWindowToForeground;
+        _savedPlaybackFocusRestoreIfMinimized = prefs.PlaybackFocusRestoreIfMinimized;
+        PlaybackFocusBringWindowToForeground = prefs.PlaybackFocusBringWindowToForeground;
+        PlaybackFocusRestoreIfMinimized = prefs.PlaybackFocusRestoreIfMinimized;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -144,12 +162,18 @@ public partial class SettingsViewModel : ObservableObject
         var app = AppSettingsStore.Load();
         app.RecordingMouseMoveMinPixels = ParseRecordingMinPixelsForSave();
         app.PlaybackUserInterruptGraceMs = ParsePlaybackGraceMsForSave();
+        app.PlaybackFocusBringWindowToForeground = PlaybackFocusBringWindowToForeground;
+        app.PlaybackFocusRestoreIfMinimized = PlaybackFocusRestoreIfMinimized;
         AppSettingsStore.Save(app);
         var reloaded = AppSettingsStore.Load();
         _savedRecordingMouseMoveMinPixels = reloaded.RecordingMouseMoveMinPixels;
         MouseMoveRecordingMinPixelsText = reloaded.RecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
         _savedPlaybackInterruptGraceMs = reloaded.PlaybackUserInterruptGraceMs;
         PlaybackInterruptGraceMsText = reloaded.PlaybackUserInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
+        _savedPlaybackFocusBringWindowToForeground = reloaded.PlaybackFocusBringWindowToForeground;
+        _savedPlaybackFocusRestoreIfMinimized = reloaded.PlaybackFocusRestoreIfMinimized;
+        PlaybackFocusBringWindowToForeground = reloaded.PlaybackFocusBringWindowToForeground;
+        PlaybackFocusRestoreIfMinimized = reloaded.PlaybackFocusRestoreIfMinimized;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -191,6 +215,8 @@ public partial class SettingsViewModel : ObservableObject
         _appearance.RevertToSaved();
         MouseMoveRecordingMinPixelsText = _savedRecordingMouseMoveMinPixels.ToString(CultureInfo.InvariantCulture);
         PlaybackInterruptGraceMsText = _savedPlaybackInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
+        PlaybackFocusBringWindowToForeground = _savedPlaybackFocusBringWindowToForeground;
+        PlaybackFocusRestoreIfMinimized = _savedPlaybackFocusRestoreIfMinimized;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -241,6 +267,14 @@ public partial class SettingsViewModel : ObservableObject
                 PlaybackGracePendingDisplay()));
         }
 
+        if (HasPendingPlaybackFocusChange())
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Settings_UnsavedCategoryPlaybackFocus"),
+                PlaybackFocusPairDisplay(_savedPlaybackFocusBringWindowToForeground, _savedPlaybackFocusRestoreIfMinimized),
+                PlaybackFocusPairDisplay(PlaybackFocusBringWindowToForeground, PlaybackFocusRestoreIfMinimized)));
+        }
+
         var intro = _loc.GetString("Settings_UnsavedIntro");
         var outro = _loc.GetString("Settings_UnsavedOutro");
         if (lines.Count == 0)
@@ -262,6 +296,20 @@ public partial class SettingsViewModel : ObservableObject
             return true;
         return parsed != _savedPlaybackInterruptGraceMs;
     }
+
+    private bool HasPendingPlaybackFocusChange() =>
+        PlaybackFocusBringWindowToForeground != _savedPlaybackFocusBringWindowToForeground
+        || PlaybackFocusRestoreIfMinimized != _savedPlaybackFocusRestoreIfMinimized;
+
+    private string PlaybackFocusPairDisplay(bool bring, bool restore) =>
+        string.Format(
+            _loc.CurrentUiCulture,
+            _loc.GetString("Settings_PlaybackFocusUnsavedPairFormat"),
+            YesNo(bring),
+            YesNo(restore));
+
+    private string YesNo(bool value) =>
+        value ? _loc.GetString("Common_Yes") : _loc.GetString("Common_No");
 
     private string PlaybackGracePendingDisplay() =>
         TryParsePlaybackGraceMs(PlaybackInterruptGraceMsText, out var parsed)

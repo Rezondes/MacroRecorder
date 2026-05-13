@@ -58,6 +58,20 @@
                            FontSize="13"
                            Foreground="{DynamicResource UiBrush.TextSecondary}" />
             </StackPanel>
+
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Margin="0,20,0,0"
+                       Text="{loc:Loc Settings_Macro_PlaybackFocusHeader}" />
+            <CheckBox Content="{loc:Loc Settings_Macro_PlaybackFocusBringToForeground}"
+                      IsChecked="{Binding PlaybackFocusBringWindowToForeground, Mode=TwoWay}"
+                      Margin="0,4,0,0"
+                      Foreground="{DynamicResource UiBrush.TextPrimary}"
+                      Style="{DynamicResource UiCheckBoxModern}" />
+            <CheckBox Content="{loc:Loc Settings_Macro_PlaybackFocusRestoreIfMinimized}"
+                      IsChecked="{Binding PlaybackFocusRestoreIfMinimized, Mode=TwoWay}"
+                      Margin="0,4,0,0"
+                      Foreground="{DynamicResource UiBrush.TextPrimary}"
+                      Style="{DynamicResource UiCheckBoxModern}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -1042,8 +1042,13 @@ public partial class MacroEditorViewModel : ObservableObject
                 _macro.DocumentVersion,
                 _macro.CreatedAtUtc,
                 _macro.LastModifiedAtUtc);
-            var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
-            await _playback.PlayAsync(test, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
+            var prefs = AppSettingsStore.Load();
+            await _playback.PlayAsync(
+                test,
+                cancellationToken: default,
+                userInputInterruptGraceMilliseconds: prefs.PlaybackUserInterruptGraceMs,
+                playbackFocusBringWindowToForeground: prefs.PlaybackFocusBringWindowToForeground,
+                playbackFocusRestoreIfMinimized: prefs.PlaybackFocusRestoreIfMinimized).ConfigureAwait(true);
         }
         catch (PlaybackAbortedByUserRequestException)
         {

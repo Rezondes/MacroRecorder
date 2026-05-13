@@ -14,6 +14,8 @@ public sealed class MacroQueueRunner(
     public async Task RunAsync(
         MacroQueueDocument document,
         int userInputInterruptGraceMilliseconds,
+        bool playbackFocusBringWindowToForeground,
+        bool playbackFocusRestoreIfMinimized,
         CancellationToken cancellationToken = default)
     {
         if (document.Steps.Count == 0)
@@ -39,7 +41,12 @@ public sealed class MacroQueueRunner(
                         throw new MacroQueueEmptyMacroException(step.MacroId);
 
                     await playback
-                        .PlayAsync(macro, cancellationToken, userInputInterruptGraceMilliseconds)
+                        .PlayAsync(
+                            macro,
+                            cancellationToken,
+                            userInputInterruptGraceMilliseconds,
+                            playbackFocusBringWindowToForeground,
+                            playbackFocusRestoreIfMinimized)
                         .ConfigureAwait(false);
 
                     if (runIndex < step.RepeatCount - 1)

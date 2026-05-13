@@ -70,8 +70,13 @@ public partial class MainViewModel : ObservableObject
 
         try
         {
-            var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
-            await _playback.PlayAsync(macro, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
+            var prefs = AppSettingsStore.Load();
+            await _playback.PlayAsync(
+                macro,
+                cancellationToken: default,
+                userInputInterruptGraceMilliseconds: prefs.PlaybackUserInterruptGraceMs,
+                playbackFocusBringWindowToForeground: prefs.PlaybackFocusBringWindowToForeground,
+                playbackFocusRestoreIfMinimized: prefs.PlaybackFocusRestoreIfMinimized).ConfigureAwait(true);
         }
         catch (PlaybackAbortedByUserRequestException)
         {

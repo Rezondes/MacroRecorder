@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using MacroRecorder.Wpf;
 
@@ -41,6 +42,14 @@ public sealed class AppSettings
     [JsonPropertyName("playbackUserInterruptGraceMs")]
     public int PlaybackUserInterruptGraceMs { get; set; } = 1000;
 
+    /// <summary>On focus-changed playback, call <c>SetForegroundWindow</c> for the target window.</summary>
+    [JsonPropertyName("playbackFocusBringWindowToForeground")]
+    public bool PlaybackFocusBringWindowToForeground { get; set; } = true;
+
+    /// <summary>On focus-changed playback, restore the target window if minimized.</summary>
+    [JsonPropertyName("playbackFocusRestoreIfMinimized")]
+    public bool PlaybackFocusRestoreIfMinimized { get; set; } = true;
+
     /// <summary>Last normal (or restore) bounds of the main window; null = use default placement.</summary>
     [JsonPropertyName("mainWindowPlacement")]
     public MainWindowPlacement? MainWindowPlacement { get; set; }
@@ -66,7 +75,10 @@ public static class AppSettingsStore
                 var json = File.ReadAllText(SettingsFilePath);
                 var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
                 if (loaded is not null)
+                {
+                    ApplyPlaybackFocusDefaultsForLegacyJson(json, loaded);
                     return Normalize(loaded);
+                }
             }
         }
         catch
@@ -150,6 +162,34 @@ public static class AppSettingsStore
         var ui = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("de", StringComparison.OrdinalIgnoreCase)
             ? "de"
             : "en";
-        return new AppSettings { UiCulture = ui, RecordingMouseMoveMinPixels = 10, PlaybackUserInterruptGraceMs = 1000 };
+        return new AppSettings
+        {
+            UiCulture = ui,
+            RecordingMouseMoveMinPixels = 10,
+            PlaybackUserInterruptGraceMs = 1000,
+            PlaybackFocusBringWindowToForeground = true,
+            PlaybackFocusRestoreIfMinimized = true
+        };
+    }
+
+    /// <summary>
+    /// Missing keys deserialize as <c>false</c> for <c>bool</c>; legacy files without these properties should behave as both true.
+    /// </summary>
+    private static void ApplyPlaybackFocusDefaultsForLegacyJson(string json, AppSettings loaded)
+    {
+        try
+        {
+            var root = JsonNode.Parse(json)?.AsObject();
+            if (root is null)
+                return;
+            if (!root.ContainsKey("playbackFocusBringWindowToForeground"))
+                loaded.PlaybackFocusBringWindowToForeground = true;
+            if (!root.ContainsKey("playbackFocusRestoreIfMinimized"))
+                loaded.PlaybackFocusRestoreIfMinimized = true;
+        }
+        catch
+        {
+            // keep deserialized values
+        }
     }
 }

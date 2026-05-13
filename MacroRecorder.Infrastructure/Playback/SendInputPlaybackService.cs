@@ -19,6 +19,9 @@ public sealed class SendInputPlaybackService : IPlaybackService
     /// <summary>Throttle start-delay overlay updates; avoids flooding the UI dispatcher while the grace loop runs.</summary>
     private const int StartDelayUiThrottleMs = 250;
 
+    /// <summary>After <see cref="NativeMethods.SetForegroundWindow"/> or restore from minimized, allow the shell to settle before SendInput.</summary>
+    private const int PlaybackFocusStabilizationDelayMs = 250;
+
     private readonly object _playLock = new();
     private readonly NativeMethods.LowLevelProc _interruptKbProc;
     private readonly NativeMethods.LowLevelProc _interruptMsProc;
@@ -37,11 +40,21 @@ public sealed class SendInputPlaybackService : IPlaybackService
         _interruptMsProc = InterruptMouseLowLevelHook;
     }
 
-    public Task PlayAsync(Macro macro, CancellationToken cancellationToken = default, int userInputInterruptGraceMilliseconds = 0) =>
+    public Task PlayAsync(
+        Macro macro,
+        CancellationToken cancellationToken = default,
+        int userInputInterruptGraceMilliseconds = 0,
+        bool playbackFocusBringWindowToForeground = true,
+        bool playbackFocusRestoreIfMinimized = true) =>
         Task.Run(() =>
         {
             lock (_playLock)
-                RunPlayLocked(macro, cancellationToken, userInputInterruptGraceMilliseconds);
+                RunPlayLocked(
+                    macro,
+                    cancellationToken,
+                    userInputInterruptGraceMilliseconds,
+                    playbackFocusBringWindowToForeground,
+                    playbackFocusRestoreIfMinimized);
         }, cancellationToken);
 
     public void RequestUserCancel()
@@ -58,7 +71,12 @@ public sealed class SendInputPlaybackService : IPlaybackService
         public nint CurrentHwnd;
     }
 
-    private void RunPlayLocked(Macro macro, CancellationToken cancellationToken, int userInputInterruptGraceMilliseconds)
+    private void RunPlayLocked(
+        Macro macro,
+        CancellationToken cancellationToken,
+        int userInputInterruptGraceMilliseconds,
+        bool playbackFocusBringWindowToForeground,
+        bool playbackFocusRestoreIfMinimized)
     {
         if (macro.Events.Count == 0)
             return;
@@ -123,7 +141,14 @@ public sealed class SendInputPlaybackService : IPlaybackService
 
             TryInstallInterruptHooks(module);
 
-            PlayCore(ordered, estimatedPlay, linked.Token, feedback, focusBoundState);
+            PlayCore(
+                ordered,
+                estimatedPlay,
+                linked.Token,
+                feedback,
+                focusBoundState,
+                playbackFocusBringWindowToForeground,
+                playbackFocusRestoreIfMinimized);
         }
         catch (OperationCanceledException)
         {
@@ -232,7 +257,9 @@ public sealed class SendInputPlaybackService : IPlaybackService
         TimeSpan totalEstimated,
         CancellationToken cancellationToken,
         IPlaybackUiFeedback? feedback,
-        FocusBoundPlaybackState? focusBoundState)
+        FocusBoundPlaybackState? focusBoundState,
+        bool playbackFocusBringWindowToForeground,
+        bool playbackFocusRestoreIfMinimized)
     {
         var sw = Stopwatch.StartNew();
         feedback?.UpdatePlayingRemaining(ClampRemaining(totalEstimated, sw.Elapsed));
@@ -290,15 +317,41 @@ public sealed class SendInputPlaybackService : IPlaybackService
                     break;
                 }
                 case FocusChangedRecordedEvent focusChanged:
-                    TryFocus(focusChanged);
+                {
+                    nint? resolvedHwnd = null;
+                    if (focusBoundState is not null && focusChanged.Hwnd is not null)
+                        resolvedHwnd = FocusWindowMatcher.ResolveForPlayback(focusChanged);
+
+                    if (focusChanged.Hwnd is not null)
+                    {
+                        var hwndForFocus = resolvedHwnd ?? (nint)focusChanged.Hwnd.Value;
+                        var needFocusStabilizationDelay = ApplyPlaybackFocusToWindow(
+                            hwndForFocus,
+                            playbackFocusBringWindowToForeground,
+                            playbackFocusRestoreIfMinimized);
+                        if (needFocusStabilizationDelay)
+                        {
+                            var stabilization = TimeSpan.FromMilliseconds(PlaybackFocusStabilizationDelayMs);
+                            SleepCancellable(
+                                stabilization,
+                                cancellationToken,
+                                totalEstimated,
+                                sw,
+                                ref lastUiMs,
+                                feedback);
+                            playbackCursor += stabilization;
+                        }
+                    }
+
                     if (focusBoundState is not null)
                     {
                         focusBoundState.CurrentHwnd = focusChanged.Hwnd is null
                             ? nint.Zero
-                            : FocusWindowMatcher.ResolveForPlayback(focusChanged);
+                            : resolvedHwnd!.Value;
                     }
 
                     break;
+                }
                 case SyntheticWaitRecordedEvent syntheticWait:
                     SleepCancellable(
                         syntheticWait.AdditionalDelay,
@@ -543,13 +596,26 @@ public sealed class SendInputPlaybackService : IPlaybackService
         _ = NativeMethods.SendInput(1, new[] { input }, InputStructSize);
     }
 
-    private static void TryFocus(FocusChangedRecordedEvent f)
+    /// <returns>True if the window was restored from minimized and/or brought to the foreground; caller may wait so the shell can settle.</returns>
+    private static bool ApplyPlaybackFocusToWindow(nint hwnd, bool bringToForeground, bool restoreIfMinimized)
     {
-        if (f.Hwnd is null)
-            return;
-        var hwnd = (nint)f.Hwnd.Value;
-        if (!NativeMethods.IsWindow(hwnd))
-            return;
-        _ = NativeMethods.SetForegroundWindow(hwnd);
+        if (hwnd == nint.Zero || !NativeMethods.IsWindow(hwnd))
+            return false;
+
+        var needStabilizationDelay = false;
+        if (restoreIfMinimized && NativeMethods.IsIconic(hwnd))
+        {
+            _ = NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
+            needStabilizationDelay = true;
+        }
+
+        if (bringToForeground)
+        {
+            if (NativeMethods.GetForegroundWindow() != hwnd)
+                needStabilizationDelay = true;
+            _ = NativeMethods.SetForegroundWindow(hwnd);
+        }
+
+        return needStabilizationDelay;
     }
 }
