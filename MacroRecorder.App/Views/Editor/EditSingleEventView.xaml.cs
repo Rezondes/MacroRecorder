@@ -44,7 +44,7 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         BuildFields();
     }
 
-    /// <summary>When true, the main window defers Escape / Win handling like <see cref="InsertKeyStrokeView"/>.</summary>
+    /// <summary>When true, the main window defers Escape / Win handling so physical keys can be captured.</summary>
     public bool IsEditingKeyPhysicalEvent => _original is KeyDownRecordedEvent or KeyUpRecordedEvent;
 
     public RecordedInputEvent? ResultEvent { get; private set; }

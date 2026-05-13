@@ -52,8 +52,7 @@ public partial class MainWindow : Window
     }
 
     private static bool ContentModalDefersPhysicalKeyRouting(object? content) =>
-        content is IContentModalKeyCaptureHost
-        || (content is Views.Editor.EditSingleEventView editEventView && editEventView.IsEditingKeyPhysicalEvent);
+        content is Views.Editor.EditSingleEventView editEventView && editEventView.IsEditingKeyPhysicalEvent;
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {

@@ -561,36 +561,26 @@ public partial class MacroEditorViewModel : ObservableObject
     {
         if (IsRecording)
             return;
-        var delayMillisecondsText = _dialogs.PromptText(
-            _loc.GetString("Editor_PromptWaitTitle"),
-            _loc.GetString("Editor_PromptWaitMessage"),
-            _loc.GetString("Editor_PromptWaitDefault"),
-            text =>
-            {
-                if (string.IsNullOrWhiteSpace(text))
-                    return _loc.GetString("Editor_PromptWaitErrorRequired");
-                if (!int.TryParse(text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n))
-                    return _loc.GetString("Editor_PromptWaitErrorNumber");
-                if (n < 1)
-                    return _loc.GetString("Editor_PromptWaitErrorMin");
-                return null;
-            },
-            restrictInputToDigits: true);
-        if (string.IsNullOrWhiteSpace(delayMillisecondsText) ||
-            !int.TryParse(delayMillisecondsText.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var parsedDelayMilliseconds) ||
-            parsedDelayMilliseconds < 1)
+        var owner = _ownerWindow ?? global::System.Windows.Application.Current?.MainWindow;
+        if (owner is null)
+            return;
+
+        var draft = new SyntheticWaitRecordedEvent
+        {
+            DelayBefore = TimeSpan.Zero,
+            Sequence = 0,
+            AdditionalDelay = TimeSpan.FromMilliseconds(500)
+        };
+
+        if (_insertDialogs.ShowEditSingleEventDialog(owner, draft, out var edited) != true)
+            return;
+        if (edited is not SyntheticWaitRecordedEvent waitEvent)
             return;
 
         var insertAt = GetInsertIndex(after);
         Mutate(() =>
         {
-            var delay = TimeSpan.FromMilliseconds(parsedDelayMilliseconds);
-            var waitEvent = new SyntheticWaitRecordedEvent
-            {
-                DelayBefore = TimeSpan.Zero,
-                Sequence = 0,
-                AdditionalDelay = delay
-            };
+            var totalDuration = waitEvent.DelayBefore + waitEvent.AdditionalDelay;
 
             if (insertAt < _flatEvents.Count)
             {
@@ -611,7 +601,7 @@ public partial class MacroEditorViewModel : ObservableObject
                 }
 
                 _flatEvents.Insert(insertAt, waitEvent);
-                var delta = delay - gapBefore;
+                var delta = totalDuration - gapBefore;
                 if (delta != TimeSpan.Zero && insertAt + 1 < _flatEvents.Count)
                     TimelinePlaybackGapCollapse.ShiftElapsedFromIndex(_flatEvents, insertAt + 1, delta);
             }
@@ -635,38 +625,37 @@ public partial class MacroEditorViewModel : ObservableObject
         var owner = _ownerWindow ?? global::System.Windows.Application.Current?.MainWindow;
         if (owner is null)
             return;
-        var showDialogResult = _insertDialogs.ShowMouseClickDialog(
-            owner,
-            out var screenX,
-            out var screenY,
-            out var mouseButton);
-        if (showDialogResult != true)
-            return;
-        var insertAt = GetInsertIndex(after);
-        Mutate(() =>
+
+        var downDraft = new MouseButtonDownRecordedEvent
         {
-            var placeholderElapsed = TimeSpan.Zero;
-            var placeholderSequence = 0UL;
-            _flatEvents.InsertRange(insertAt,
-            [
-                new MouseButtonDownRecordedEvent
-                {
-                    DelayBefore = placeholderElapsed,
-                    Sequence = placeholderSequence,
-                    Button = mouseButton,
-                    ScreenX = screenX,
-                    ScreenY = screenY
-                },
-                new MouseButtonUpRecordedEvent
-                {
-                    DelayBefore = placeholderElapsed,
-                    Sequence = placeholderSequence,
-                    Button = mouseButton,
-                    ScreenX = screenX,
-                    ScreenY = screenY
-                }
-            ]);
-        });
+            DelayBefore = TimeSpan.Zero,
+            Sequence = 0,
+            Button = MouseButtonKind.Left,
+            ScreenX = 0,
+            ScreenY = 0
+        };
+
+        if (_insertDialogs.ShowEditSingleEventDialog(owner, downDraft, out var editedDown) != true)
+            return;
+        if (editedDown is not MouseButtonDownRecordedEvent mouseDownOk)
+            return;
+
+        var upDraft = new MouseButtonUpRecordedEvent
+        {
+            DelayBefore = TimeSpan.Zero,
+            Sequence = 0,
+            Button = mouseDownOk.Button,
+            ScreenX = mouseDownOk.ScreenX,
+            ScreenY = mouseDownOk.ScreenY
+        };
+
+        if (_insertDialogs.ShowEditSingleEventDialog(owner, upDraft, out var editedUp) != true)
+            return;
+        if (editedUp is not MouseButtonUpRecordedEvent mouseUpOk)
+            return;
+
+        var insertAt = GetInsertIndex(after);
+        Mutate(() => { _flatEvents.InsertRange(insertAt, [mouseDownOk, mouseUpOk]); });
     }
 
     [RelayCommand(CanExecute = nameof(CanInsertWhileNotRecording))]
@@ -682,43 +671,43 @@ public partial class MacroEditorViewModel : ObservableObject
         var owner = _ownerWindow ?? global::System.Windows.Application.Current?.MainWindow;
         if (owner is null)
             return;
-        var showDialogResult = _insertDialogs.ShowKeyStrokeDialog(
-            owner,
-            out var virtualKey,
-            out var scanCode,
-            out var isExtendedKey);
-        if (showDialogResult != true)
-            return;
-        var insertAt = GetInsertIndex(after);
-        Mutate(() =>
+
+        var defaultVk = (ushort)System.Windows.Input.KeyInterop.VirtualKeyFromKey(System.Windows.Input.Key.Space);
+        var downDraft = new KeyDownRecordedEvent
         {
-            var placeholderElapsed = TimeSpan.Zero;
-            var placeholderSequence = 0UL;
-            _flatEvents.InsertRange(insertAt,
-            [
-                new KeyDownRecordedEvent
-                {
-                    DelayBefore = placeholderElapsed,
-                    Sequence = placeholderSequence,
-                    Vk = virtualKey,
-                    ScanCode = scanCode,
-                    IsExtendedKey = isExtendedKey,
-                    IsAltDown = false,
-                    IsInjected = false,
-                    RepeatCount = 1
-                },
-                new KeyUpRecordedEvent
-                {
-                    DelayBefore = placeholderElapsed,
-                    Sequence = placeholderSequence,
-                    Vk = virtualKey,
-                    ScanCode = scanCode,
-                    IsExtendedKey = isExtendedKey,
-                    IsAltDown = false,
-                    IsInjected = false
-                }
-            ]);
-        });
+            DelayBefore = TimeSpan.Zero,
+            Sequence = 0,
+            Vk = defaultVk,
+            ScanCode = MacroRecorder.Infrastructure.Input.VkScanMapper.VirtualKeyToScanCode(defaultVk),
+            IsExtendedKey = false,
+            IsAltDown = false,
+            IsInjected = false,
+            RepeatCount = 1
+        };
+
+        if (_insertDialogs.ShowEditSingleEventDialog(owner, downDraft, out var editedDown) != true)
+            return;
+        if (editedDown is not KeyDownRecordedEvent keyDownOk)
+            return;
+
+        var upDraft = new KeyUpRecordedEvent
+        {
+            DelayBefore = TimeSpan.Zero,
+            Sequence = 0,
+            Vk = keyDownOk.Vk,
+            ScanCode = keyDownOk.ScanCode,
+            IsExtendedKey = keyDownOk.IsExtendedKey,
+            IsAltDown = keyDownOk.IsAltDown,
+            IsInjected = keyDownOk.IsInjected
+        };
+
+        if (_insertDialogs.ShowEditSingleEventDialog(owner, upDraft, out var editedUp) != true)
+            return;
+        if (editedUp is not KeyUpRecordedEvent keyUpOk)
+            return;
+
+        var insertAt = GetInsertIndex(after);
+        Mutate(() => { _flatEvents.InsertRange(insertAt, [keyDownOk, keyUpOk]); });
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleRecording))]
