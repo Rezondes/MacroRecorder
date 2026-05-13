@@ -47,7 +47,7 @@
                                           DigitsOnly="True"
                                           MinimumValue="0"
                                           MaximumValue="300000"
-                                          SpinnerStep="1"
+                                          SpinnerStep="1000"
                                           ShowSpinner="True"
                                           SpinUpToolTip="{loc:Loc Editor_PromptWaitSpinUp}"
                                           SpinDownToolTip="{loc:Loc Editor_PromptWaitSpinDown}"

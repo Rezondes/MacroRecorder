@@ -19,8 +19,8 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IUserDialogService _dialogs;
 
     private int _selectedSettingsTabIndex;
-    private int _savedRecordingMouseMoveMinPixels = 5;
-    private int _savedPlaybackInterruptGraceMs;
+    private int _savedRecordingMouseMoveMinPixels = 10;
+    private int _savedPlaybackInterruptGraceMs = 1000;
 
     /// <summary>0 = General, 1 = Visuals, 2 = Macro. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
     public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
@@ -88,14 +88,14 @@ public partial class SettingsViewModel : ObservableObject
 
     /// <summary>Digits for <see cref="MacroRecorder.Wpf.Controls.DigitsOnlyNumericBox"/> (mouse move min pixels).</summary>
     [ObservableProperty]
-    private string mouseMoveRecordingMinPixelsText = "5";
+    private string mouseMoveRecordingMinPixelsText = "10";
 
     partial void OnMouseMoveRecordingMinPixelsTextChanged(string value) =>
         OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
 
     /// <summary>Milliseconds (digits) for playback user-interrupt grace; 0 = off.</summary>
     [ObservableProperty]
-    private string playbackInterruptGraceMsText = "0";
+    private string playbackInterruptGraceMsText = "1000";
 
     partial void OnPlaybackInterruptGraceMsTextChanged(string value) =>
         OnPropertyChanged(nameof(HasUnsavedSettingsChanges));

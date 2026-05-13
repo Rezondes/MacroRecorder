@@ -19,11 +19,11 @@ public sealed class AppSettings
 
     /// <summary>Minimum Euclidean pixel delta between consecutive stored mouse moves (recording).</summary>
     [JsonPropertyName("recordingMouseMoveMinPixels")]
-    public int RecordingMouseMoveMinPixels { get; set; } = 5;
+    public int RecordingMouseMoveMinPixels { get; set; } = 10;
 
     /// <summary>Wait this many milliseconds after play begins before emitting events; same window ignores user interrupt (0 = off).</summary>
     [JsonPropertyName("playbackUserInterruptGraceMs")]
-    public int PlaybackUserInterruptGraceMs { get; set; }
+    public int PlaybackUserInterruptGraceMs { get; set; } = 1000;
 }
 
 public static class AppSettingsStore
@@ -102,6 +102,6 @@ public static class AppSettingsStore
         var ui = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("de", StringComparison.OrdinalIgnoreCase)
             ? "de"
             : "en";
-        return new AppSettings { UiCulture = ui, RecordingMouseMoveMinPixels = 5, PlaybackUserInterruptGraceMs = 0 };
+        return new AppSettings { UiCulture = ui, RecordingMouseMoveMinPixels = 10, PlaybackUserInterruptGraceMs = 1000 };
     }
 }
