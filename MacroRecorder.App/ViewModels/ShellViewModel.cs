@@ -18,7 +18,8 @@ public partial class ShellViewModel : ObservableObject,
     IConfirmModalHost,
     IEditEventModalHost,
     IEditorInsertModalHost,
-    IPromptTextModalHost
+    IPromptTextModalHost,
+    IPlaybackUiFeedback
 {
     private readonly MainViewModel _overview;
     private readonly IServiceProvider _services;

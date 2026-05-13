@@ -12,7 +12,8 @@ public static class DependencyInjection
     {
         services.AddSingleton<IMacroRepository, JsonMacroRepository>();
         services.AddSingleton<IRecordingEngine, LowLevelRecordingEngine>();
-        services.AddSingleton<IPlaybackService, SendInputPlaybackService>();
+        services.AddSingleton<IPlaybackService>(sp =>
+            new SendInputPlaybackService(() => sp.GetService<IPlaybackUiFeedback>()));
         return services;
     }
 }

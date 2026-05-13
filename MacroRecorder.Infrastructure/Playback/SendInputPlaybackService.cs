@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using MacroRecorder.Application.Ports;
+using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Interop;
 
@@ -10,17 +11,21 @@ public sealed class SendInputPlaybackService : IPlaybackService
 {
     private static readonly int InputStructSize = Marshal.SizeOf<NativeMethods.INPUT>();
 
+    private const int PlayingUiThrottleMs = 200;
+
     private readonly object _playLock = new();
     private readonly NativeMethods.LowLevelProc _interruptKbProc;
     private readonly NativeMethods.LowLevelProc _interruptMsProc;
+    private readonly Func<IPlaybackUiFeedback?> _resolveFeedback;
     private CancellationTokenSource? _interruptCts;
     private nint _interruptKeyboardHook;
     private nint _interruptMouseHook;
     private Stopwatch? _userInterruptGraceStopwatch;
     private int _userInterruptGraceMs;
 
-    public SendInputPlaybackService()
+    public SendInputPlaybackService(Func<IPlaybackUiFeedback?> resolveFeedback)
     {
+        _resolveFeedback = resolveFeedback;
         _interruptKbProc = InterruptKeyboardLowLevelHook;
         _interruptMsProc = InterruptMouseLowLevelHook;
     }
@@ -57,12 +62,38 @@ public sealed class SendInputPlaybackService : IPlaybackService
         _userInterruptGraceMs = Math.Clamp(userInputInterruptGraceMilliseconds, 0, 300_000);
         _userInterruptGraceStopwatch = Stopwatch.StartNew();
 
+        var ordered = macro.Events.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
+        var estimatedPlay = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(ordered);
+        var overlayBegan = false;
+        var feedback = _resolveFeedback();
+
         try
         {
-            // No events until grace elapses; hooks still ignore user cancel while Elapsed < grace (see interrupt hooks).
+            feedback?.Begin(macro, _userInterruptGraceMs, estimatedPlay);
+            overlayBegan = true;
+
             if (_userInterruptGraceMs > 0)
-                Task.Delay(_userInterruptGraceMs, linked.Token).GetAwaiter().GetResult();
-            PlayCore(macro, linked.Token);
+            {
+                var graceSw = Stopwatch.StartNew();
+                while (graceSw.ElapsedMilliseconds < _userInterruptGraceMs)
+                {
+                    linked.Token.ThrowIfCancellationRequested();
+                    var remMs = _userInterruptGraceMs - graceSw.ElapsedMilliseconds;
+                    if (remMs < 0)
+                        remMs = 0;
+                    feedback?.UpdateStartDelayRemaining(TimeSpan.FromMilliseconds(remMs));
+                    var chunk = (int)Math.Min(100, remMs);
+                    if (chunk <= 0)
+                        break;
+                    Task.Delay(chunk, linked.Token).GetAwaiter().GetResult();
+                }
+
+                feedback?.UpdateStartDelayRemaining(TimeSpan.Zero);
+            }
+            else
+                feedback?.UpdatePlayingRemaining(estimatedPlay);
+
+            PlayCore(ordered, estimatedPlay, linked.Token, feedback);
         }
         catch (OperationCanceledException)
         {
@@ -73,6 +104,9 @@ public sealed class SendInputPlaybackService : IPlaybackService
         }
         finally
         {
+            if (overlayBegan)
+                feedback?.End();
+
             CleanupInterruptHooks();
             _interruptCts = null;
             _userInterruptGraceStopwatch = null;
@@ -134,15 +168,21 @@ public sealed class SendInputPlaybackService : IPlaybackService
         }
     }
 
-    private void PlayCore(Macro macro, CancellationToken cancellationToken)
+    private void PlayCore(
+        IReadOnlyList<RecordedInputEvent> ordered,
+        TimeSpan totalEstimated,
+        CancellationToken cancellationToken,
+        IPlaybackUiFeedback? feedback)
     {
-        var ordered = macro.Events.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
         var sw = Stopwatch.StartNew();
+        feedback?.UpdatePlayingRemaining(ClampRemaining(totalEstimated, sw.Elapsed));
+        var lastUiMs = Environment.TickCount64;
 
         foreach (var recordedEvent in ordered)
         {
             cancellationToken.ThrowIfCancellationRequested();
             WaitUntil(sw, recordedEvent.ElapsedSinceSessionStart, cancellationToken);
+            MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
 
             switch (recordedEvent)
             {
@@ -172,7 +212,31 @@ public sealed class SendInputPlaybackService : IPlaybackService
                     SleepCancellable(syntheticWait.AdditionalDelay, cancellationToken);
                     break;
             }
+
+            MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
         }
+
+        feedback?.UpdatePlayingRemaining(TimeSpan.Zero);
+    }
+
+    private void MaybeUpdatePlayingRemaining(
+        TimeSpan totalEstimated,
+        Stopwatch sessionSw,
+        ref long lastUiMs,
+        IPlaybackUiFeedback? feedback)
+    {
+        var now = Environment.TickCount64;
+        if (now - lastUiMs < PlayingUiThrottleMs)
+            return;
+
+        lastUiMs = now;
+        feedback?.UpdatePlayingRemaining(ClampRemaining(totalEstimated, sessionSw.Elapsed));
+    }
+
+    private static TimeSpan ClampRemaining(TimeSpan totalEstimated, TimeSpan elapsed)
+    {
+        var rem = totalEstimated - elapsed;
+        return rem < TimeSpan.Zero ? TimeSpan.Zero : rem;
     }
 
     private static void WaitUntil(Stopwatch sw, TimeSpan target, CancellationToken cancellationToken)

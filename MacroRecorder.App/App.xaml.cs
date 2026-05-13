@@ -29,6 +29,7 @@ public partial class App : System.Windows.Application
             new Lazy<INavigationService>(() => sp.GetRequiredService<INavigationService>()));
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<ShellViewModel>();
+        builder.Services.AddSingleton<IPlaybackUiFeedback>(sp => sp.GetRequiredService<ShellViewModel>());
         builder.Services.AddSingleton(sp =>
             new Lazy<IUnsavedChangesModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>

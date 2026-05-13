@@ -181,6 +181,10 @@ EN: dict[str, str] = {
     "Editor_Value_MouseWheelHorizontalSuffix": " (horizontal)",
     "Editor_Value_FocusFormat": "{0}, {1}{2}",
     "Editor_Value_FocusHwndFormat": " (HWND {0})",
+    "Playback_Overlay_WarningTitle": "Macro is playing",
+    "Playback_Overlay_WarningBody": "Do not use the keyboard or mouse, or playback will stop.",
+    "Playback_Overlay_StartDelayFormat": "Starts in {0}",
+    "Playback_Overlay_RemainingFormat": "About {0} remaining (estimated)",
 }
 
 DE: dict[str, str] = {
@@ -358,6 +362,10 @@ DE: dict[str, str] = {
     "Editor_Value_MouseWheelHorizontalSuffix": " (horizontal)",
     "Editor_Value_FocusFormat": "{0}, {1}{2}",
     "Editor_Value_FocusHwndFormat": " (HWND {0})",
+    "Playback_Overlay_WarningTitle": "Makro läuft",
+    "Playback_Overlay_WarningBody": "Keine Eingaben mit Tastatur oder Maus, sonst bricht die Wiedergabe ab.",
+    "Playback_Overlay_StartDelayFormat": "Start in {0}",
+    "Playback_Overlay_RemainingFormat": "Noch ca. {0}",
 }
 
 

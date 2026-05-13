@@ -58,6 +58,37 @@
                         Content="{Binding CurrentPage}" />
         <Grid Grid.Row="0"
               Grid.RowSpan="2"
+              Panel.ZIndex="110"
+              Background="{DynamicResource UiBrush.PlaybackOverlay}"
+              Visibility="{Binding IsPlaybackOverlayVisible, Converter={StaticResource BoolToVis}}"
+              IsHitTestVisible="True">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Margin="24"
+                        MaxWidth="520">
+                <TextBlock Text="{Binding PlaybackOverlayTitle}"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource UiBrush.PlaybackOverlayText}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+                <TextBlock Text="{Binding PlaybackOverlayBody}"
+                           FontSize="15"
+                           Foreground="{DynamicResource UiBrush.PlaybackOverlayText}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Opacity="0.95" />
+                <TextBlock Text="{Binding PlaybackOverlayCountdown}"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource UiBrush.PlaybackOverlayText}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="0"
+              Grid.RowSpan="2"
               Panel.ZIndex="114"
               Background="{DynamicResource UiBrush.OverlayScrim}"
               Visibility="{Binding IsContentModalOpen, Converter={StaticResource BoolToVis}}">

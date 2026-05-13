@@ -26,6 +26,9 @@ public static class ThemeResourceBuilder
         Add(dict, "UiBrush.OverlayScrim", Color.FromArgb(0x99, 0, 0, 0));
         Add(dict, "UiBrush.SurfaceHover", Lerp(c.Surface, c.Primary, isDark ? 0.12 : 0.06));
         Add(dict, "UiBrush.SurfaceSelected", Lerp(c.Surface, c.Primary, isDark ? 0.22 : 0.14));
+        var playbackTint = Lerp(c.Error, c.Primary, isDark ? 0.38 : 0.28);
+        Add(dict, "UiBrush.PlaybackOverlay", Color.FromArgb(0xE4, playbackTint.R, playbackTint.G, playbackTint.B));
+        Add(dict, "UiBrush.PlaybackOverlayText", c.OnError);
         return dict;
     }
 
