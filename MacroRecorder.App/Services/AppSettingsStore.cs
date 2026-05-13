@@ -6,6 +6,22 @@ using MacroRecorder.Wpf;
 
 namespace MacroRecorder.App.Services;
 
+/// <summary>Persisted <see cref="System.Windows.Window"/> bounds for the main shell (DIP).</summary>
+public sealed class MainWindowPlacement
+{
+    [JsonPropertyName("left")]
+    public double Left { get; set; }
+
+    [JsonPropertyName("top")]
+    public double Top { get; set; }
+
+    [JsonPropertyName("width")]
+    public double Width { get; set; }
+
+    [JsonPropertyName("height")]
+    public double Height { get; set; }
+}
+
 public sealed class AppSettings
 {
     [JsonPropertyName("uiCulture")]
@@ -24,6 +40,10 @@ public sealed class AppSettings
     /// <summary>Wait this many milliseconds after play begins before emitting events; same window ignores user interrupt (0 = off).</summary>
     [JsonPropertyName("playbackUserInterruptGraceMs")]
     public int PlaybackUserInterruptGraceMs { get; set; } = 1000;
+
+    /// <summary>Last normal (or restore) bounds of the main window; null = use default placement.</summary>
+    [JsonPropertyName("mainWindowPlacement")]
+    public MainWindowPlacement? MainWindowPlacement { get; set; }
 }
 
 public static class AppSettingsStore
@@ -79,6 +99,13 @@ public static class AppSettingsStore
         Save(s);
     }
 
+    public static void SaveMainWindowPlacementOnly(MainWindowPlacement placement)
+    {
+        var s = Load();
+        s.MainWindowPlacement = placement;
+        Save(s);
+    }
+
     private static AppSettings Normalize(AppSettings s)
     {
         s.UiCulture = s.UiCulture.Equals("de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
@@ -94,8 +121,29 @@ public static class AppSettingsStore
             s.PlaybackUserInterruptGraceMs = 0;
         if (s.PlaybackUserInterruptGraceMs > 300_000)
             s.PlaybackUserInterruptGraceMs = 300_000;
+        if (s.MainWindowPlacement is { } placement)
+        {
+            if (!IsFinitePlacement(placement))
+                s.MainWindowPlacement = null;
+            else
+            {
+                placement.Width = Math.Clamp(placement.Width, 640, 16_000);
+                placement.Height = Math.Clamp(placement.Height, 400, 16_000);
+            }
+        }
+
         return s;
     }
+
+    private static bool IsFinitePlacement(MainWindowPlacement placement) =>
+        !double.IsNaN(placement.Left) &&
+        !double.IsNaN(placement.Top) &&
+        !double.IsNaN(placement.Width) &&
+        !double.IsNaN(placement.Height) &&
+        !double.IsInfinity(placement.Left) &&
+        !double.IsInfinity(placement.Top) &&
+        !double.IsInfinity(placement.Width) &&
+        !double.IsInfinity(placement.Height);
 
     private static AppSettings Default()
     {
