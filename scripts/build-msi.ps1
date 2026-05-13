@@ -6,6 +6,9 @@
   Restores and builds MacroRecorder.Installer twice with InstallerWixCulture=de-DE and en-US.
   WiX links one .wxl per MSI; passing both wxl files in one build causes duplicate string ids (WIX0100).
 
+  The installer project uses a per-culture intermediate path so MSBuild IncrementalClean does not remove
+  the other culture's MSI when building the second language.
+
   Outputs:
     MacroRecorder.Installer\bin\<Configuration>\de-DE\MacroRecorderSetup.msi
     MacroRecorder.Installer\bin\<Configuration>\en-US\MacroRecorderSetup.msi

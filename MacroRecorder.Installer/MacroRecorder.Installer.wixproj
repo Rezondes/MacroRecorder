@@ -9,6 +9,8 @@
     <!-- One wxl per link: WiX passes all EmbeddedResource wxl files to every culture batch (WIX0100 if both are included). -->
     <InstallerWixCulture Condition="'$(InstallerWixCulture)'==''">en-US</InstallerWixCulture>
     <Cultures>$(InstallerWixCulture)</Cultures>
+    <!-- Per culture: shared obj\Release\ would make IncrementalClean delete the other culture's MSI under bin. -->
+    <IntermediateOutputPath>obj\$(Configuration)\$(InstallerWixCulture)\</IntermediateOutputPath>
     <!-- Heat tries to reflect many publish outputs; .NET 10 / single-file layout triggers HEAT5151 noise without affecting the MSI. -->
     <HarvestSuppressSpecificWarnings>5151;5149</HarvestSuppressSpecificWarnings>
   </PropertyGroup>
