@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Threading;
@@ -9,6 +10,7 @@ using MacroRecorder.App.Localization;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
+using MacroRecorder.Application.Recording;
 using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Persistence;
@@ -968,10 +970,14 @@ public partial class MacroEditorViewModel : ObservableObject
             UseFocusBoundMouseCoordinates = result.UseFocusBoundMouseCoordinates,
             MouseAnchor = null
         };
+        var newSessionEvents = result.Events.ToList();
+        RecordingStopArtifactTrimmer.TrimTrailingHostStopArtifacts(
+            newSessionEvents,
+            Process.GetCurrentProcess().ProcessName);
         var merged = new List<RecordedInputEvent>();
         if (_recordingSnapshot is not null)
             merged.AddRange(_recordingSnapshot.Select(CloneEvent));
-        merged.AddRange(result.Events);
+        merged.AddRange(newSessionEvents);
         TimelineNormalizer.NormalizeInPlace(merged);
 
         _flatEvents.Clear();
