@@ -64,49 +64,57 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                     Vk = _keyVk,
                     ScanCode = _keyScan,
                     IsExtendedKey = Bool("ext"),
-                    IsAltDown = Bool("alt")
+                    IsAltDown = Bool("alt"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 KeyUpRecordedEvent keyUp => keyUp with
                 {
                     Vk = _keyVk,
                     ScanCode = _keyScan,
                     IsExtendedKey = Bool("ext"),
-                    IsAltDown = Bool("alt")
+                    IsAltDown = Bool("alt"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 MouseMoveRecordedEvent mouseMove => mouseMove with
                 {
                     ScreenX = Int("x"),
-                    ScreenY = Int("y")
+                    ScreenY = Int("y"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 MouseButtonDownRecordedEvent mouseButtonDown => mouseButtonDown with
                 {
                     Button = ReadSelectedMouseButton(),
                     ScreenX = Int("x"),
-                    ScreenY = Int("y")
+                    ScreenY = Int("y"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 MouseButtonUpRecordedEvent mouseButtonUp => mouseButtonUp with
                 {
                     Button = ReadSelectedMouseButton(),
                     ScreenX = Int("x"),
-                    ScreenY = Int("y")
+                    ScreenY = Int("y"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 MouseWheelRecordedEvent mouseWheel => mouseWheel with
                 {
                     ScreenX = Int("x"),
                     ScreenY = Int("y"),
                     WheelDelta = Int("delta"),
-                    IsHorizontal = Bool("horiz")
+                    IsHorizontal = Bool("horiz"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 SyntheticWaitRecordedEvent syntheticWait => syntheticWait with
                 {
-                    AdditionalDelay = TimeSpan.FromMilliseconds(Double("ms"))
+                    AdditionalDelay = TimeSpan.FromMilliseconds(Double("ms")),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 FocusChangedRecordedEvent focusChanged => focusChanged with
                 {
                     WindowTitle = Str("title"),
                     ProcessName = Str("proc"),
                     Hwnd = ULongOrNull("hwnd"),
-                    ProcessId = UIntOrNull("pid")
+                    ProcessId = UIntOrNull("pid"),
+                    DelayBefore = ReadDelayBeforeFromField()
                 },
                 _ => null
             };
@@ -217,7 +225,7 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         _fields[fieldKey] = box;
     }
 
-    private void AddWaitMillisecondsField(string label, string fieldKey, string value)
+    private void AddWaitMillisecondsField(string label, string fieldKey, string value, int minimumValue = 1)
     {
         var labelBlock = new TextBlock
         {
@@ -237,13 +245,30 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
             InputFontSize = 13,
             MinInnerHeight = 40,
             SpinnerStep = 1,
-            MinimumValue = 1,
+            MinimumValue = minimumValue,
             MaximumValue = int.MaxValue,
             SpinUpToolTip = _loc.GetString("Editor_PromptWaitSpinUp"),
             SpinDownToolTip = _loc.GetString("Editor_PromptWaitSpinDown")
         };
         FieldsPanel.Children.Add(box);
         _fields[fieldKey] = box;
+    }
+
+    private void AddDelayBeforeMillisecondsField()
+    {
+        var msText = Math.Round(_original.DelayBefore.TotalMilliseconds).ToString("0", CultureInfo.InvariantCulture);
+        AddWaitMillisecondsField(_loc.GetString("DialogEdit_Field_DelayBeforeMs"), "delayBefore", msText, minimumValue: 0);
+    }
+
+    private TimeSpan ReadDelayBeforeFromField()
+    {
+        var trimmed = ReadFieldText("delayBefore").Trim();
+        if (string.IsNullOrEmpty(trimmed))
+            throw new FormatException(_loc.GetString("Editor_PromptWaitErrorRequired"));
+        var ms = double.Parse(trimmed, CultureInfo.InvariantCulture);
+        if (ms < 0)
+            ms = 0;
+        return TimeSpan.FromMilliseconds(ms);
     }
 
     private void AddMouseButtonField(string label, MouseButtonKind selected)
@@ -431,41 +456,49 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         {
             case KeyDownRecordedEvent keyDown:
                 AddKeyboardKeySection(keyDown.Vk, keyDown.ScanCode, keyDown.IsExtendedKey, keyDown.IsAltDown);
+                AddDelayBeforeMillisecondsField();
                 break;
             case KeyUpRecordedEvent keyUp:
                 AddKeyboardKeySection(keyUp.Vk, keyUp.ScanCode, keyUp.IsExtendedKey, keyUp.IsAltDown);
+                AddDelayBeforeMillisecondsField();
                 break;
             case MouseMoveRecordedEvent mouseMove:
                 AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseMove.ScreenX.ToString(), restrictToDigitsOnlyCoordinates: true);
                 AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseMove.ScreenY.ToString(), restrictToDigitsOnlyCoordinates: true);
+                AddDelayBeforeMillisecondsField();
                 break;
             case MouseButtonDownRecordedEvent mouseButtonDown:
                 AddMouseButtonField(_loc.GetString("DialogEdit_Field_Button"), mouseButtonDown.Button);
                 AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_X"), "x", mouseButtonDown.ScreenX.ToString());
                 AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_Y"), "y", mouseButtonDown.ScreenY.ToString());
+                AddDelayBeforeMillisecondsField();
                 break;
             case MouseButtonUpRecordedEvent mouseButtonUp:
                 AddMouseButtonField(_loc.GetString("DialogEdit_Field_Button"), mouseButtonUp.Button);
                 AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_X"), "x", mouseButtonUp.ScreenX.ToString());
                 AddCoordinateFieldWithSpinner(_loc.GetString("DialogEdit_Field_Y"), "y", mouseButtonUp.ScreenY.ToString());
+                AddDelayBeforeMillisecondsField();
                 break;
             case MouseWheelRecordedEvent mouseWheel:
                 AddField(_loc.GetString("DialogEdit_Field_X"), "x", mouseWheel.ScreenX.ToString(), restrictToDigitsOnlyCoordinates: true);
                 AddField(_loc.GetString("DialogEdit_Field_Y"), "y", mouseWheel.ScreenY.ToString(), restrictToDigitsOnlyCoordinates: true);
                 AddField(_loc.GetString("DialogEdit_Field_Delta"), "delta", mouseWheel.WheelDelta.ToString());
                 AddBoolCheckboxField(_loc.GetString("DialogEdit_Field_Horizontal"), "horiz", mouseWheel.IsHorizontal);
+                AddDelayBeforeMillisecondsField();
                 break;
             case SyntheticWaitRecordedEvent syntheticWait:
                 AddWaitMillisecondsField(
                     _loc.GetString("DialogEdit_Field_WaitMs"),
                     "ms",
                     syntheticWait.AdditionalDelay.TotalMilliseconds.ToString("0"));
+                AddDelayBeforeMillisecondsField();
                 break;
             case FocusChangedRecordedEvent focusChanged:
                 AddField(_loc.GetString("DialogEdit_Field_WindowTitle"), "title", focusChanged.WindowTitle);
                 AddField(_loc.GetString("DialogEdit_Field_ProcessName"), "proc", focusChanged.ProcessName);
                 AddField(_loc.GetString("DialogEdit_Field_Hwnd"), "hwnd", focusChanged.Hwnd?.ToString() ?? "");
                 AddField(_loc.GetString("DialogEdit_Field_Pid"), "pid", focusChanged.ProcessId?.ToString() ?? "");
+                AddDelayBeforeMillisecondsField();
                 break;
             default:
                 var notEditable = new TextBlock

@@ -258,7 +258,6 @@ public partial class ShellViewModel : ObservableObject,
         {
             updatedEvent = built with
             {
-                DelayBefore = currentEvent.DelayBefore,
                 Sequence = currentEvent.Sequence
             };
             return true;
