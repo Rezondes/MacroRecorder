@@ -6,7 +6,7 @@ public sealed record RecordingMetadata(
     long StopwatchFrequency,
     RecordingEnvironment? Environment = null)
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public static RecordingMetadata ForNewSession(RecordingEnvironment? environment) =>
         new(

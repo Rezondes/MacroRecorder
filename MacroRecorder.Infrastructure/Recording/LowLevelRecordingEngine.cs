@@ -34,6 +34,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private int _mouseMoveMinPixelDelta = 5;
     private bool _haveAnchor;
     private TimeSpan _lastAnchorElapsed;
+    private TimeSpan _playbackTimelineEnd;
 
     public LowLevelRecordingEngine()
     {
@@ -59,6 +60,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _mouseMoveMinPixelDelta = clampedMinPixels;
             _haveAnchor = false;
             _lastAnchorElapsed = TimeSpan.Zero;
+            _playbackTimelineEnd = TimeSpan.Zero;
         }
 
         _onEventRecorded = onEventRecorded;
@@ -183,7 +185,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
         return new FocusChangedRecordedEvent
         {
-            ElapsedSinceSessionStart = default,
+            DelayBefore = default,
             Sequence = 0,
             Hwnd = (ulong)windowHandle,
             WindowTitle = windowTitle,
@@ -309,25 +311,37 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
                 var gap = elapsed - _lastAnchorElapsed;
                 if (gap >= MinAnchorGap)
                 {
+                    var waitDelayBefore = elapsed - _playbackTimelineEnd;
+                    if (waitDelayBefore < TimeSpan.Zero)
+                        waitDelayBefore = TimeSpan.Zero;
+
                     var waitSequence = (ulong)Interlocked.Increment(ref _sequence);
                     var waitStamped = Stamp(
                         new SyntheticWaitRecordedEvent
                         {
-                            ElapsedSinceSessionStart = default,
+                            DelayBefore = default,
                             Sequence = 0,
                             AdditionalDelay = gap
                         },
-                        elapsed,
+                        waitDelayBefore,
                         waitSequence);
                     _events.Add(waitStamped);
                     pendingCallbacks.Add(waitStamped);
+                    _playbackTimelineEnd += waitDelayBefore + gap;
                 }
             }
 
+            var delayBefore = elapsed - _playbackTimelineEnd;
+            if (delayBefore < TimeSpan.Zero)
+                delayBefore = TimeSpan.Zero;
+
             var nextSequence = (ulong)Interlocked.Increment(ref _sequence);
-            var stampedEvent = Stamp(eventTemplate, elapsed, nextSequence);
+            var stampedEvent = Stamp(eventTemplate, delayBefore, nextSequence);
             _events.Add(stampedEvent);
             pendingCallbacks.Add(stampedEvent);
+            _playbackTimelineEnd += delayBefore;
+            if (stampedEvent is SyntheticWaitRecordedEvent syntheticAfterMain)
+                _playbackTimelineEnd += syntheticAfterMain.AdditionalDelay;
 
             if (stampedEvent is MouseMoveRecordedEvent storedMove && _recordMouseMoves)
             {
@@ -389,22 +403,22 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _ => recordedEvent
         };
 
-    private static RecordedInputEvent Stamp(RecordedInputEvent recordedEvent, TimeSpan elapsed, ulong sequence) =>
+    private static RecordedInputEvent Stamp(RecordedInputEvent recordedEvent, TimeSpan delayBefore, ulong sequence) =>
         recordedEvent switch
         {
-            KeyDownRecordedEvent keyDown => keyDown with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
-            KeyUpRecordedEvent keyUp => keyUp with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
-            MouseMoveRecordedEvent mouseMove => mouseMove with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
+            KeyDownRecordedEvent keyDown => keyDown with { DelayBefore = delayBefore, Sequence = sequence },
+            KeyUpRecordedEvent keyUp => keyUp with { DelayBefore = delayBefore, Sequence = sequence },
+            MouseMoveRecordedEvent mouseMove => mouseMove with { DelayBefore = delayBefore, Sequence = sequence },
             MouseButtonDownRecordedEvent mouseButtonDown =>
-                mouseButtonDown with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
+                mouseButtonDown with { DelayBefore = delayBefore, Sequence = sequence },
             MouseButtonUpRecordedEvent mouseButtonUp =>
-                mouseButtonUp with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
+                mouseButtonUp with { DelayBefore = delayBefore, Sequence = sequence },
             MouseWheelRecordedEvent mouseWheel =>
-                mouseWheel with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
+                mouseWheel with { DelayBefore = delayBefore, Sequence = sequence },
             FocusChangedRecordedEvent focusChanged =>
-                focusChanged with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
+                focusChanged with { DelayBefore = delayBefore, Sequence = sequence },
             SyntheticWaitRecordedEvent syntheticWait =>
-                syntheticWait with { ElapsedSinceSessionStart = elapsed, Sequence = sequence },
+                syntheticWait with { DelayBefore = delayBefore, Sequence = sequence },
             _ => recordedEvent
         };
 }

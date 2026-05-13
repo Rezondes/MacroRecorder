@@ -125,6 +125,16 @@
                                         Style="{DynamicResource UiButtonChrome}"
                                         Command="{Binding DataContext.Overview.EditCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
+                                <Button Content="{loc:Loc Main_Export}"
+                                        Margin="8,0,0,0"
+                                        Padding="12,6"
+                                        MinWidth="96"
+                                        FontSize="12"
+                                        Style="{DynamicResource UiButtonChrome}"
+                                        ToolTip="{loc:Loc Main_Export_ToolTip}"
+                                        AutomationProperties.Name="{loc:Loc Main_Export_ToolTip}"
+                                        Command="{Binding DataContext.Overview.ExportCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}" />
                                 <Button Content="{loc:Loc Main_Delete}"
                                         Margin="8,0,0,0"
                                         Padding="12,6"

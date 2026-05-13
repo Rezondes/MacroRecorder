@@ -13,7 +13,8 @@ namespace MacroRecorder.Domain;
 [JsonDerivedType(typeof(SyntheticWaitRecordedEvent), "syntheticWait")]
 public abstract record RecordedInputEvent
 {
-    public required TimeSpan ElapsedSinceSessionStart { get; init; }
+    /// <summary>Idle time after the previous event finishes before this step runs (<c>WaitUntil</c> advance only).</summary>
+    public required TimeSpan DelayBefore { get; init; }
     public required ulong Sequence { get; init; }
 }
 

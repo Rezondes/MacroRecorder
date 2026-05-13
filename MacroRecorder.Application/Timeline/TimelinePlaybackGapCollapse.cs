@@ -3,24 +3,15 @@ using MacroRecorder.Domain;
 namespace MacroRecorder.Application.Timeline;
 
 /// <summary>
-/// After deleting events from a <b>normalized</b> timeline, remaining events still carry old cumulative
-/// <see cref="RecordedInputEvent.ElapsedSinceSessionStart"/> values. <see cref="TimelineNormalizer"/> would keep the
-/// wall-time gap between the neighbor before the hole and the first survivor. This type subtracts that gap from all
-/// following survivors so total playback matches user expectation (removed segment no longer consumes time).
+/// After deleting events from a timeline, the first survivor can still have a <see cref="RecordedInputEvent.DelayBefore"/>
+/// that was sized for removed neighbors. This type computes how much absolute schedule time was removed and shifts
+/// later <c>WaitUntil</c> targets earlier by subtracting that gap from the first survivor onward.
 /// </summary>
 public static class TimelinePlaybackGapCollapse
 {
-    /// <summary>
-    /// Wall-clock position just after <paramref name="recordedEvent"/> has been executed in playback
-    /// (<c>WaitUntil</c> target plus synthetic-wait sleep).
-    /// </summary>
-    public static TimeSpan PlaybackEndAfterEvent(RecordedInputEvent recordedEvent)
-    {
-        var end = recordedEvent.ElapsedSinceSessionStart;
-        if (recordedEvent is SyntheticWaitRecordedEvent syntheticWait)
-            end += syntheticWait.AdditionalDelay;
-        return end;
-    }
+    /// <summary>Same as <see cref="EventPlaybackSchedule.PlaybackEndAfterEventAtIndex"/> for convenience.</summary>
+    public static TimeSpan PlaybackEndAfterEvent(IReadOnlyList<RecordedInputEvent> ordered, int index) =>
+        EventPlaybackSchedule.PlaybackEndAfterEventAtIndex(ordered, index);
 
     /// <summary>
     /// Playback time between the end of the event before <paramref name="removeStartInclusive"/> and the
@@ -41,45 +32,25 @@ public static class TimelinePlaybackGapCollapse
             return TimeSpan.Zero;
 
         var left = removeStartInclusive > 0
-            ? PlaybackEndAfterEvent(listBeforeRemoval[removeStartInclusive - 1])
+            ? PlaybackEndAfterEvent(listBeforeRemoval, removeStartInclusive - 1)
             : TimeSpan.Zero;
-        var right = listBeforeRemoval[removeEndInclusive + 1].ElapsedSinceSessionStart;
+        var right = EventPlaybackSchedule.GetWaitUntilTarget(listBeforeRemoval, removeEndInclusive + 1);
         var gap = right - left;
         return gap < TimeSpan.Zero ? TimeSpan.Zero : gap;
     }
 
     /// <summary>
-    /// Subtracts <paramref name="amount"/> from <see cref="RecordedInputEvent.ElapsedSinceSessionStart"/> on every
-    /// event at index <paramref name="fromIndexInclusive"/> or later (after a delete shrunk the list).
+    /// Subtracts <paramref name="amount"/> from every <c>WaitUntil</c> target from <paramref name="fromIndexInclusive"/> onward.
     /// </summary>
     public static void ShiftElapsedEarlierFromIndex(List<RecordedInputEvent> events, int fromIndexInclusive,
-        TimeSpan amount)
-    {
-        if (amount <= TimeSpan.Zero || fromIndexInclusive < 0 || fromIndexInclusive >= events.Count)
-            return;
+        TimeSpan amount) =>
+        EventPlaybackSchedule.ShiftWaitTargetsEarlierFromIndex(events, fromIndexInclusive, amount);
 
-        for (var i = fromIndexInclusive; i < events.Count; i++)
-        {
-            var newElapsed = events[i].ElapsedSinceSessionStart - amount;
-            if (newElapsed < TimeSpan.Zero)
-                newElapsed = TimeSpan.Zero;
-            events[i] = WithElapsed(events[i], newElapsed);
-        }
-    }
-
-    private static RecordedInputEvent WithElapsed(RecordedInputEvent recordedEvent, TimeSpan elapsed) =>
-        recordedEvent switch
-        {
-            KeyDownRecordedEvent keyDown => keyDown with { ElapsedSinceSessionStart = elapsed },
-            KeyUpRecordedEvent keyUp => keyUp with { ElapsedSinceSessionStart = elapsed },
-            MouseMoveRecordedEvent mouseMove => mouseMove with { ElapsedSinceSessionStart = elapsed },
-            MouseButtonDownRecordedEvent mouseButtonDown =>
-                mouseButtonDown with { ElapsedSinceSessionStart = elapsed },
-            MouseButtonUpRecordedEvent mouseButtonUp => mouseButtonUp with { ElapsedSinceSessionStart = elapsed },
-            MouseWheelRecordedEvent mouseWheel => mouseWheel with { ElapsedSinceSessionStart = elapsed },
-            FocusChangedRecordedEvent focusChanged => focusChanged with { ElapsedSinceSessionStart = elapsed },
-            SyntheticWaitRecordedEvent syntheticWait =>
-                syntheticWait with { ElapsedSinceSessionStart = elapsed },
-            _ => throw new InvalidOperationException($"Unsupported event type: {recordedEvent.GetType().Name}")
-        };
+    /// <summary>
+    /// Adds <paramref name="delta"/> to every <c>WaitUntil</c> target from <paramref name="fromIndexInclusive"/> onward.
+    /// Used when inserting a synthetic wait so the following schedule is not left unchanged while the inserted sleep
+    /// adds duration.
+    /// </summary>
+    public static void ShiftElapsedFromIndex(List<RecordedInputEvent> events, int fromIndexInclusive, TimeSpan delta) =>
+        EventPlaybackSchedule.ShiftWaitTargetsLaterFromIndex(events, fromIndexInclusive, delta);
 }

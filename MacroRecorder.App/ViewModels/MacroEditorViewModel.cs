@@ -10,6 +10,7 @@ using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
+using MacroRecorder.Infrastructure.Persistence;
 
 namespace MacroRecorder.App.ViewModels;
 
@@ -74,6 +75,29 @@ public partial class MacroEditorViewModel : ObservableObject
     }
 
     public MacroId MacroId { get; }
+
+    public string? MacroNameForFileExport => _macro?.Name;
+
+    public string GetSerializedMacroJson()
+    {
+        if (_macro is null)
+            return string.Empty;
+
+        var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).Select(CloneEvent).ToList();
+        if (_isDirty)
+            TimelineNormalizer.NormalizeInPlace(ordered);
+
+        var snapshot = new Macro(
+            _macro.Id,
+            _macro.Name,
+            _macro.Metadata,
+            ordered,
+            _macro.WasModifiedAfterRecording,
+            _macro.DocumentVersion,
+            _macro.CreatedAtUtc,
+            _macro.LastModifiedAtUtc);
+        return MacroJsonFileFormat.Serialize(snapshot);
+    }
 
     private void OnUiCultureChanged()
     {
@@ -560,13 +584,39 @@ public partial class MacroEditorViewModel : ObservableObject
         var insertAt = GetInsertIndex(after);
         Mutate(() =>
         {
-            _flatEvents.Insert(insertAt,
-                new SyntheticWaitRecordedEvent
+            var delay = TimeSpan.FromMilliseconds(parsedDelayMilliseconds);
+            var waitEvent = new SyntheticWaitRecordedEvent
+            {
+                DelayBefore = TimeSpan.Zero,
+                Sequence = 0,
+                AdditionalDelay = delay
+            };
+
+            if (insertAt < _flatEvents.Count)
+            {
+                TimeSpan gapBefore;
+                if (insertAt == 0)
                 {
-                    ElapsedSinceSessionStart = TimeSpan.Zero,
-                    Sequence = 0,
-                    AdditionalDelay = TimeSpan.FromMilliseconds(parsedDelayMilliseconds)
-                });
+                    gapBefore = EventPlaybackSchedule.GetWaitUntilTarget(_flatEvents, 0);
+                    if (gapBefore < TimeSpan.Zero)
+                        gapBefore = TimeSpan.Zero;
+                }
+                else
+                {
+                    var prevEnd = TimelinePlaybackGapCollapse.PlaybackEndAfterEvent(_flatEvents, insertAt - 1);
+                    var nextStart = EventPlaybackSchedule.GetWaitUntilTarget(_flatEvents, insertAt);
+                    gapBefore = nextStart - prevEnd;
+                    if (gapBefore < TimeSpan.Zero)
+                        gapBefore = TimeSpan.Zero;
+                }
+
+                _flatEvents.Insert(insertAt, waitEvent);
+                var delta = delay - gapBefore;
+                if (delta != TimeSpan.Zero && insertAt + 1 < _flatEvents.Count)
+                    TimelinePlaybackGapCollapse.ShiftElapsedFromIndex(_flatEvents, insertAt + 1, delta);
+            }
+            else
+                _flatEvents.Add(waitEvent);
         });
     }
 
@@ -601,7 +651,7 @@ public partial class MacroEditorViewModel : ObservableObject
             [
                 new MouseButtonDownRecordedEvent
                 {
-                    ElapsedSinceSessionStart = placeholderElapsed,
+                    DelayBefore = placeholderElapsed,
                     Sequence = placeholderSequence,
                     Button = mouseButton,
                     ScreenX = screenX,
@@ -609,7 +659,7 @@ public partial class MacroEditorViewModel : ObservableObject
                 },
                 new MouseButtonUpRecordedEvent
                 {
-                    ElapsedSinceSessionStart = placeholderElapsed,
+                    DelayBefore = placeholderElapsed,
                     Sequence = placeholderSequence,
                     Button = mouseButton,
                     ScreenX = screenX,
@@ -648,7 +698,7 @@ public partial class MacroEditorViewModel : ObservableObject
             [
                 new KeyDownRecordedEvent
                 {
-                    ElapsedSinceSessionStart = placeholderElapsed,
+                    DelayBefore = placeholderElapsed,
                     Sequence = placeholderSequence,
                     Vk = virtualKey,
                     ScanCode = scanCode,
@@ -659,7 +709,7 @@ public partial class MacroEditorViewModel : ObservableObject
                 },
                 new KeyUpRecordedEvent
                 {
-                    ElapsedSinceSessionStart = placeholderElapsed,
+                    DelayBefore = placeholderElapsed,
                     Sequence = placeholderSequence,
                     Vk = virtualKey,
                     ScanCode = scanCode,
@@ -768,8 +818,7 @@ public partial class MacroEditorViewModel : ObservableObject
 
         _flatEvents.Clear();
         _flatEvents.AddRange(merged);
-        _macro!.ReplaceEvents(_flatEvents.ToList(), markEdited: true);
-        _macro.SetMetadata(meta);
+        _macro!.ApplyRecordingMerge(merged, meta);
         _recordingSnapshot = null;
         _isDirty = true;
         RebuildRows();
@@ -805,7 +854,15 @@ public partial class MacroEditorViewModel : ObservableObject
         {
             var snap = _flatEvents.Select(CloneEvent).ToList();
             TimelineNormalizer.NormalizeInPlace(snap);
-            var test = new Macro(_macro.Id, _macro.Name, _macro.Metadata, snap, _macro.WasModifiedAfterRecording);
+            var test = new Macro(
+                _macro.Id,
+                _macro.Name,
+                _macro.Metadata,
+                snap,
+                _macro.WasModifiedAfterRecording,
+                _macro.DocumentVersion,
+                _macro.CreatedAtUtc,
+                _macro.LastModifiedAtUtc);
             var graceMs = AppSettingsStore.Load().PlaybackUserInterruptGraceMs;
             await _playback.PlayAsync(test, cancellationToken: default, userInputInterruptGraceMilliseconds: graceMs).ConfigureAwait(true);
         }
@@ -913,16 +970,16 @@ public partial class MacroEditorViewModel : ObservableObject
                 _macro.Name);
             if (string.IsNullOrWhiteSpace(name))
                 return false;
-            _macro.Rename(name.Trim());
+            _macro.AssignNameOnly(name.Trim());
             WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
         }
 
         if (_isDirty)
             TimelineNormalizer.NormalizeInPlace(_flatEvents);
         var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
-        var updated = new Macro(_macro.Id, _macro.Name, _macro.Metadata, ordered, wasModifiedAfterRecording: true);
-        await _workspace.SaveAsync(updated).ConfigureAwait(true);
-        _macro = updated;
+        var versionBump = _isDirty || !_persistedOnDisk;
+        _macro!.ApplyPersistedEditorState(ordered, markRecordedDirty: true, bumpDocumentVersion: versionBump);
+        await _workspace.SaveAsync(_macro).ConfigureAwait(true);
         _flatEvents.Clear();
         _flatEvents.AddRange(ordered);
         _isDirty = false;

@@ -1,29 +1,12 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 
 namespace MacroRecorder.Infrastructure.Persistence;
 
-internal sealed class MacroFileDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = "";
-    public RecordingMetadata Metadata { get; set; } = null!;
-    public List<RecordedInputEvent> Events { get; set; } = new();
-    public bool WasModifiedAfterRecording { get; set; }
-}
-
 public sealed class JsonMacroRepository : IMacroRepository
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    };
-
     private readonly string _root;
 
     public JsonMacroRepository()
@@ -51,18 +34,11 @@ public sealed class JsonMacroRepository : IMacroRepository
         if (!File.Exists(path))
             return null;
 
+        var lastWriteUtc = new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero);
         await using var stream = File.OpenRead(path);
-        var macroFileDto = await JsonSerializer.DeserializeAsync<MacroFileDto>(stream, JsonOptions, cancellationToken)
+        var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
-        if (macroFileDto is null)
-            return null;
-
-        return new Macro(
-            new MacroId(macroFileDto.Id),
-            macroFileDto.Name,
-            macroFileDto.Metadata ?? RecordingMetadata.Empty(),
-            macroFileDto.Events,
-            macroFileDto.WasModifiedAfterRecording);
+        return MacroJsonFileFormat.ParseMacro(document.RootElement, lastWriteUtc);
     }
 
     public async Task<IReadOnlyList<MacroSummary>> ListAsync(CancellationToken cancellationToken = default)
@@ -76,15 +52,16 @@ public sealed class JsonMacroRepository : IMacroRepository
                 try
                 {
                     var fileJson = File.ReadAllText(macroFilePath);
-                    var macroFileDto = JsonSerializer.Deserialize<MacroFileDto>(fileJson, JsonOptions);
-                    if (macroFileDto is null)
+                    var lastWriteUtc = new DateTimeOffset(File.GetLastWriteTimeUtc(macroFilePath), TimeSpan.Zero);
+                    using var document = JsonDocument.Parse(fileJson);
+                    var macro = MacroJsonFileFormat.ParseMacro(document.RootElement, lastWriteUtc);
+                    if (macro is null)
                         continue;
-                    var lastWriteTimeUtc = File.GetLastWriteTimeUtc(macroFilePath);
                     summaries.Add(new MacroSummary(
-                        new MacroId(macroFileDto.Id),
-                        macroFileDto.Name,
-                        TimelineActionRowCount.Count(macroFileDto.Events),
-                        new DateTimeOffset(lastWriteTimeUtc, TimeSpan.Zero)));
+                        macro.Id,
+                        macro.Name,
+                        TimelineActionRowCount.Count(macro.Events),
+                        macro.LastModifiedAtUtc));
                 }
                 catch
                 {
@@ -98,19 +75,14 @@ public sealed class JsonMacroRepository : IMacroRepository
 
     public async Task SaveAsync(Macro macro, CancellationToken cancellationToken = default)
     {
-        var macroFileDto = new MacroFileDto
-        {
-            Id = macro.Id.Value,
-            Name = macro.Name,
-            Metadata = macro.Metadata,
-            Events = macro.Events.ToList(),
-            WasModifiedAfterRecording = macro.WasModifiedAfterRecording
-        };
-
         var macroFilePath = PathFor(macro.Id);
         await using var stream = File.Create(macroFilePath);
-        await JsonSerializer.SerializeAsync(stream, macroFileDto, JsonOptions, cancellationToken).ConfigureAwait(false);
+        await JsonSerializer.SerializeAsync(
+            stream,
+            MacroJsonFileFormat.ToDto(macro),
+            MacroJsonFileFormat.JsonOptions,
+            cancellationToken).ConfigureAwait(false);
     }
 
-    private string PathFor(MacroId id) => Path.Combine(_root, $"{id.Value:N}.json");
+    private string PathFor(MacroId id) => Path.Combine(_root, $"{id.ToFileStem()}.json");
 }

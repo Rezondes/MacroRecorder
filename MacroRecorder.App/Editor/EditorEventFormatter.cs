@@ -46,7 +46,7 @@ public static class EditorEventFormatter
                     "Editor_Value_MouseMoveFormat",
                     mouseMove.ScreenX,
                     mouseMove.ScreenY,
-                    FormatElapsed(mouseMove.ElapsedSinceSessionStart, loc)),
+                    FormatElapsed(mouseMove.DelayBefore, loc)),
             MouseButtonDownRecordedEvent mouseButtonDown =>
                 $"{mouseButtonDown.ScreenX}, {mouseButtonDown.ScreenY}",
             MouseButtonUpRecordedEvent mouseButtonUp =>

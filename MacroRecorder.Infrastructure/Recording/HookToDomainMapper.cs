@@ -17,7 +17,7 @@ internal static class HookToDomainMapper
         if ((windowMessage == NativeMethods.WM_KEYDOWN || windowMessage == NativeMethods.WM_SYSKEYDOWN) && !isReleased)
             return new KeyDownRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Vk = virtualKey,
                 ScanCode = scanCode,
@@ -30,7 +30,7 @@ internal static class HookToDomainMapper
         if ((windowMessage == NativeMethods.WM_KEYUP || windowMessage == NativeMethods.WM_SYSKEYUP) && isReleased)
             return new KeyUpRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Vk = virtualKey,
                 ScanCode = scanCode,
@@ -51,14 +51,14 @@ internal static class HookToDomainMapper
         {
             NativeMethods.WM_MOUSEMOVE => new MouseMoveRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 ScreenX = screenX,
                 ScreenY = screenY
             },
             NativeMethods.WM_LBUTTONDOWN => new MouseButtonDownRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.Left,
                 ScreenX = screenX,
@@ -66,7 +66,7 @@ internal static class HookToDomainMapper
             },
             NativeMethods.WM_LBUTTONUP => new MouseButtonUpRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.Left,
                 ScreenX = screenX,
@@ -74,7 +74,7 @@ internal static class HookToDomainMapper
             },
             NativeMethods.WM_RBUTTONDOWN => new MouseButtonDownRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.Right,
                 ScreenX = screenX,
@@ -82,7 +82,7 @@ internal static class HookToDomainMapper
             },
             NativeMethods.WM_RBUTTONUP => new MouseButtonUpRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.Right,
                 ScreenX = screenX,
@@ -90,7 +90,7 @@ internal static class HookToDomainMapper
             },
             NativeMethods.WM_MBUTTONDOWN => new MouseButtonDownRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.Middle,
                 ScreenX = screenX,
@@ -98,7 +98,7 @@ internal static class HookToDomainMapper
             },
             NativeMethods.WM_MBUTTONUP => new MouseButtonUpRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.Middle,
                 ScreenX = screenX,
@@ -108,7 +108,7 @@ internal static class HookToDomainMapper
             NativeMethods.WM_XBUTTONUP => BuildXButtonUp(mouseLowLevel, screenX, screenY),
             NativeMethods.WM_MOUSEWHEEL => new MouseWheelRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 ScreenX = screenX,
                 ScreenY = screenY,
@@ -117,7 +117,7 @@ internal static class HookToDomainMapper
             },
             NativeMethods.WM_MOUSEHWHEEL => new MouseWheelRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 ScreenX = screenX,
                 ScreenY = screenY,
@@ -136,7 +136,7 @@ internal static class HookToDomainMapper
         if (xButtonWord == NativeMethods.XBUTTON1)
             return new MouseButtonDownRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.X1,
                 ScreenX = screenX,
@@ -145,7 +145,7 @@ internal static class HookToDomainMapper
         if (xButtonWord == NativeMethods.XBUTTON2)
             return new MouseButtonDownRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.X2,
                 ScreenX = screenX,
@@ -160,7 +160,7 @@ internal static class HookToDomainMapper
         if (xButtonWord == NativeMethods.XBUTTON1)
             return new MouseButtonUpRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.X1,
                 ScreenX = screenX,
@@ -169,7 +169,7 @@ internal static class HookToDomainMapper
         if (xButtonWord == NativeMethods.XBUTTON2)
             return new MouseButtonUpRecordedEvent
             {
-                ElapsedSinceSessionStart = default,
+                DelayBefore = default,
                 Sequence = 0,
                 Button = MouseButtonKind.X2,
                 ScreenX = screenX,

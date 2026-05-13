@@ -6,18 +6,6 @@ namespace MacroRecorder.Application.Timeline;
 /// Estimates wall-clock playback time until the last step finishes (last <c>WaitUntil</c> target plus any trailing
 /// <see cref="SyntheticWaitRecordedEvent"/> sleep).
 /// </summary>
-/// <remarks>
-/// <para>
-/// Over the <b>flat</b> event list (not grouped into UI “mouse path” rows), total duration equals the sum of every
-/// gap between consecutive events <i>plus</i> every <see cref="SyntheticWaitRecordedEvent.AdditionalDelay"/> at its
-/// position — that is exactly what <see cref="TimelineNormalizer.NormalizeInPlace"/> folds into cumulative
-/// <see cref="RecordedInputEvent.ElapsedSinceSessionStart"/> values, including gaps from one <c>mouseMove</c> to the next.
-/// </para>
-/// <para>
-/// Once the list is normalized, <c>last.ElapsedSinceSessionStart</c> (plus <c>AdditionalDelay</c> when the last event is
-/// a synthetic wait) is the same total in O(1). Normalizing again would re-apply those sums and distort the result.
-/// </para>
-/// </remarks>
 public static class PlaybackDurationEstimator
 {
     /// <param name="eventsInPlaybackOrder">Editor / capture order.</param>
@@ -38,7 +26,7 @@ public static class PlaybackDurationEstimator
 
     /// <summary>
     /// After <see cref="TimelineNormalizer.NormalizeInPlace"/>, <see cref="RecordedInputEvent.Sequence"/> is 1..n
-    /// in list order and elapsed times are non-decreasing.
+    /// in list order and <c>WaitUntil</c> targets are non-decreasing.
     /// </summary>
     private static bool LooksLikeNormalizedTimeline(IReadOnlyList<RecordedInputEvent> events)
     {
@@ -46,7 +34,9 @@ public static class PlaybackDurationEstimator
         {
             if (events[i].Sequence != (ulong)(i + 1))
                 return false;
-            if (i > 0 && events[i].ElapsedSinceSessionStart < events[i - 1].ElapsedSinceSessionStart)
+            if (i > 0 &&
+                EventPlaybackSchedule.GetWaitUntilTarget(events, i) <
+                EventPlaybackSchedule.GetWaitUntilTarget(events, i - 1))
                 return false;
         }
 
@@ -54,7 +44,7 @@ public static class PlaybackDurationEstimator
     }
 
     private static TimeSpan PlaybackEndFromNormalizedOrder(IReadOnlyList<RecordedInputEvent> ordered) =>
-        TimelinePlaybackGapCollapse.PlaybackEndAfterEvent(ordered[^1]);
+        EventPlaybackSchedule.PlaybackEndAfterEventAtIndex(ordered, ordered.Count - 1);
 
     private static RecordedInputEvent CloneEvent(RecordedInputEvent recordedEvent) =>
         recordedEvent switch

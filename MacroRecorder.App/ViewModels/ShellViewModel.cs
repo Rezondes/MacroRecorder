@@ -46,6 +46,7 @@ public partial class ShellViewModel : ObservableObject,
         _stack.Add(overview);
         CurrentPage = overview;
         UpdateShellTitle();
+        UpdateShowEditorShareJsonButton();
     }
 
     public MainViewModel Overview => _overview;
@@ -100,6 +101,9 @@ public partial class ShellViewModel : ObservableObject,
 
     [ObservableProperty]
     private object? contentModalContent;
+
+    [ObservableProperty]
+    private bool showEditorShareJsonButton;
 
     [RelayCommand]
     private void CloseInfoModal() => IsInfoModalOpen = false;
@@ -254,7 +258,7 @@ public partial class ShellViewModel : ObservableObject,
         {
             updatedEvent = built with
             {
-                ElapsedSinceSessionStart = currentEvent.ElapsedSinceSessionStart,
+                DelayBefore = currentEvent.DelayBefore,
                 Sequence = currentEvent.Sequence
             };
             return true;
@@ -587,6 +591,7 @@ public partial class ShellViewModel : ObservableObject,
         else
             DetachEditorTitleListener(_editorTitleSource);
         UpdateShellTitle();
+        UpdateShowEditorShareJsonButton();
     }
 
     private void AttachEditorTitleListener(MacroEditorViewModel editor)
@@ -609,6 +614,8 @@ public partial class ShellViewModel : ObservableObject,
     {
         if (e.PropertyName == nameof(MacroEditorViewModel.WindowTitle))
             UpdateShellTitle();
+        else if (e.PropertyName == nameof(MacroEditorViewModel.EditorHasMacro))
+            UpdateShowEditorShareJsonButton();
     }
 
     private void UpdateShellTitle()
@@ -620,6 +627,27 @@ public partial class ShellViewModel : ObservableObject,
             SettingsViewModel => _loc.GetString("Main_Settings_PageTitle"),
             _ => _loc.GetString("Main_WindowTitle")
         };
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShareEditorJson))]
+    private void ShareEditorJson()
+    {
+        if (CurrentPage is not MacroEditorViewModel editor || !editor.EditorHasMacro)
+            return;
+        var json = editor.GetSerializedMacroJson();
+        if (string.IsNullOrWhiteSpace(json))
+            return;
+        var macroName = editor.MacroNameForFileExport ?? "macro";
+        RunBlockingContentModal(complete => new MacroJsonShareView(_loc, _dialogs, macroName, json, complete));
+    }
+
+    private bool CanShareEditorJson() =>
+        CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
+
+    private void UpdateShowEditorShareJsonButton()
+    {
+        ShowEditorShareJsonButton = CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
+        ShareEditorJsonCommand.NotifyCanExecuteChanged();
     }
 
     internal MacroEditorViewModel CreateEditorViewModel(

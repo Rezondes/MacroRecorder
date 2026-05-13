@@ -1,4 +1,5 @@
 using MacroRecorder.Application.Ports;
+using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 
 namespace MacroRecorder.App.Editor;
@@ -54,7 +55,7 @@ public sealed class EditorMousePathRow : EditorTimelineRow
                 return "";
             var first = Moves[0];
             var last = Moves[^1];
-            var span = last.ElapsedSinceSessionStart - first.ElapsedSinceSessionStart;
+            var span = EventPlaybackSchedule.PlaybackSpanOverSublist(Moves);
             return _loc.GetString(
                 "Editor_MousePathValueFormat",
                 Moves.Count,

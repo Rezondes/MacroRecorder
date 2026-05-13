@@ -178,10 +178,12 @@ public sealed class SendInputPlaybackService : IPlaybackService
         feedback?.UpdatePlayingRemaining(ClampRemaining(totalEstimated, sw.Elapsed));
         var lastUiMs = Environment.TickCount64;
 
+        var playbackCursor = TimeSpan.Zero;
         foreach (var recordedEvent in ordered)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            WaitUntil(sw, recordedEvent.ElapsedSinceSessionStart, cancellationToken);
+            playbackCursor += recordedEvent.DelayBefore;
+            WaitUntil(sw, playbackCursor, cancellationToken);
             MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
 
             switch (recordedEvent)
@@ -210,6 +212,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
                     break;
                 case SyntheticWaitRecordedEvent syntheticWait:
                     SleepCancellable(syntheticWait.AdditionalDelay, cancellationToken);
+                    playbackCursor += syntheticWait.AdditionalDelay;
                     break;
             }
 
@@ -241,17 +244,29 @@ public sealed class SendInputPlaybackService : IPlaybackService
 
     private static void WaitUntil(Stopwatch sw, TimeSpan target, CancellationToken cancellationToken)
     {
+        // Avoid tiny sleeps in a tight loop: default system timer resolution (~15.6 ms) inflates short waits.
+        // Use Task.Delay (with cancellation) so each chunk cooperates with CancellationToken; work runs on a
+        // thread-pool thread inside Task.Run(PlayAsync), not the WPF UI thread.
+        const int maxSleepChunkMs = 50;
         while (sw.Elapsed < target)
         {
             cancellationToken.ThrowIfCancellationRequested();
             PumpWindowsMessages();
             var remaining = target - sw.Elapsed;
+            if (remaining <= TimeSpan.Zero)
+                break;
+
             if (remaining > TimeSpan.FromMilliseconds(2))
-                Thread.Sleep(1);
+            {
+                var sleepMs = (int)Math.Min(
+                    Math.Max(1, remaining.TotalMilliseconds - 0.5),
+                    maxSleepChunkMs);
+                Task.Delay(TimeSpan.FromMilliseconds(sleepMs), cancellationToken).GetAwaiter().GetResult();
+            }
             else
             {
                 PumpWindowsMessages();
-                Thread.SpinWait(50);
+                Thread.SpinWait(100);
             }
         }
     }
@@ -269,9 +284,16 @@ public sealed class SendInputPlaybackService : IPlaybackService
             var left = delay - sw.Elapsed;
             var sleepChunkMilliseconds = (int)Math.Min(15, Math.Ceiling(left.TotalMilliseconds));
             if (sleepChunkMilliseconds < 1)
-                Thread.Sleep(0);
+            {
+                PumpWindowsMessages();
+                Thread.SpinWait(50);
+            }
             else
-                Thread.Sleep(sleepChunkMilliseconds);
+            {
+                Task.Delay(TimeSpan.FromMilliseconds(sleepChunkMilliseconds), cancellationToken)
+                    .GetAwaiter()
+                    .GetResult();
+            }
         }
     }
 
