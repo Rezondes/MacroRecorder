@@ -199,6 +199,7 @@ EN: dict[str, str] = {
     "Playback_Overlay_WarningBody": "Do not use the keyboard or mouse, or playback will stop.",
     "Playback_Overlay_StartDelayFormat": "Starts in {0}",
     "Playback_Overlay_RemainingFormat": "About {0} remaining (estimated)",
+    "Playback_Overlay_CancelPlayback": "Cancel playback",
 }
 
 DE: dict[str, str] = {
@@ -394,6 +395,7 @@ DE: dict[str, str] = {
     "Playback_Overlay_WarningBody": "Keine Eingaben mit Tastatur oder Maus, sonst bricht die Wiedergabe ab.",
     "Playback_Overlay_StartDelayFormat": "Start in {0}",
     "Playback_Overlay_RemainingFormat": "Noch ca. {0}",
+    "Playback_Overlay_CancelPlayback": "Abspielen abbrechen",
 }
 
 

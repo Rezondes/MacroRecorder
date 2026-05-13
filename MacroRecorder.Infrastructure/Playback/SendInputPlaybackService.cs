@@ -40,6 +40,8 @@ public sealed class SendInputPlaybackService : IPlaybackService
                 RunPlayLocked(macro, cancellationToken, userInputInterruptGraceMilliseconds);
         }, cancellationToken);
 
+    public void RequestUserCancel() => _interruptCts?.Cancel();
+
     private void RunPlayLocked(Macro macro, CancellationToken cancellationToken, int userInputInterruptGraceMilliseconds)
     {
         if (macro.Events.Count == 0)

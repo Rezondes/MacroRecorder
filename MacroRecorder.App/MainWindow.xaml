@@ -140,6 +140,15 @@
                            Foreground="{DynamicResource UiBrush.PlaybackOverlayText}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
+                <Button Margin="0,20,0,0"
+                        MinWidth="160"
+                        Padding="14,8"
+                        HorizontalAlignment="Center"
+                        Style="{DynamicResource UiButtonChrome}"
+                        Command="{Binding CancelPlaybackFromOverlayCommand}"
+                        Visibility="{Binding ShowPlaybackStartDelayCancel, Converter={StaticResource BoolToVis}}"
+                        Content="{loc:Loc Playback_Overlay_CancelPlayback}"
+                        AutomationProperties.Name="{loc:Loc Playback_Overlay_CancelPlayback}" />
             </StackPanel>
         </Grid>
         <Grid Grid.Row="0"

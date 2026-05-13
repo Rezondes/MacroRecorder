@@ -1,9 +1,11 @@
 using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MacroRecorder.App.ViewModels;
 
@@ -26,6 +28,9 @@ public partial class ShellViewModel
     [ObservableProperty]
     private string playbackOverlayCountdown = "";
 
+    [ObservableProperty]
+    private bool showPlaybackStartDelayCancel;
+
     void IPlaybackUiFeedback.Begin(Macro macro, int graceMs, TimeSpan estimatedPlayDuration)
     {
         _ = macro;
@@ -36,6 +41,7 @@ public partial class ShellViewModel
             PlaybackOverlayTitle = _loc.GetString("Playback_Overlay_WarningTitle");
             PlaybackOverlayBody = _loc.GetString("Playback_Overlay_WarningBody");
             PlaybackOverlayCountdown = "";
+            ShowPlaybackStartDelayCancel = graceMs > 0;
             IsPlaybackOverlayVisible = true;
         });
     }
@@ -51,7 +57,10 @@ public partial class ShellViewModel
     {
         var formatted = FormatPlaybackCountdown(remaining);
         RunOnUi(DispatcherPriority.Normal, () =>
-            PlaybackOverlayCountdown = _loc.GetString("Playback_Overlay_RemainingFormat", formatted));
+        {
+            ShowPlaybackStartDelayCancel = false;
+            PlaybackOverlayCountdown = _loc.GetString("Playback_Overlay_RemainingFormat", formatted);
+        });
     }
 
     void IPlaybackUiFeedback.End()
@@ -63,6 +72,7 @@ public partial class ShellViewModel
         void SchedulePostPlayTail()
         {
             CancelPlaybackPostPlayTailTimer();
+            ShowPlaybackStartDelayCancel = false;
             var timer = new DispatcherTimer
             {
                 Interval = PlaybackPostPlayTailDelay
@@ -96,7 +106,14 @@ public partial class ShellViewModel
         PlaybackOverlayTitle = "";
         PlaybackOverlayBody = "";
         PlaybackOverlayCountdown = "";
+        ShowPlaybackStartDelayCancel = false;
         PlaybackCursorRestoreSession.TryRestoreAndClear();
+    }
+
+    [RelayCommand]
+    private void CancelPlaybackFromOverlay()
+    {
+        _services.GetRequiredService<IPlaybackService>().RequestUserCancel();
     }
 
     private void RunOnUi(DispatcherPriority priority, Action action)
