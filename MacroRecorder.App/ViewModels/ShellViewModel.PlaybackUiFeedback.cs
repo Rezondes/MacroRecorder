@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 
@@ -59,6 +60,7 @@ public partial class ShellViewModel
             PlaybackOverlayTitle = "";
             PlaybackOverlayBody = "";
             PlaybackOverlayCountdown = "";
+            PlaybackCursorRestoreSession.TryRestoreAndClear();
         }
 
         if (d.CheckAccess())

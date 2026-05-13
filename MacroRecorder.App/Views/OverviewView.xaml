@@ -111,10 +111,9 @@
                                         HorizontalAlignment="Right">
                                 <Button Content="{loc:Loc Main_Play}"
                                         Margin="4,0,0,0"
-                                        Padding="12,6"
-                                        MinWidth="96"
-                                        FontSize="12"
-                                        Style="{DynamicResource UiButtonChrome}"
+                                        MinWidth="88"
+                                        Style="{DynamicResource UiToolbarChromeButton}"
+                                        PreviewMouseLeftButtonDown="OnOverviewPlayPreviewMouseDown"
                                         Command="{Binding DataContext.Overview.PlayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
                                 <Button Content="{loc:Loc Main_Edit}"
