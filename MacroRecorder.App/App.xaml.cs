@@ -40,6 +40,8 @@ public partial class App : System.Windows.Application
             new Lazy<IEditorInsertModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>
             new Lazy<IPromptTextModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
+        builder.Services.AddSingleton(sp =>
+            new Lazy<IExportMacroJsonModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton<IUserDialogService>(sp =>
             new WpfUserDialogService(
                 sp.GetRequiredService<IUiLocalizer>(),

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,6 +20,7 @@ public partial class ShellViewModel : ObservableObject,
     IEditEventModalHost,
     IEditorInsertModalHost,
     IPromptTextModalHost,
+    IExportMacroJsonModalHost,
     IPlaybackUiFeedback
 {
     private readonly MainViewModel _overview;
@@ -46,7 +48,7 @@ public partial class ShellViewModel : ObservableObject,
         _stack.Add(overview);
         CurrentPage = overview;
         UpdateShellTitle();
-        UpdateShowEditorShareJsonButton();
+        UpdateShowEditorMacroHeaderActions();
     }
 
     public MainViewModel Overview => _overview;
@@ -103,7 +105,7 @@ public partial class ShellViewModel : ObservableObject,
     private object? contentModalContent;
 
     [ObservableProperty]
-    private bool showEditorShareJsonButton;
+    private bool showEditorMacroHeaderActions;
 
     [RelayCommand]
     private void CloseInfoModal() => IsInfoModalOpen = false;
@@ -488,7 +490,7 @@ public partial class ShellViewModel : ObservableObject,
         else
             DetachEditorTitleListener(_editorTitleSource);
         UpdateShellTitle();
-        UpdateShowEditorShareJsonButton();
+        UpdateShowEditorMacroHeaderActions();
     }
 
     private void AttachEditorTitleListener(MacroEditorViewModel editor)
@@ -512,7 +514,7 @@ public partial class ShellViewModel : ObservableObject,
         if (e.PropertyName == nameof(MacroEditorViewModel.WindowTitle))
             UpdateShellTitle();
         else if (e.PropertyName == nameof(MacroEditorViewModel.EditorHasMacro))
-            UpdateShowEditorShareJsonButton();
+            UpdateShowEditorMacroHeaderActions();
     }
 
     private void UpdateShellTitle()
@@ -526,8 +528,8 @@ public partial class ShellViewModel : ObservableObject,
         };
     }
 
-    [RelayCommand(CanExecute = nameof(CanShareEditorJson))]
-    private void ShareEditorJson()
+    [RelayCommand(CanExecute = nameof(CanExportEditorJson))]
+    private void ExportEditorJson()
     {
         if (CurrentPage is not MacroEditorViewModel editor || !editor.EditorHasMacro)
             return;
@@ -535,16 +537,70 @@ public partial class ShellViewModel : ObservableObject,
         if (string.IsNullOrWhiteSpace(json))
             return;
         var macroName = editor.MacroNameForFileExport ?? "macro";
+        ShowExportJsonModalOnUiThread(macroName, json);
+    }
+
+    private bool CanExportEditorJson() =>
+        CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
+
+    [RelayCommand(CanExecute = nameof(CanDeleteCurrentMacroFromEditor))]
+    private async Task DeleteCurrentMacroFromEditorAsync()
+    {
+        if (CurrentPage is not MacroEditorViewModel editor || !editor.EditorHasMacro)
+            return;
+        var macroName = editor.MacroNameForFileExport ?? "";
+        if (!_dialogs.Confirm(_loc.GetString("Main_DeleteConfirm", macroName)))
+            return;
+        var workspace = _services.GetRequiredService<MacroWorkspaceService>();
+        await workspace.DeleteAsync(editor.MacroId).ConfigureAwait(true);
+        ForcePopTopPageSkippingLeaveConfirmation();
+        await _overview.RefreshAsync().ConfigureAwait(true);
+    }
+
+    private bool CanDeleteCurrentMacroFromEditor() =>
+        CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
+
+    private void ForcePopTopPageSkippingLeaveConfirmation()
+    {
+        if (_stack.Count <= 1)
+            return;
+        if (CurrentPage is MacroEditorViewModel oldEditor)
+            DetachEditorTitleListener(oldEditor);
+        _stack.RemoveAt(_stack.Count - 1);
+        CurrentPage = _stack[^1];
+        UpdateShellTitle();
+        GoBackCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(ShowBackButton));
+        UpdateShowEditorMacroHeaderActions();
+    }
+
+    void IExportMacroJsonModalHost.ShowExportJsonModal(string macroNameForFileDialog, string json)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+            return;
+        if (!dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(() => ShowExportJsonModalOnUiThread(macroNameForFileDialog, json));
+            return;
+        }
+
+        ShowExportJsonModalOnUiThread(macroNameForFileDialog, json);
+    }
+
+    private void ShowExportJsonModalOnUiThread(string macroNameForFileDialog, string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return;
+        var macroName = string.IsNullOrWhiteSpace(macroNameForFileDialog) ? "macro" : macroNameForFileDialog.Trim();
         RunBlockingContentModal(complete => new MacroJsonShareView(_loc, _dialogs, macroName, json, complete));
     }
 
-    private bool CanShareEditorJson() =>
-        CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
-
-    private void UpdateShowEditorShareJsonButton()
+    private void UpdateShowEditorMacroHeaderActions()
     {
-        ShowEditorShareJsonButton = CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
-        ShareEditorJsonCommand.NotifyCanExecuteChanged();
+        ShowEditorMacroHeaderActions = CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
+        ExportEditorJsonCommand.NotifyCanExecuteChanged();
+        DeleteCurrentMacroFromEditorCommand.NotifyCanExecuteChanged();
     }
 
     internal MacroEditorViewModel CreateEditorViewModel(

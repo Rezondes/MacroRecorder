@@ -66,6 +66,16 @@
         <Setter Property="MinHeight" Value="40" />
     </Style>
 
+    <!-- MDL2 / icon glyph: theme primary (e.g. share / export). -->
+    <Style x:Key="UiIconButtonPrimaryGlyph" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.Primary}" />
+    </Style>
+
+    <!-- MDL2 / icon glyph: theme error / destructive. -->
+    <Style x:Key="UiIconButtonDangerGlyph" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.Error}" />
+    </Style>
+
     <ControlTemplate x:Key="UiFlatToggleButtonTemplate" TargetType="ToggleButton">
         <Border x:Name="Bd"
                 Background="{TemplateBinding Background}"

@@ -45,16 +45,31 @@
                           AutomationProperties.Name="{loc:Loc Shell_PinTopmost_A11y}" />
             <Button DockPanel.Dock="Right"
                     VerticalAlignment="Center"
-                    Margin="0,0,6,0"
-                    Style="{DynamicResource UiCaptionIconButton}"
-                    Command="{Binding ShareEditorJsonCommand}"
-                    Visibility="{Binding ShowEditorShareJsonButton, Converter={StaticResource BoolToVis}}"
-                    ToolTip="{loc:Loc Editor_ShareJson_ToolTip}"
-                    AutomationProperties.Name="{loc:Loc Editor_ShareJson}">
+                    Margin="4,0,0,0"
+                    Style="{DynamicResource UiIconButtonDangerGlyph}"
+                    Command="{Binding DeleteCurrentMacroFromEditorCommand}"
+                    Visibility="{Binding ShowEditorMacroHeaderActions, Converter={StaticResource BoolToVis}}"
+                    ToolTip="{loc:Loc Main_Delete}"
+                    AutomationProperties.Name="{loc:Loc Main_Delete}">
+                <TextBlock FontFamily="Segoe MDL2 Assets"
+                           Text="&#xE74D;"
+                           FontSize="14"
+                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Button>
+            <Button DockPanel.Dock="Right"
+                    VerticalAlignment="Center"
+                    Margin="4,0,6,0"
+                    Style="{DynamicResource UiIconButtonPrimaryGlyph}"
+                    Command="{Binding ExportEditorJsonCommand}"
+                    Visibility="{Binding ShowEditorMacroHeaderActions, Converter={StaticResource BoolToVis}}"
+                    ToolTip="{loc:Loc Main_Export_ToolTip}"
+                    AutomationProperties.Name="{loc:Loc Main_Export_ToolTip}">
                 <TextBlock FontFamily="Segoe MDL2 Assets"
                            Text="&#xE72D;"
                            FontSize="14"
-                           Foreground="{DynamicResource UiBrush.TextPrimary}"
+                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
             </Button>

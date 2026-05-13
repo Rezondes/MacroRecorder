@@ -124,24 +124,32 @@
                                         Style="{DynamicResource UiButtonChrome}"
                                         Command="{Binding DataContext.Overview.EditCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
-                                <Button Content="{loc:Loc Main_Export}"
-                                        Margin="8,0,0,0"
-                                        Padding="12,6"
-                                        MinWidth="96"
-                                        FontSize="12"
-                                        Style="{DynamicResource UiButtonChrome}"
+                                <Button Margin="4,0,0,0"
+                                        Style="{DynamicResource UiIconButtonPrimaryGlyph}"
                                         ToolTip="{loc:Loc Main_Export_ToolTip}"
                                         AutomationProperties.Name="{loc:Loc Main_Export_ToolTip}"
                                         Command="{Binding DataContext.Overview.ExportCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}" />
-                                <Button Content="{loc:Loc Main_Delete}"
-                                        Margin="8,0,0,0"
-                                        Padding="12,6"
-                                        MinWidth="96"
-                                        FontSize="12"
-                                        Style="{DynamicResource UiButtonChrome}"
+                                        CommandParameter="{Binding}">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               Text="&#xE72D;"
+                                               FontSize="18"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center" />
+                                </Button>
+                                <Button Margin="4,0,0,0"
+                                        Style="{DynamicResource UiIconButtonDangerGlyph}"
+                                        ToolTip="{loc:Loc Main_Delete}"
+                                        AutomationProperties.Name="{loc:Loc Main_Delete}"
                                         Command="{Binding DataContext.Overview.DeleteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}" />
+                                        CommandParameter="{Binding}">
+                                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                                               Text="&#xE74D;"
+                                               FontSize="18"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center" />
+                                </Button>
                             </StackPanel>
                         </Grid>
                     </DataTemplate>

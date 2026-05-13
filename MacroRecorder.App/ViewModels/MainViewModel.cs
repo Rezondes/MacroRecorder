@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,7 +7,6 @@ using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Persistence;
-using Microsoft.Win32;
 
 namespace MacroRecorder.App.ViewModels;
 
@@ -19,6 +17,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IUserDialogService _dialogs;
     private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly Lazy<INavigationService> _navigation;
+    private readonly Lazy<IExportMacroJsonModalHost> _exportModalHost;
     private readonly IUiLocalizer _loc;
 
     public MainViewModel(
@@ -27,6 +26,7 @@ public partial class MainViewModel : ObservableObject
         IUserDialogService dialogs,
         InAppInfoMessageChannel inAppInfo,
         Lazy<INavigationService> navigation,
+        Lazy<IExportMacroJsonModalHost> exportModalHost,
         IUiLocalizer loc)
     {
         _workspace = workspace;
@@ -34,6 +34,7 @@ public partial class MainViewModel : ObservableObject
         _dialogs = dialogs;
         _inAppInfo = inAppInfo;
         _navigation = navigation;
+        _exportModalHost = exportModalHost;
         _loc = loc;
         _loc.UiCultureChanged += (_, _) => OnUiCultureChanged();
     }
@@ -122,37 +123,11 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        var dialog = new SaveFileDialog
-        {
-            Filter = _loc.GetString("Main_Export_FileFilter"),
-            FileName = SanitizeFileNameForExport(item.Name) + ".json",
-            AddExtension = true,
-            DefaultExt = ".json"
-        };
-        var showResult = System.Windows.Application.Current?.MainWindow is { } owner
-            ? dialog.ShowDialog(owner)
-            : dialog.ShowDialog();
-        if (showResult != true || string.IsNullOrWhiteSpace(dialog.FileName))
+        var json = MacroJsonFileFormat.Serialize(macro);
+        if (string.IsNullOrWhiteSpace(json))
             return;
-
-        try
-        {
-            var json = MacroJsonFileFormat.Serialize(macro);
-            await File.WriteAllTextAsync(dialog.FileName, json).ConfigureAwait(true);
-            _dialogs.ShowInfo(_loc.GetString("Main_Export_Success", dialog.FileName));
-        }
-        catch (Exception exception)
-        {
-            _dialogs.ShowInfo(_loc.GetString("Main_Export_ErrorWrite", exception.Message));
-        }
-    }
-
-    private static string SanitizeFileNameForExport(string name)
-    {
-        var invalid = Path.GetInvalidFileNameChars();
-        var chars = name.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray();
-        var trimmed = new string(chars).Trim();
-        return string.IsNullOrEmpty(trimmed) ? "macro" : trimmed;
+        var macroNameForFileDialog = string.IsNullOrWhiteSpace(item.Name) ? "macro" : item.Name.Trim();
+        _exportModalHost.Value.ShowExportJsonModal(macroNameForFileDialog, json);
     }
 
     [RelayCommand]
