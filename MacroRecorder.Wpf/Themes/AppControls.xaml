@@ -129,6 +129,69 @@
         <Setter Property="Foreground" Value="{DynamicResource UiBrush.Success}" />
     </Style>
 
+    <!-- Split: play (left) + overflow menu (right), one combined outline with vertical separator. -->
+    <ControlTemplate x:Key="UiIconButtonSuccessSplitLeftTemplate" TargetType="Button">
+        <Border x:Name="Bd"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="1,1,0,1"
+                CornerRadius="6,0,0,6"
+                Padding="{TemplateBinding Padding}"
+                SnapsToDevicePixels="True">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource UiBrush.SurfaceHover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource UiBrush.SurfaceElevated}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="UiIconButtonSuccessSplitRightTemplate" TargetType="Button">
+        <Border x:Name="Bd"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="0,1,1,1"
+                CornerRadius="0,6,6,0"
+                Padding="{TemplateBinding Padding}"
+                SnapsToDevicePixels="True">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource UiBrush.SurfaceHover}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource UiBrush.SurfaceElevated}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="UiIconButtonSuccessSplitLeft" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.Success}" />
+        <Setter Property="Template" Value="{StaticResource UiIconButtonSuccessSplitLeftTemplate}" />
+        <Setter Property="MinWidth" Value="40" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="10,10,6,10" />
+    </Style>
+
+    <Style x:Key="UiIconButtonSuccessSplitRight" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.Success}" />
+        <Setter Property="Template" Value="{StaticResource UiIconButtonSuccessSplitRightTemplate}" />
+        <Setter Property="MinWidth" Value="32" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="4,10,8,10" />
+    </Style>
+
     <!-- MDL2 / icon glyph: secondary accent (e.g. edit). -->
     <Style x:Key="UiIconButtonSecondaryGlyph" TargetType="Button" BasedOn="{StaticResource UiIconButton}">
         <Setter Property="Foreground" Value="{DynamicResource UiBrush.Secondary}" />
@@ -573,6 +636,64 @@
         <Setter Property="Orientation" Value="Horizontal" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="Margin" Value="0,20,0,0" />
+    </Style>
+
+    <!-- Themed context menu (e.g. overview row “⋯”); MenuBase items host must stay on the ItemsPresenter stack. -->
+    <Style x:Key="UiThemedContextMenu" TargetType="ContextMenu">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{DynamicResource UiBrush.Surface}"
+                            BorderBrush="{DynamicResource UiBrush.Border}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="4"
+                            SnapsToDevicePixels="True">
+                        <StackPanel IsItemsHost="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="UiThemedContextMenuItem" TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="12,10,14,10" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="ItemBorder"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="4"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter x:Name="HeaderHost"
+                                          ContentSource="Header"
+                                          RecognizesAccessKey="True"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource UiBrush.SurfaceHover}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="UiSettingsComboBox" TargetType="ComboBox" BasedOn="{StaticResource UiComboBox}">

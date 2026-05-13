@@ -21,4 +21,6 @@ public sealed record MacroSummary(
     string Name,
     int ActionCount,
     DateTimeOffset LastModifiedUtc,
-    TimeSpan TotalPlaybackDuration);
+    TimeSpan TotalPlaybackDuration,
+    PlaybackKeyChord? PlaybackHotkey = null,
+    string? PlaybackHotkeyDisplay = null);

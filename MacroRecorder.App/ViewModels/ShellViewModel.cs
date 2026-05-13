@@ -22,6 +22,7 @@ public partial class ShellViewModel : ObservableObject,
     IEditEventModalHost,
     IEditorInsertModalHost,
     IPromptTextModalHost,
+    IPromptPlaybackChordModalHost,
     IExportMacroJsonModalHost,
     IPlaybackUiFeedback
 {
@@ -30,6 +31,7 @@ public partial class ShellViewModel : ObservableObject,
     private readonly IUiLocalizer _loc;
     private readonly IUserDialogService _dialogs;
     private readonly InAppInfoMessageChannel _inAppInfo;
+    private readonly MacroPlaybackHotkeyRegistrar _playbackHotkeys;
     private readonly List<object> _stack = new();
     private MacroEditorViewModel? _editorTitleSource;
 
@@ -38,13 +40,15 @@ public partial class ShellViewModel : ObservableObject,
         IServiceProvider services,
         IUiLocalizer loc,
         IUserDialogService dialogs,
-        InAppInfoMessageChannel inAppInfo)
+        InAppInfoMessageChannel inAppInfo,
+        MacroPlaybackHotkeyRegistrar playbackHotkeys)
     {
         _overview = overview;
         _services = services;
         _loc = loc;
         _dialogs = dialogs;
         _inAppInfo = inAppInfo;
+        _playbackHotkeys = playbackHotkeys;
         _inAppInfo.InfoRequested += OnInAppInfoRequested;
         _loc.UiCultureChanged += (_, _) => UpdateShellTitle();
         _stack.Add(overview);
@@ -335,6 +339,45 @@ public partial class ShellViewModel : ObservableObject,
         return PromptTextOnUiThread(title, message, defaultValue, validator, restrictInputToDigits);
     }
 
+    PlaybackKeyChord? IPromptPlaybackChordModalHost.PromptPlaybackChord(
+        string title,
+        string message,
+        IReadOnlyList<PlaybackKeyChord> blockedChords)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+            return null;
+        if (!dispatcher.CheckAccess())
+            return dispatcher.Invoke(() =>
+                ((IPromptPlaybackChordModalHost)this).PromptPlaybackChord(title, message, blockedChords));
+
+        _playbackHotkeys.Suspend();
+        try
+        {
+            return PromptPlaybackChordOnUiThread(title, message, blockedChords);
+        }
+        finally
+        {
+            _playbackHotkeys.Resume();
+        }
+    }
+
+    private PlaybackKeyChord? PromptPlaybackChordOnUiThread(
+        string title,
+        string message,
+        IReadOnlyList<PlaybackKeyChord> blockedChords)
+    {
+        PlaybackKeyChord? result = null;
+        var ok = RunBlockingContentModal(
+            complete => new PromptPlaybackChordView(_loc, title, message, blockedChords, complete),
+            (confirmed, v) =>
+            {
+                if (confirmed && v is PromptPlaybackChordView p)
+                    result = p.CapturedChord;
+            });
+        return ok ? result : null;
+    }
+
     private string? PromptTextOnUiThread(
         string title,
         string message,
@@ -456,7 +499,7 @@ public partial class ShellViewModel : ObservableObject,
         _stack.RemoveAt(_stack.Count - 1);
         CurrentPage = _stack[^1];
         if (ReferenceEquals(CurrentPage, _overview))
-            _ = _overview.RefreshAsync();
+            _ = _overview.RefreshAsync(suppressHotkeyRegistrationFailureDialog: true);
         UpdateShellTitle();
         GoBackCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ShowBackButton));
@@ -588,7 +631,7 @@ public partial class ShellViewModel : ObservableObject,
         var workspace = _services.GetRequiredService<MacroWorkspaceService>();
         await workspace.DeleteAsync(editor.MacroId).ConfigureAwait(true);
         ForcePopTopPageSkippingLeaveConfirmation();
-        await _overview.RefreshAsync().ConfigureAwait(true);
+        await _overview.RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
     }
 
     private bool CanDeleteCurrentMacroFromEditor() =>

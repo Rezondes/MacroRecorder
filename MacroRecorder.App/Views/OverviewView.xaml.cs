@@ -1,8 +1,11 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using MacroRecorder.App.Controls;
+using System.Windows.Threading;
+using MacroRecorder.Application.Ports;
+using MacroRecorder.App.Services;
 using MacroRecorder.App.ViewModels;
 
 namespace MacroRecorder.App.Views;
@@ -10,6 +13,8 @@ namespace MacroRecorder.App.Views;
 public partial class OverviewView
 {
     public const string OverviewReorderDragFormat = "MacroRecorder.OverviewReorderIndex";
+
+    private const string InteractiveChromeTag = "OverviewInteractiveChrome";
 
     private Point _dragReorderStart;
     private bool _dragReorderMouseDown;
@@ -19,6 +24,62 @@ public partial class OverviewView
     {
         InitializeComponent();
         Unloaded += (_, _) => ClearDropIndicator();
+    }
+
+    private void OnPlaybackSplitMenuButtonClick(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Button { ContextMenu: { } menu, Tag: MacroSummary summary })
+            return;
+        menu.DataContext = summary;
+        menu.PlacementTarget = (UIElement)sender;
+        menu.Placement = PlacementMode.Right;
+        menu.IsOpen = true;
+    }
+
+    private void OnPlaybackSplitPlayPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Button button)
+            PlaybackCursorRestoreSession.ArmFromButton(button);
+    }
+
+    private void OnPlaybackHotkeyMenuAddClick(object sender, RoutedEventArgs e) =>
+        RunPlaybackHotkeyMenuCommand(sender, static vm => vm.AddPlaybackHotkeyCommand);
+
+    private void OnPlaybackHotkeyMenuChangeClick(object sender, RoutedEventArgs e) =>
+        RunPlaybackHotkeyMenuCommand(sender, static vm => vm.ChangePlaybackHotkeyCommand);
+
+    private void OnPlaybackHotkeyMenuRemoveClick(object sender, RoutedEventArgs e) =>
+        RunPlaybackHotkeyMenuCommand(sender, static vm => vm.RemovePlaybackHotkeyCommand);
+
+    private void RunPlaybackHotkeyMenuCommand(object sender, Func<MainViewModel, ICommand> getCommand)
+    {
+        CloseContextMenuFromSender(sender);
+        if (sender is not MenuItem { DataContext: MacroSummary row })
+            return;
+        if (Window.GetWindow(this)?.DataContext is not ShellViewModel shell)
+            return;
+        var overview = shell.Overview;
+        var command = getCommand(overview);
+        Dispatcher.BeginInvoke(
+            DispatcherPriority.ApplicationIdle,
+            new Action(() =>
+            {
+                if (command.CanExecute(row))
+                    command.Execute(row);
+            }));
+    }
+
+    private static void CloseContextMenuFromSender(object sender)
+    {
+        for (var d = sender as DependencyObject; d != null; d = VisualTreeHelper.GetParent(d))
+        {
+            if (d is ContextMenu contextMenu)
+            {
+                contextMenu.IsOpen = false;
+                return;
+            }
+        }
     }
 
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -275,7 +336,9 @@ public partial class OverviewView
     {
         for (var d = leaf; d is not null && !ReferenceEquals(d, row); d = VisualTreeHelper.GetParent(d))
         {
-            if (d is Button or System.Windows.Controls.Primitives.RepeatButton or PlayMacroGlyphButton)
+            if (d is Button or System.Windows.Controls.Primitives.RepeatButton)
+                return true;
+            if (d is FrameworkElement fe && fe.Tag as string == InteractiveChromeTag)
                 return true;
         }
 

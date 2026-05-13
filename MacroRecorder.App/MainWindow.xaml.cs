@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Threading;
 using MacroRecorder.App.Services;
 using MacroRecorder.App.ViewModels;
+using MacroRecorder.Infrastructure.Interop;
 
 namespace MacroRecorder.App;
 
@@ -13,13 +15,16 @@ public partial class MainWindow : Window
     private const double MinPersistHeight = 400;
 
     private readonly AppearanceService _appearance;
+    private readonly MacroPlaybackHotkeyRegistrar _playbackHotkeys;
     private readonly EventHandler _onAppearancePreviewChanged;
     private readonly DispatcherTimer _windowPlacementSaveDebounce;
     private bool _forceClose;
+    private HwndSource? _hwndSource;
 
-    public MainWindow(ShellViewModel shellViewModel, AppearanceService appearance)
+    public MainWindow(ShellViewModel shellViewModel, AppearanceService appearance, MacroPlaybackHotkeyRegistrar playbackHotkeys)
     {
         _appearance = appearance;
+        _playbackHotkeys = playbackHotkeys;
         _onAppearancePreviewChanged = (_, _) => Dispatcher.Invoke(ApplyCaptionTheme);
         DataContext = shellViewModel;
         InitializeComponent();
@@ -36,11 +41,11 @@ public partial class MainWindow : Window
         };
         LocationChanged += (_, _) => SchedulePersistWindowPlacement();
         SizeChanged += (_, _) => SchedulePersistWindowPlacement();
-        SourceInitialized += (_, _) => ApplyCaptionTheme();
+        SourceInitialized += OnMainWindowSourceInitialized;
         Loaded += async (_, _) =>
         {
             ApplyCaptionTheme();
-            await shellViewModel.Overview.RefreshAsync().ConfigureAwait(true);
+            await shellViewModel.Overview.RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
         };
         Closed += (_, _) =>
         {
@@ -50,7 +55,24 @@ public partial class MainWindow : Window
         };
         _appearance.PreviewChanged += _onAppearancePreviewChanged;
     }
+
     private ShellViewModel Shell => (ShellViewModel)DataContext;
+
+    private void OnMainWindowSourceInitialized(object? sender, EventArgs e)
+    {
+        ApplyCaptionTheme();
+        var handle = new WindowInteropHelper(this).Handle;
+        _playbackHotkeys.AttachWindow(handle);
+        _hwndSource = HwndSource.FromHwnd(handle);
+        _hwndSource?.AddHook(WndProc);
+    }
+
+    private nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
+    {
+        if (msg == User32Hotkeys.WmHotkey && _playbackHotkeys.TryConsumeWmHotKey(wParam))
+            handled = true;
+        return nint.Zero;
+    }
 
     private void ApplyCaptionTheme() => CaptionThemeHelper.Apply(this, _appearance.PreviewIsDark);
 

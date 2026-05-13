@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MacroRecorder.App"
-             xmlns:controls="clr-namespace:MacroRecorder.App.Controls"
              xmlns:loc="clr-namespace:MacroRecorder.App.Localization"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -94,9 +93,129 @@
                                         Orientation="Horizontal"
                                         VerticalAlignment="Center"
                                         HorizontalAlignment="Right">
-                                <controls:PlayMacroGlyphButton Margin="4,0,0,0"
-                                                               Command="{Binding DataContext.Overview.PlayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               CommandParameter="{Binding}" />
+                                <!-- Play + overflow: one success split icon (separator); chip overlay; menu opens to the right. -->
+                                <Grid Margin="4,0,6,0"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      Tag="OverviewInteractiveChrome">
+                                    <Grid HorizontalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0"
+                                                Style="{DynamicResource UiIconButtonSuccessSplitLeft}"
+                                                ToolTip="{loc:Loc Main_Play}"
+                                                AutomationProperties.Name="{loc:Loc Main_Play}"
+                                                Command="{Binding DataContext.Overview.PlayCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                PreviewMouseLeftButtonDown="OnPlaybackSplitPlayPreviewMouseDown">
+                                            <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                       Text="&#xE768;"
+                                                       FontSize="18"
+                                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center" />
+                                        </Button>
+                                        <Rectangle Grid.Column="1"
+                                                   Width="1"
+                                                   HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   Margin="0,10"
+                                                   Fill="{DynamicResource UiBrush.Border}" />
+                                        <Button Grid.Column="2"
+                                                Style="{DynamicResource UiIconButtonSuccessSplitRight}"
+                                                ToolTip="{loc:Loc Main_PlaybackHotkey_MoreToolTip}"
+                                                AutomationProperties.Name="{loc:Loc Main_PlaybackHotkey_More}"
+                                                Tag="{Binding}"
+                                                Click="OnPlaybackSplitMenuButtonClick">
+                                            <Button.ContextMenu>
+                                                <ContextMenu Style="{DynamicResource UiThemedContextMenu}">
+                                                    <MenuItem Header="{loc:Loc Main_PlaybackHotkey_Add}"
+                                                              Click="OnPlaybackHotkeyMenuAddClick">
+                                                        <MenuItem.Style>
+                                                            <Style BasedOn="{StaticResource UiThemedContextMenuItem}" TargetType="MenuItem">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding PlaybackHotkey}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </MenuItem.Style>
+                                                    </MenuItem>
+                                                    <MenuItem Header="{loc:Loc Main_PlaybackHotkey_Change}"
+                                                              Click="OnPlaybackHotkeyMenuChangeClick">
+                                                        <MenuItem.Style>
+                                                            <Style BasedOn="{StaticResource UiThemedContextMenuItem}" TargetType="MenuItem">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding PlaybackHotkey}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </MenuItem.Style>
+                                                    </MenuItem>
+                                                    <MenuItem Header="{loc:Loc Main_PlaybackHotkey_Remove}"
+                                                              Click="OnPlaybackHotkeyMenuRemoveClick">
+                                                        <MenuItem.Style>
+                                                            <Style BasedOn="{StaticResource UiThemedContextMenuItem}" TargetType="MenuItem">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding PlaybackHotkey}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </MenuItem.Style>
+                                                    </MenuItem>
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                            <TextBlock FontFamily="Segoe MDL2 Assets"
+                                                       Text="&#xE10C;"
+                                                       FontSize="15"
+                                                       RenderTransformOrigin="0.5,0.5"
+                                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center">
+                                                <TextBlock.LayoutTransform>
+                                                    <RotateTransform Angle="-90" />
+                                                </TextBlock.LayoutTransform>
+                                            </TextBlock>
+                                        </Button>
+                                    </Grid>
+                                    <Border HorizontalAlignment="Right"
+                                            VerticalAlignment="Top"
+                                            Margin="0,-6,-2,0"
+                                            Padding="4,2"
+                                            CornerRadius="4"
+                                            Background="{DynamicResource UiBrush.Surface}"
+                                            BorderBrush="{DynamicResource UiBrush.Border}"
+                                            BorderThickness="1"
+                                            Tag="OverviewInteractiveChrome"
+                                            MaxWidth="120"
+                                            Panel.ZIndex="1">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PlaybackHotkeyDisplay}" Value="{x:Null}">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding PlaybackHotkeyDisplay}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding PlaybackHotkeyDisplay}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource UiBrush.TextSecondary}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Border>
+                                </Grid>
                                 <Button Margin="4,0,0,0"
                                         Style="{DynamicResource UiIconButtonSecondaryGlyph}"
                                         ToolTip="{loc:Loc Main_Edit}"

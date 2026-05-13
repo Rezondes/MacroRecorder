@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Windows.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Services;
@@ -19,6 +18,8 @@ public partial class MainViewModel : ObservableObject
     private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly Lazy<INavigationService> _navigation;
     private readonly Lazy<IExportMacroJsonModalHost> _exportModalHost;
+    private readonly Lazy<IPromptPlaybackChordModalHost> _promptChordHost;
+    private readonly MacroPlaybackHotkeyRegistrar _playbackHotkeyRegistrar;
     private readonly IUiLocalizer _loc;
 
     public MainViewModel(
@@ -28,6 +29,8 @@ public partial class MainViewModel : ObservableObject
         InAppInfoMessageChannel inAppInfo,
         Lazy<INavigationService> navigation,
         Lazy<IExportMacroJsonModalHost> exportModalHost,
+        Lazy<IPromptPlaybackChordModalHost> promptChordHost,
+        MacroPlaybackHotkeyRegistrar playbackHotkeyRegistrar,
         IUiLocalizer loc)
     {
         _workspace = workspace;
@@ -36,24 +39,36 @@ public partial class MainViewModel : ObservableObject
         _inAppInfo = inAppInfo;
         _navigation = navigation;
         _exportModalHost = exportModalHost;
+        _promptChordHost = promptChordHost;
+        _playbackHotkeyRegistrar = playbackHotkeyRegistrar;
         _loc = loc;
         _loc.UiCultureChanged += (_, _) => OnUiCultureChanged();
     }
 
-    private void OnUiCultureChanged()
-    {
-        var view = CollectionViewSource.GetDefaultView(Macros);
-        view?.Refresh();
-    }
+    private void OnUiCultureChanged() => _ = RefreshAsync(suppressHotkeyRegistrationFailureDialog: true);
 
     public ObservableCollection<MacroSummary> Macros { get; } = new();
 
-    public async Task RefreshAsync()
+    /// <summary>Reloads overview rows from disk and reapplies global playback hotkeys.</summary>
+    /// <returns><c>true</c> if all hotkeys were registered with Windows; <c>false</c> if registration failed (all hotkeys are unregistered).</returns>
+    public async Task<bool> RefreshAsync(bool suppressHotkeyRegistrationFailureDialog = false)
     {
         var list = await _workspace.ListAsync().ConfigureAwait(true);
         Macros.Clear();
-        foreach (var macroSummary in list)
-            Macros.Add(macroSummary);
+        var map = new Dictionary<MacroId, PlaybackKeyChord>();
+        foreach (var s in list)
+        {
+            var display = s.PlaybackHotkey is { } c ? PlaybackHotkeyDisplayFormatter.Format(c, _loc) : null;
+            Macros.Add(s with { PlaybackHotkeyDisplay = display });
+            if (s.PlaybackHotkey is { } h)
+                map[s.Id] = h;
+        }
+
+        var applied = _playbackHotkeyRegistrar.TryApplyAssignments(map, out var win32Error);
+        if (!applied && !suppressHotkeyRegistrationFailureDialog)
+            _dialogs.ShowInfo(_loc.GetString("Hotkey_Error_RegisterFailed", win32Error.ToString()));
+
+        return applied;
     }
 
     /// <summary>Reorders the overview list and persists order for the next <see cref="RefreshAsync"/>.</summary>
@@ -71,7 +86,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch
         {
-            await RefreshAsync().ConfigureAwait(true);
+            await RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
         }
     }
 
@@ -87,6 +102,23 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        await RunPlaybackCoreAsync(macro).ConfigureAwait(true);
+    }
+
+    public async Task PlayMacroByIdAsync(MacroId macroId)
+    {
+        var macro = await _workspace.GetAsync(macroId).ConfigureAwait(true);
+        if (macro is null || macro.Events.Count == 0)
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorNoMacro"));
+            return;
+        }
+
+        await RunPlaybackCoreAsync(macro).ConfigureAwait(true);
+    }
+
+    private async Task RunPlaybackCoreAsync(Macro macro)
+    {
         try
         {
             var prefs = AppSettingsStore.Load();
@@ -141,7 +173,7 @@ public partial class MainViewModel : ObservableObject
         if (!_dialogs.Confirm(_loc.GetString("Main_DeleteConfirm", item.Name)))
             return;
         await _workspace.DeleteAsync(item.Id).ConfigureAwait(true);
-        await RefreshAsync().ConfigureAwait(true);
+        await RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -170,5 +202,85 @@ public partial class MainViewModel : ObservableObject
         _navigation.Value.OpenNewMacroEditor(macro, OnMacroListShouldRefresh);
     }
 
-    private void OnMacroListShouldRefresh() => _ = RefreshAsync();
+    [RelayCommand]
+    private async Task AddPlaybackHotkeyAsync(MacroSummary? item) =>
+        await PromptAndSavePlaybackHotkeyAsync(item).ConfigureAwait(true);
+
+    [RelayCommand]
+    private async Task ChangePlaybackHotkeyAsync(MacroSummary? item) =>
+        await PromptAndSavePlaybackHotkeyAsync(item).ConfigureAwait(true);
+
+    [RelayCommand]
+    private async Task RemovePlaybackHotkeyAsync(MacroSummary? item)
+    {
+        if (item is null)
+            return;
+        try
+        {
+            await _workspace.SetPlaybackHotkeyAsync(item.Id, null).ConfigureAwait(true);
+            await RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
+        }
+        catch (Exception exception)
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
+        }
+    }
+
+    private async Task PromptAndSavePlaybackHotkeyAsync(MacroSummary? item)
+    {
+        if (item is null)
+            return;
+
+        var list = (await _workspace.ListAsync().ConfigureAwait(true)).ToList();
+        var blocked = list
+            .Where(m => m.Id != item.Id && m.PlaybackHotkey is not null)
+            .Select(m => m.PlaybackHotkey!.Value)
+            .ToList();
+
+        var chord = _promptChordHost.Value.PromptPlaybackChord(
+            _loc.GetString("Hotkey_Capture_Title"),
+            _loc.GetString("Hotkey_Capture_Message"),
+            blocked);
+        if (chord is null)
+            return;
+
+        if (PlaybackHotkeyRiskPolicy.IsRisky(chord.Value) &&
+            !_dialogs.Confirm(_loc.GetString("Hotkey_Warn_RiskyConfirm")))
+            return;
+
+        var previous = item.PlaybackHotkey;
+        try
+        {
+            await _workspace.SetPlaybackHotkeyAsync(item.Id, chord.Value).ConfigureAwait(true);
+            var listAfterSave = (await _workspace.ListAsync().ConfigureAwait(true)).ToList();
+            var map = new Dictionary<MacroId, PlaybackKeyChord>();
+            foreach (var m in listAfterSave)
+            {
+                if (m.PlaybackHotkey is { } h)
+                    map[m.Id] = h;
+            }
+
+            var applied = _playbackHotkeyRegistrar.TryApplyAssignments(map, out var regErr);
+            if (applied)
+            {
+                await RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
+                return;
+            }
+
+            await _workspace.SetPlaybackHotkeyAsync(item.Id, previous).ConfigureAwait(true);
+            await RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
+            _dialogs.ShowInfo(_loc.GetString("Hotkey_Error_RegisterFailed", regErr.ToString()));
+        }
+        catch (PlaybackHotkeyConflictException ex)
+        {
+            var otherName = list.FirstOrDefault(m => m.Id == ex.ConflictingMacroId)?.Name ?? ex.ConflictingMacroId.Value;
+            _dialogs.ShowInfo(_loc.GetString("Hotkey_Error_Conflict", otherName));
+        }
+        catch (Exception exception)
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
+        }
+    }
+
+    private void OnMacroListShouldRefresh() => _ = RefreshAsync(suppressHotkeyRegistrationFailureDialog: true);
 }

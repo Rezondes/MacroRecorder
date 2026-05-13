@@ -25,6 +25,10 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<InAppInfoMessageChannel>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddSingleton<IUiLocalizer, ResxUiLocalizer>();
+        builder.Services.AddSingleton(sp =>
+            new MacroPlaybackHotkeyRegistrar(
+                new Lazy<MainViewModel>(() => sp.GetRequiredService<MainViewModel>()),
+                sp.GetRequiredService<RecordingCoordinator>()));
         builder.Services.AddSingleton<Lazy<INavigationService>>(static sp =>
             new Lazy<INavigationService>(() => sp.GetRequiredService<INavigationService>()));
         builder.Services.AddSingleton<MainViewModel>();
@@ -43,6 +47,8 @@ public partial class App : System.Windows.Application
             new Lazy<IPromptTextModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>
             new Lazy<IExportMacroJsonModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
+        builder.Services.AddSingleton(sp =>
+            new Lazy<IPromptPlaybackChordModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton<IUserDialogService>(sp =>
             new WpfUserDialogService(
                 sp.GetRequiredService<IUiLocalizer>(),
@@ -57,7 +63,8 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
         builder.Services.AddSingleton(sp => new MainWindow(
             sp.GetRequiredService<ShellViewModel>(),
-            sp.GetRequiredService<AppearanceService>()));
+            sp.GetRequiredService<AppearanceService>(),
+            sp.GetRequiredService<MacroPlaybackHotkeyRegistrar>()));
 
         _host = builder.Build();
         var appearance = _host.Services.GetRequiredService<AppearanceService>();
