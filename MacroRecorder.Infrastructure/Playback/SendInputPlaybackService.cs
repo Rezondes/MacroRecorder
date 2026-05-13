@@ -11,7 +11,10 @@ public sealed class SendInputPlaybackService : IPlaybackService
 {
     private static readonly int InputStructSize = Marshal.SizeOf<NativeMethods.INPUT>();
 
-    private const int PlayingUiThrottleMs = 200;
+    /// <summary>Min interval between playback countdown UI updates (wall clock). Long waits call into
+    /// <see cref="MaybeUpdatePlayingRemaining"/> every loop chunk; throttle keeps dispatcher load low and aligns
+    /// visible seconds to about once per second.</summary>
+    private const int PlayingUiThrottleMs = 1000;
 
     private readonly object _playLock = new();
     private readonly NativeMethods.LowLevelProc _interruptKbProc;
@@ -183,7 +186,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
         {
             cancellationToken.ThrowIfCancellationRequested();
             playbackCursor += recordedEvent.DelayBefore;
-            WaitUntil(sw, playbackCursor, cancellationToken);
+            WaitUntil(sw, playbackCursor, cancellationToken, totalEstimated, ref lastUiMs, feedback);
             MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
 
             switch (recordedEvent)
@@ -211,7 +214,13 @@ public sealed class SendInputPlaybackService : IPlaybackService
                     TryFocus(focusChanged);
                     break;
                 case SyntheticWaitRecordedEvent syntheticWait:
-                    SleepCancellable(syntheticWait.AdditionalDelay, cancellationToken);
+                    SleepCancellable(
+                        syntheticWait.AdditionalDelay,
+                        cancellationToken,
+                        totalEstimated,
+                        sw,
+                        ref lastUiMs,
+                        feedback);
                     playbackCursor += syntheticWait.AdditionalDelay;
                     break;
             }
@@ -242,7 +251,13 @@ public sealed class SendInputPlaybackService : IPlaybackService
         return rem < TimeSpan.Zero ? TimeSpan.Zero : rem;
     }
 
-    private static void WaitUntil(Stopwatch sw, TimeSpan target, CancellationToken cancellationToken)
+    private void WaitUntil(
+        Stopwatch sw,
+        TimeSpan target,
+        CancellationToken cancellationToken,
+        TimeSpan totalEstimated,
+        ref long lastUiMs,
+        IPlaybackUiFeedback? feedback)
     {
         // Avoid tiny sleeps in a tight loop: default system timer resolution (~15.6 ms) inflates short waits.
         // Use Task.Delay (with cancellation) so each chunk cooperates with CancellationToken; work runs on a
@@ -252,6 +267,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
         {
             cancellationToken.ThrowIfCancellationRequested();
             PumpWindowsMessages();
+            MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
             var remaining = target - sw.Elapsed;
             if (remaining <= TimeSpan.Zero)
                 break;
@@ -268,10 +284,18 @@ public sealed class SendInputPlaybackService : IPlaybackService
                 PumpWindowsMessages();
                 Thread.SpinWait(100);
             }
+
+            MaybeUpdatePlayingRemaining(totalEstimated, sw, ref lastUiMs, feedback);
         }
     }
 
-    private static void SleepCancellable(TimeSpan delay, CancellationToken cancellationToken)
+    private void SleepCancellable(
+        TimeSpan delay,
+        CancellationToken cancellationToken,
+        TimeSpan totalEstimated,
+        Stopwatch sessionSw,
+        ref long lastUiMs,
+        IPlaybackUiFeedback? feedback)
     {
         if (delay <= TimeSpan.Zero)
             return;
@@ -281,6 +305,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
         {
             cancellationToken.ThrowIfCancellationRequested();
             PumpWindowsMessages();
+            MaybeUpdatePlayingRemaining(totalEstimated, sessionSw, ref lastUiMs, feedback);
             var left = delay - sw.Elapsed;
             var sleepChunkMilliseconds = (int)Math.Min(15, Math.Ceiling(left.TotalMilliseconds));
             if (sleepChunkMilliseconds < 1)
@@ -294,6 +319,8 @@ public sealed class SendInputPlaybackService : IPlaybackService
                     .GetAwaiter()
                     .GetResult();
             }
+
+            MaybeUpdatePlayingRemaining(totalEstimated, sessionSw, ref lastUiMs, feedback);
         }
     }
 
