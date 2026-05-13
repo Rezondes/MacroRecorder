@@ -193,9 +193,9 @@
         <Setter Property="Foreground" Value="{DynamicResource UiBrush.TextPrimary}" />
         <Setter Property="BorderBrush" Value="{DynamicResource UiBrush.Border}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="6,2" />
-        <Setter Property="MinWidth" Value="32" />
-        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="10" />
+        <Setter Property="MinWidth" Value="40" />
+        <Setter Property="MinHeight" Value="40" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
