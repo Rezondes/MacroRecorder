@@ -11,6 +11,7 @@
         Title="{Binding ShellTitle}"
         Height="640" Width="960"
         MinHeight="400" MinWidth="640"
+        Topmost="{Binding IsPinnedTopmost, Mode=OneWay}"
         Background="{DynamicResource UiBrush.WindowBackground}"
         Closing="OnMainWindowClosing"
         PreviewKeyDown="OnPreviewKeyDown">
@@ -35,6 +36,13 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="12,10,12,6" LastChildFill="True">
+            <ToggleButton DockPanel.Dock="Right"
+                          VerticalAlignment="Center"
+                          Margin="8,0,0,0"
+                          Style="{DynamicResource UiCaptionIconToggle}"
+                          IsChecked="{Binding IsPinnedTopmost, Mode=TwoWay}"
+                          ToolTip="{loc:Loc Shell_PinTopmost_ToolTip}"
+                          AutomationProperties.Name="{loc:Loc Shell_PinTopmost_A11y}" />
             <Button DockPanel.Dock="Left"
                     Padding="12,6"
                     MinWidth="88"
@@ -52,6 +60,7 @@
                     </Style>
                 </Button.Style>
             </Button>
+            <Grid Background="Transparent" />
         </DockPanel>
         <ContentControl Grid.Row="1"
                         Margin="0,0,0,8"
@@ -78,6 +87,7 @@
                            Foreground="{DynamicResource UiBrush.PlaybackOverlayText}"
                            TextAlignment="Center"
                            TextWrapping="Wrap"
+                           Margin="0,0,0,16"
                            Opacity="0.95" />
                 <TextBlock Text="{Binding PlaybackOverlayCountdown}"
                            FontSize="20"

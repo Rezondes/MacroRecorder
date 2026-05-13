@@ -84,6 +84,9 @@ public partial class ShellViewModel : ObservableObject,
     private string shellTitle = "";
 
     [ObservableProperty]
+    private bool isPinnedTopmost;
+
+    [ObservableProperty]
     private bool isConfirmModalOpen;
 
     [ObservableProperty]
