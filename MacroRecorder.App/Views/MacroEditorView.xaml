@@ -27,42 +27,99 @@
                 CornerRadius="8">
             <StackPanel>
                 <DockPanel LastChildFill="False" Margin="0,0,0,10">
-                    <TextBlock DockPanel.Dock="Left"
-                               Text="{loc:Loc Editor_LabelMacro}"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource UiBrush.TextPrimary}"
-                               Margin="0,0,20,0" />
-                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                        <Button Content="{Binding RecordingButtonCaption}"
-                                Command="{Binding ToggleRecordingCommand}"
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <controls:PlayMacroGlyphButton Margin="0,0,8,0"
+                                                       Command="{Binding PlayTestCommand}" />
+                        <Button Command="{Binding ToggleRecordingCommand}"
                                 IsEnabled="{Binding EditorHasMacro}"
-                                Style="{DynamicResource UiToolbarPrimaryButton}" />
+                                Margin="0,0,8,0"
+                                Style="{DynamicResource UiIconButton}"
+                                ToolTip="{Binding RecordingButtonCaption}"
+                                AutomationProperties.Name="{Binding RecordingButtonCaption}">
+                            <Grid Width="20" Height="20">
+                                <Ellipse Width="12"
+                                         Height="12"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{DynamicResource UiBrush.Error}" />
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <Rectangle Width="10"
+                                           Height="10"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           RadiusX="1"
+                                           RadiusY="1">
+                                    <Rectangle.Style>
+                                        <Style TargetType="Rectangle">
+                                            <Setter Property="Fill" Value="#2196F3" />
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Rectangle.Style>
+                                </Rectangle>
+                            </Grid>
+                        </Button>
                         <Border Width="1"
-                                Height="22"
+                                Height="28"
                                 Margin="4,0,12,0"
                                 Background="{DynamicResource UiBrush.Border}"
                                 VerticalAlignment="Center" />
                         <StackPanel Orientation="Horizontal" IsEnabled="{Binding CanUseCommandsWhileNotRecording}">
-                            <Button Content="{loc:Loc Editor_Save}"
-                                    Style="{DynamicResource UiToolbarPrimaryButton}"
-                                    Command="{Binding SaveCommand}" />
+                            <Button Margin="0,0,8,0"
+                                    Style="{DynamicResource UiIconButtonSuccessGlyph}"
+                                    Command="{Binding SaveCommand}"
+                                    ToolTip="{loc:Loc Editor_Save}"
+                                    AutomationProperties.Name="{loc:Loc Editor_Save}">
+                                <TextBlock FontFamily="Segoe MDL2 Assets"
+                                           Text="&#xE74E;"
+                                           FontSize="18"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Button>
                             <Border Width="1"
                                     Height="22"
                                     Margin="4,0,12,0"
                                     Background="{DynamicResource UiBrush.Border}"
                                     VerticalAlignment="Center" />
-                            <Button Content="{loc:Loc Editor_Undo}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding UndoCommand}" />
-                            <Button Content="{loc:Loc Editor_Redo}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding RedoCommand}" />
-                            <Border Width="1"
-                                    Height="22"
-                                    Margin="4,0,12,0"
-                                    Background="{DynamicResource UiBrush.Border}"
-                                    VerticalAlignment="Center" />
-                            <controls:PlayMacroGlyphButton Margin="4,0,8,0"
-                                                           Command="{Binding PlayTestCommand}" />
-                            <Button Content="{loc:Loc Editor_Rename}" Style="{DynamicResource UiToolbarChromeButton}" Command="{Binding RenameMacroCommand}" />
+                            <Button Margin="0,0,8,0"
+                                    Style="{DynamicResource UiIconButtonPrimaryGlyph}"
+                                    Command="{Binding UndoCommand}"
+                                    ToolTip="{loc:Loc Editor_Undo}"
+                                    AutomationProperties.Name="{loc:Loc Editor_Undo}">
+                                <TextBlock FontFamily="Segoe MDL2 Assets"
+                                           Text="&#xE7A7;"
+                                           FontSize="18"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Button>
+                            <Button Margin="0,0,8,0"
+                                    Style="{DynamicResource UiIconButtonPrimaryGlyph}"
+                                    Command="{Binding RedoCommand}"
+                                    ToolTip="{loc:Loc Editor_Redo}"
+                                    AutomationProperties.Name="{loc:Loc Editor_Redo}">
+                                <TextBlock FontFamily="Segoe MDL2 Assets"
+                                           Text="&#xE7A6;"
+                                           FontSize="18"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                            </Button>
                         </StackPanel>
                     </StackPanel>
                 </DockPanel>

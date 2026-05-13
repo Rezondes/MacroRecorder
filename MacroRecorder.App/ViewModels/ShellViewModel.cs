@@ -515,6 +515,8 @@ public partial class ShellViewModel : ObservableObject,
             UpdateShellTitle();
         else if (e.PropertyName == nameof(MacroEditorViewModel.EditorHasMacro))
             UpdateShowEditorMacroHeaderActions();
+        else if (e.PropertyName == nameof(MacroEditorViewModel.IsRecording))
+            RenameEditorMacroCommand.NotifyCanExecuteChanged();
     }
 
     private void UpdateShellTitle()
@@ -527,6 +529,19 @@ public partial class ShellViewModel : ObservableObject,
             _ => _loc.GetString("Main_WindowTitle")
         };
     }
+
+    [RelayCommand(CanExecute = nameof(CanRenameEditorMacro))]
+    private void RenameEditorMacro()
+    {
+        if (CurrentPage is not MacroEditorViewModel editor)
+            return;
+        if (!editor.RenameMacroCommand.CanExecute(null))
+            return;
+        editor.RenameMacroCommand.Execute(null);
+    }
+
+    private bool CanRenameEditorMacro() =>
+        CurrentPage is MacroEditorViewModel ed && ed.RenameMacroCommand.CanExecute(null);
 
     [RelayCommand(CanExecute = nameof(CanExportEditorJson))]
     private void ExportEditorJson()
@@ -601,6 +616,7 @@ public partial class ShellViewModel : ObservableObject,
         ShowEditorMacroHeaderActions = CurrentPage is MacroEditorViewModel ed && ed.EditorHasMacro;
         ExportEditorJsonCommand.NotifyCanExecuteChanged();
         DeleteCurrentMacroFromEditorCommand.NotifyCanExecuteChanged();
+        RenameEditorMacroCommand.NotifyCanExecuteChanged();
     }
 
     internal MacroEditorViewModel CreateEditorViewModel(

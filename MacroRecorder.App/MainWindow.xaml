@@ -73,6 +73,21 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
             </Button>
+            <Button DockPanel.Dock="Right"
+                    VerticalAlignment="Center"
+                    Margin="4,0,0,0"
+                    Style="{DynamicResource UiIconButtonSecondaryGlyph}"
+                    Command="{Binding RenameEditorMacroCommand}"
+                    Visibility="{Binding ShowEditorMacroHeaderActions, Converter={StaticResource BoolToVis}}"
+                    ToolTip="{loc:Loc Editor_Rename}"
+                    AutomationProperties.Name="{loc:Loc Editor_Rename}">
+                <TextBlock FontFamily="Segoe MDL2 Assets"
+                           Text="&#xE70F;"
+                           FontSize="14"
+                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Button>
             <Button DockPanel.Dock="Left"
                     Padding="12,6"
                     MinWidth="88"
