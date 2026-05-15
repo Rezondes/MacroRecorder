@@ -10,7 +10,9 @@ internal readonly record struct PlaybackWindowMatchSpec(
     string ProcessName,
     string WindowTitle,
     int? ExpectedClientWidth,
-    int? ExpectedClientHeight);
+    int? ExpectedClientHeight,
+    int ReferenceClientWidthTolerance = 0,
+    int ReferenceClientHeightTolerance = 0);
 
 internal static class FocusWindowMatcher
 {
@@ -60,7 +62,9 @@ internal static class FocusWindowMatcher
             focusChanged.ProcessName,
             focusChanged.WindowTitle,
             focusChanged.ReferenceClientWidth,
-            focusChanged.ReferenceClientHeight));
+            focusChanged.ReferenceClientHeight,
+            focusChanged.ReferenceClientWidthTolerance,
+            focusChanged.ReferenceClientHeightTolerance));
 
     /// <summary>Throws <see cref="PlaybackFocusTargetException"/> on first resolution failure.</summary>
     public static void ValidateFocusBoundTimeline(Macro macro, IReadOnlyList<RecordedInputEvent> orderedBySequence)
@@ -148,7 +152,9 @@ internal static class FocusWindowMatcher
         {
             var w = rect.Width;
             var h = rect.Height;
-            if (w != ew || h != eh)
+            var tolW = Math.Max(0, spec.ReferenceClientWidthTolerance);
+            var tolH = Math.Max(0, spec.ReferenceClientHeightTolerance);
+            if (Math.Abs(w - ew) > tolW || Math.Abs(h - eh) > tolH)
             {
                 throw new PlaybackFocusTargetException(
                     PlaybackFocusTargetKind.ClientSizeMismatch,

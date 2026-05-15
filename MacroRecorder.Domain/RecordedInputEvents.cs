@@ -78,6 +78,14 @@ public sealed record FocusChangedRecordedEvent : RecordedInputEvent
 
     /// <summary>Client area size of the newly focused window when recorded with focus-bound mouse (null for legacy macros).</summary>
     public int? ReferenceClientHeight { get; init; }
+
+    /// <summary>Allowed deviation in pixels from <see cref="ReferenceClientWidth"/> during playback window matching. Default 0 (exact). Ignored if reference width is not set.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int ReferenceClientWidthTolerance { get; init; }
+
+    /// <summary>Allowed deviation in pixels from <see cref="ReferenceClientHeight"/> during playback window matching. Default 0 (exact). Ignored if reference height is not set.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public int ReferenceClientHeightTolerance { get; init; }
 }
 
 public sealed record SyntheticWaitRecordedEvent : RecordedInputEvent

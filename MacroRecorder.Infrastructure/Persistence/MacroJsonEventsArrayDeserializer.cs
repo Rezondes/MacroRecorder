@@ -115,7 +115,9 @@ internal static class MacroJsonEventsArrayDeserializer
                     ? pid.GetUInt32()
                     : null,
                 ReferenceClientWidth = ReadNullableInt32(el, "referenceClientWidth"),
-                ReferenceClientHeight = ReadNullableInt32(el, "referenceClientHeight")
+                ReferenceClientHeight = ReadNullableInt32(el, "referenceClientHeight"),
+                ReferenceClientWidthTolerance = ReadInt32OrDefault(el, "referenceClientWidthTolerance"),
+                ReferenceClientHeightTolerance = ReadInt32OrDefault(el, "referenceClientHeightTolerance")
             }, waitUntil),
             "syntheticWait" => (new SyntheticWaitRecordedEvent
             {
@@ -144,6 +146,9 @@ internal static class MacroJsonEventsArrayDeserializer
 
     private static int ReadInt32(JsonElement el, string name) =>
         el.TryGetProperty(name, out var p) ? p.GetInt32() : 0;
+
+    private static int ReadInt32OrDefault(JsonElement el, string name) =>
+        el.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.Number ? p.GetInt32() : 0;
 
     private static int? ReadNullableInt32(JsonElement el, string name)
     {

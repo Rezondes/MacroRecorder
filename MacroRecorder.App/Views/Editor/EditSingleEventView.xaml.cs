@@ -116,6 +116,8 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                     ProcessId = UIntOrNull("pid"),
                     ReferenceClientWidth = IntOrNull("refW"),
                     ReferenceClientHeight = IntOrNull("refH"),
+                    ReferenceClientWidthTolerance = NonNegativeIntTolerance("tolW"),
+                    ReferenceClientHeightTolerance = NonNegativeIntTolerance("tolH"),
                     DelayBefore = ReadDelayBeforeFromField()
                 },
                 _ => null
@@ -508,6 +510,14 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                     _loc.GetString("DialogEdit_Field_ReferenceClientHeight"),
                     "refH",
                     focusChanged.ReferenceClientHeight?.ToString(CultureInfo.InvariantCulture) ?? "");
+                AddField(
+                    _loc.GetString("DialogEdit_Field_ReferenceClientWidthTolerance"),
+                    "tolW",
+                    focusChanged.ReferenceClientWidthTolerance.ToString(CultureInfo.InvariantCulture));
+                AddField(
+                    _loc.GetString("DialogEdit_Field_ReferenceClientHeightTolerance"),
+                    "tolH",
+                    focusChanged.ReferenceClientHeightTolerance.ToString(CultureInfo.InvariantCulture));
                 AddDelayBeforeMillisecondsField();
                 break;
             default:
@@ -538,6 +548,18 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
     }
 
     private int Int(string fieldKey) => int.Parse(Str(fieldKey), CultureInfo.InvariantCulture);
+
+    private int NonNegativeIntTolerance(string fieldKey)
+    {
+        var text = Str(fieldKey);
+        if (string.IsNullOrWhiteSpace(text))
+            return 0;
+        if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
+            throw new FormatException(_loc.GetString("DialogEdit_Error_InvalidInteger"));
+        if (value < 0)
+            throw new InvalidOperationException(_loc.GetString("DialogEdit_Error_ReferenceToleranceNonNegative"));
+        return value;
+    }
 
     private double Double(string fieldKey) =>
         double.Parse(Str(fieldKey), CultureInfo.InvariantCulture);
