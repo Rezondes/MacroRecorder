@@ -7,7 +7,6 @@ import xml.etree.ElementTree as ET
 ROOT = pathlib.Path(__file__).resolve().parents[1] / "MacroRecorder.App" / "Localization"
 
 EN: dict[str, str] = {
-    "Common_AppTitle": "Macro Recorder by Rezondes",
     "Common_Ok": "OK",
     "Common_Yes": "Yes",
     "Common_No": "No",
@@ -282,7 +281,6 @@ EN: dict[str, str] = {
 }
 
 DE: dict[str, str] = {
-    "Common_AppTitle": "Macro Recorder by Rezondes",
     "Common_Ok": "OK",
     "Common_Yes": "Ja",
     "Common_No": "Nein",

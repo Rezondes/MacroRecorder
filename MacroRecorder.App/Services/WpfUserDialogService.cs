@@ -4,7 +4,6 @@ namespace MacroRecorder.App.Services;
 
 /// <summary>All prompts are hosted on the shell (see UI_HOSTING.txt).</summary>
 public sealed class WpfUserDialogService(
-    IUiLocalizer loc,
     Lazy<IUnsavedChangesModalHost> unsavedChangesModalHost,
     Lazy<IConfirmModalHost> confirmModalHost,
     Lazy<IPromptTextModalHost> promptTextModalHost,
@@ -19,10 +18,10 @@ public sealed class WpfUserDialogService(
         promptTextModalHost.Value.PromptText(title, message, defaultValue, validator, restrictInputToDigits);
 
     public void ShowInfo(string message) =>
-        inAppInfo.RequestInfo(message, loc.GetString("Common_AppTitle"));
+        inAppInfo.RequestInfo(message);
 
     public bool Confirm(string message) =>
-        confirmModalHost.Value.Confirm(message, loc.GetString("Common_AppTitle"));
+        confirmModalHost.Value.Confirm(message, string.Empty);
 
     public UnsavedChangesPromptResult PromptUnsavedChanges(
         string message,

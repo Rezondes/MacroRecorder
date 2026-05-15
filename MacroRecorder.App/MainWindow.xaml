@@ -239,7 +239,18 @@
                                FontSize="15"
                                Foreground="{DynamicResource UiBrush.TextPrimary}"
                                Margin="0,0,0,10"
-                               Text="{Binding ConfirmModalTitle}" />
+                               Text="{Binding ConfirmModalTitle}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ConfirmModalTitle}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                     <TextBlock Text="{Binding ConfirmModalMessage}"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource UiBrush.TextPrimary}"

@@ -53,7 +53,6 @@ public partial class App : System.Windows.Application
             new Lazy<IPromptPlaybackChordModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton<IUserDialogService>(sp =>
             new WpfUserDialogService(
-                sp.GetRequiredService<IUiLocalizer>(),
                 sp.GetRequiredService<Lazy<IUnsavedChangesModalHost>>(),
                 sp.GetRequiredService<Lazy<IConfirmModalHost>>(),
                 sp.GetRequiredService<Lazy<IPromptTextModalHost>>(),
