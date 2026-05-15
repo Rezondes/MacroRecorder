@@ -38,6 +38,16 @@ public partial class ShellViewModel
         RunOnUi(DispatcherPriority.Normal, () =>
         {
             CancelPlaybackPostPlayTailTimer();
+            if (IsInfoModalOpen &&
+                string.Equals(
+                    InfoModalTitle,
+                    _loc.GetString("Main_PlaybackInterruptedModalTitle"),
+                    StringComparison.Ordinal))
+            {
+                IsInfoModalOpen = false;
+                InfoModalTitle = "";
+                InfoModalMessage = "";
+            }
             PlaybackOverlayTitle = _loc.GetString("Playback_Overlay_WarningTitle");
             PlaybackOverlayBody = _loc.GetString("Playback_Overlay_WarningBody");
             PlaybackOverlayCountdown = "";
