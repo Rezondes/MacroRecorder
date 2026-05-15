@@ -19,6 +19,7 @@ alwaysApply: true
 - **Generisch** wiederverwendbare Oberflächenbausteine (z. B. Button-/ComboBox-Stile, Textfelder, zusammengesetzte Controls wie numerische Eingaben) in **`MacroRecorder.Wpf`** anlegen, nicht pro Screen in der App neu erfinden.
 - **Styles und Templates** (Aussehen von Standard-Controls) in den Theme-Resource-Dictionaries, z. B. `Themes/AppControls.xaml`.
 - **Eigene Controls mit Verhalten** (Dependency Properties, Eingabefilter, zusammengesetzte UI) als Typen unter `Controls/` (XAML + Code-behind bzw. `CustomControl` nach Bedarf).
+- **Nur-Ziffern- / ganzzahlige numerische Eingaben** (z. B. Pixel, Toleranzen, Verzögerungen in ms): **`DigitsOnlyNumericBox`** (`MacroRecorder.Wpf/Controls/DigitsOnlyNumericBox.xaml`) verwenden; `ShowSpinner = true` setzen, wenn Hoch-/Runter-Pfeile gewünscht sind, und `MinimumValue` / `MaximumValue` passend begrenzen. Kein schlichtes `TextBox` ohne Ziffernfilter für solche Felder in neuem UI.
 - **`MacroRecorder.App`** bindet und nutzt diese Bibliothek; app-spezifische Views, Dialoge und ViewModels bleiben in der App.
 
 ## MVVM

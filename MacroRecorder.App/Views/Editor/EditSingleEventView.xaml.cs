@@ -202,34 +202,20 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
 
     private void AddCoordinateFieldWithSpinner(string label, string fieldKey, string value)
     {
-        var labelBlock = new TextBlock
-        {
-            Text = label,
-            FontSize = 12,
-            Margin = new Thickness(0, 10, 0, 4)
-        };
-        labelBlock.SetResourceReference(TextBlock.ForegroundProperty, "UiBrush.TextSecondary");
-        FieldsPanel.Children.Add(labelBlock);
-
-        var box = new DigitsOnlyNumericBox
-        {
-            Text = value,
-            Tag = fieldKey,
-            DigitsOnly = true,
-            ShowSpinner = true,
-            InputFontSize = 13,
-            MinInnerHeight = 40,
-            SpinnerStep = 1,
-            MinimumValue = int.MinValue,
-            MaximumValue = int.MaxValue,
-            SpinUpToolTip = _loc.GetString("Editor_PromptWaitSpinUp"),
-            SpinDownToolTip = _loc.GetString("Editor_PromptWaitSpinDown")
-        };
-        FieldsPanel.Children.Add(box);
-        _fields[fieldKey] = box;
+        AddDigitsOnlySpinnerField(
+            label,
+            fieldKey,
+            value,
+            int.MinValue,
+            int.MaxValue);
     }
 
-    private void AddWaitMillisecondsField(string label, string fieldKey, string value, int minimumValue = 1)
+    private void AddDigitsOnlySpinnerField(
+        string label,
+        string fieldKey,
+        string value,
+        int minimumValue,
+        int maximumValue = int.MaxValue)
     {
         var labelBlock = new TextBlock
         {
@@ -250,13 +236,16 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
             MinInnerHeight = 40,
             SpinnerStep = 1,
             MinimumValue = minimumValue,
-            MaximumValue = int.MaxValue,
+            MaximumValue = maximumValue,
             SpinUpToolTip = _loc.GetString("Editor_PromptWaitSpinUp"),
             SpinDownToolTip = _loc.GetString("Editor_PromptWaitSpinDown")
         };
         FieldsPanel.Children.Add(box);
         _fields[fieldKey] = box;
     }
+
+    private void AddWaitMillisecondsField(string label, string fieldKey, string value, int minimumValue = 1) =>
+        AddDigitsOnlySpinnerField(label, fieldKey, value, minimumValue, int.MaxValue);
 
     private void AddDelayBeforeMillisecondsField()
     {
@@ -510,14 +499,16 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
                     _loc.GetString("DialogEdit_Field_ReferenceClientHeight"),
                     "refH",
                     focusChanged.ReferenceClientHeight?.ToString(CultureInfo.InvariantCulture) ?? "");
-                AddField(
+                AddDigitsOnlySpinnerField(
                     _loc.GetString("DialogEdit_Field_ReferenceClientWidthTolerance"),
                     "tolW",
-                    focusChanged.ReferenceClientWidthTolerance.ToString(CultureInfo.InvariantCulture));
-                AddField(
+                    focusChanged.ReferenceClientWidthTolerance.ToString(CultureInfo.InvariantCulture),
+                    minimumValue: 0);
+                AddDigitsOnlySpinnerField(
                     _loc.GetString("DialogEdit_Field_ReferenceClientHeightTolerance"),
                     "tolH",
-                    focusChanged.ReferenceClientHeightTolerance.ToString(CultureInfo.InvariantCulture));
+                    focusChanged.ReferenceClientHeightTolerance.ToString(CultureInfo.InvariantCulture),
+                    minimumValue: 0);
                 AddDelayBeforeMillisecondsField();
                 break;
             default:
