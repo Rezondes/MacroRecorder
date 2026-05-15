@@ -1,0 +1,62 @@
+<UserControl x:Class="MacroRecorder.App.Views.Editor.MacroJsonImportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:MacroRecorder.App.Localization"
+             Background="Transparent"
+             Focusable="True">
+    <Border Style="{DynamicResource UiDialogSurface}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" MinHeight="200" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0"
+                       Style="{DynamicResource UiDialogTitle}"
+                       Margin="0,0,0,12"
+                       Text="{loc:Loc Main_Import_ModalTitle}" />
+            <Border Grid.Row="1"
+                    Margin="0,0,0,16"
+                    Background="{DynamicResource UiBrush.SurfaceElevated}"
+                    BorderBrush="{DynamicResource UiBrush.Border}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="0">
+                <ScrollViewer Style="{DynamicResource UiScrollViewerChrome}"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto">
+                    <TextBox x:Name="JsonBox"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             HorizontalScrollBarVisibility="Auto"
+                             TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" />
+                </ScrollViewer>
+            </Border>
+            <StackPanel Grid.Row="2"
+                        Style="{DynamicResource UiDialogFooter}">
+                <Button MinWidth="100"
+                        Margin="0,0,8,0"
+                        Padding="12,6"
+                        Click="OnCancelClick"
+                        Content="{loc:Loc Common_Cancel}"
+                        Style="{DynamicResource UiButtonChrome}" />
+                <Button MinWidth="120"
+                        Margin="0,0,8,0"
+                        Padding="12,6"
+                        Click="OnBrowseClick"
+                        Content="{loc:Loc Main_Import_BrowseFile}"
+                        Style="{DynamicResource UiButtonChrome}" />
+                <Button MinWidth="100"
+                        Padding="12,6"
+                        Click="OnImportClick"
+                        Content="{loc:Loc Main_Import_ImportAction}"
+                        Style="{DynamicResource UiPrimaryButton}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

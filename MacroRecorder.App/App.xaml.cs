@@ -48,6 +48,8 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton(sp =>
             new Lazy<IExportMacroJsonModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>
+            new Lazy<IImportMacroJsonModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
+        builder.Services.AddSingleton(sp =>
             new Lazy<IPromptPlaybackChordModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton<IUserDialogService>(sp =>
             new WpfUserDialogService(

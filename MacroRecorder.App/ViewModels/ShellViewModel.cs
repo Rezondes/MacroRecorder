@@ -24,6 +24,7 @@ public partial class ShellViewModel : ObservableObject,
     IPromptTextModalHost,
     IPromptPlaybackChordModalHost,
     IExportMacroJsonModalHost,
+    IImportMacroJsonModalHost,
     IPlaybackUiFeedback
 {
     private readonly MainViewModel _overview;
@@ -672,6 +673,23 @@ public partial class ShellViewModel : ObservableObject,
         var macroName = string.IsNullOrWhiteSpace(macroNameForFileDialog) ? "macro" : macroNameForFileDialog.Trim();
         RunBlockingContentModal(complete => new MacroJsonShareView(_loc, _dialogs, macroName, json, complete));
     }
+
+    void IImportMacroJsonModalHost.ShowImportMacroModal(Func<string, Task<bool>> importJsonAsync)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+            return;
+        if (!dispatcher.CheckAccess())
+        {
+            dispatcher.Invoke(() => ShowImportMacroModalOnUiThread(importJsonAsync));
+            return;
+        }
+
+        ShowImportMacroModalOnUiThread(importJsonAsync);
+    }
+
+    private void ShowImportMacroModalOnUiThread(Func<string, Task<bool>> importJsonAsync) =>
+        RunBlockingContentModal(complete => new MacroJsonImportView(_loc, _dialogs, importJsonAsync, complete));
 
     private void UpdateShowEditorMacroHeaderActions()
     {

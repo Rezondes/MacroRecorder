@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MacroRecorder.App.Services;
@@ -18,6 +19,7 @@ public partial class MainViewModel : ObservableObject
     private readonly InAppInfoMessageChannel _inAppInfo;
     private readonly Lazy<INavigationService> _navigation;
     private readonly Lazy<IExportMacroJsonModalHost> _exportModalHost;
+    private readonly Lazy<IImportMacroJsonModalHost> _importModalHost;
     private readonly Lazy<IPromptPlaybackChordModalHost> _promptChordHost;
     private readonly MacroPlaybackHotkeyRegistrar _playbackHotkeyRegistrar;
     private readonly IUiLocalizer _loc;
@@ -29,6 +31,7 @@ public partial class MainViewModel : ObservableObject
         InAppInfoMessageChannel inAppInfo,
         Lazy<INavigationService> navigation,
         Lazy<IExportMacroJsonModalHost> exportModalHost,
+        Lazy<IImportMacroJsonModalHost> importModalHost,
         Lazy<IPromptPlaybackChordModalHost> promptChordHost,
         MacroPlaybackHotkeyRegistrar playbackHotkeyRegistrar,
         IUiLocalizer loc)
@@ -39,6 +42,7 @@ public partial class MainViewModel : ObservableObject
         _inAppInfo = inAppInfo;
         _navigation = navigation;
         _exportModalHost = exportModalHost;
+        _importModalHost = importModalHost;
         _promptChordHost = promptChordHost;
         _playbackHotkeyRegistrar = playbackHotkeyRegistrar;
         _loc = loc;
@@ -200,6 +204,64 @@ public partial class MainViewModel : ObservableObject
     {
         var macro = Macro.CreateEmpty(_loc.GetString("Main_NewMacroDefaultName"));
         _navigation.Value.OpenNewMacroEditor(macro, OnMacroListShouldRefresh);
+    }
+
+    [RelayCommand]
+    private void ImportMacro()
+    {
+        _importModalHost.Value.ShowImportMacroModal(ImportMacroFromJsonAsync);
+    }
+
+    private async Task<bool> ImportMacroFromJsonAsync(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorEmpty"));
+            return false;
+        }
+
+        var trimmed = json.Trim();
+        try
+        {
+            using var document = JsonDocument.Parse(trimmed);
+            var parsed = MacroJsonFileFormat.ParseMacro(document.RootElement);
+            if (parsed is null)
+            {
+                _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorInvalid"));
+                return false;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var copy = new Macro(
+                MacroId.New(),
+                parsed.Name,
+                parsed.Metadata,
+                parsed.Events,
+                parsed.WasModifiedAfterRecording,
+                null,
+                now,
+                now);
+
+            await _workspace.SaveAsync(copy).ConfigureAwait(true);
+            await RefreshAsync(suppressHotkeyRegistrationFailureDialog: true).ConfigureAwait(true);
+            _dialogs.ShowInfo(_loc.GetString("Main_Import_Success", copy.Name));
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorInvalid"));
+            return false;
+        }
+        catch (JsonException)
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorInvalid"));
+            return false;
+        }
+        catch (Exception exception)
+        {
+            _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorLoad", exception.Message));
+            return false;
+        }
     }
 
     [RelayCommand]

@@ -138,15 +138,30 @@
                     </Style>
                 </Button.Style>
             </Button>
-            <Button DockPanel.Dock="Left"
-                    HorizontalAlignment="Left"
-                    Margin="8,0,0,0"
-                    Padding="14,8"
-                    FontSize="13"
-                    Style="{DynamicResource UiPrimaryButton}"
-                    Command="{Binding Overview.NewRecordingCommand}"
-                    Content="{loc:Loc Main_NewRecording}"
-                    Visibility="{Binding ShowOverviewHeaderChrome, Converter={StaticResource BoolToVis}}" />
+            <StackPanel DockPanel.Dock="Left"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Left"
+                        Margin="8,0,0,0"
+                        Visibility="{Binding ShowOverviewHeaderChrome, Converter={StaticResource BoolToVis}}">
+                <Button Padding="14,8"
+                        FontSize="13"
+                        Style="{DynamicResource UiPrimaryButton}"
+                        Command="{Binding Overview.NewRecordingCommand}"
+                        Content="{loc:Loc Main_NewRecording}" />
+                <Button VerticalAlignment="Center"
+                        Margin="8,0,0,0"
+                        Style="{DynamicResource UiIconButton}"
+                        Command="{Binding Overview.ImportMacroCommand}"
+                        ToolTip="{loc:Loc Main_Import_ToolTip}"
+                        AutomationProperties.Name="{loc:Loc Main_Import_ToolTip}">
+                    <TextBlock FontFamily="Segoe MDL2 Assets"
+                               Text="&#xE8E5;"
+                               FontSize="18"
+                               Foreground="{DynamicResource UiBrush.TextPrimary}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
+                </Button>
+            </StackPanel>
             <Grid Background="Transparent" />
         </DockPanel>
         <ContentControl Grid.Row="1"
