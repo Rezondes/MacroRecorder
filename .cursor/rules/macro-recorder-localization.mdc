@@ -39,5 +39,6 @@ alwaysApply: false
 
 ## Pflege
 
-- Neue UI-Strings: **beide** RESX-Dateien pflegen (Generator-Skript `scripts/build_ui_resx.py` oder manuell synchron halten).
+- **Quelle der Wahrheit:** [`scripts/build_ui_resx.py`](scripts/build_ui_resx.py) — Wörterbücher `EN` und `DE` dort ergänzen oder ändern.
+- **RESX nicht direkt bearbeiten:** `UiStrings.resx` und `UiStrings.de.resx` werden **nur** vom Skript erzeugt. Nach Änderungen am Skript ausführen: `python scripts/build_ui_resx.py` (oder `py scripts/build_ui_resx.py`).
 - Keine hart kodierten nutzersichtbaren Zeichenketten in ViewModels / WPF-Services / XAML (außer reine technische Ausnahmetexte in tiefer Infrastruktur).

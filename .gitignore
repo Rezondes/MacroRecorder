@@ -33,8 +33,8 @@ project.fragment.lock.json
 publish/
 **/PublishProfiles/*.pubxml.user
 
-## MSI (optional local build output; one MSI per WiX culture subfolder)
-MacroRecorder.Installer/**/*.msi
+## Portable build output
+artifacts/
 
 ## OS / tooling
 .DS_Store

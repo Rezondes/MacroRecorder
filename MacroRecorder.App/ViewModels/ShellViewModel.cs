@@ -25,6 +25,7 @@ public partial class ShellViewModel : ObservableObject,
     IPromptPlaybackChordModalHost,
     IExportMacroJsonModalHost,
     IImportMacroJsonModalHost,
+    IUpdatePromptModalHost,
     IPlaybackUiFeedback
 {
     private readonly MainViewModel _overview;
@@ -690,6 +691,20 @@ public partial class ShellViewModel : ObservableObject,
 
     private void ShowImportMacroModalOnUiThread(Func<string, Task<bool>> importJsonAsync) =>
         RunBlockingContentModal(complete => new MacroJsonImportView(_loc, _dialogs, importJsonAsync, complete));
+
+    UpdatePromptChoice IUpdatePromptModalHost.ShowUpdateAvailable(UpdateCheckResult result)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+            return UpdatePromptChoice.Later;
+
+        if (!dispatcher.CheckAccess())
+            return dispatcher.Invoke(() => ((IUpdatePromptModalHost)this).ShowUpdateAvailable(result));
+
+        var openRelease = RunBlockingContentModal(
+            complete => new UpdateAvailableView(_loc, result, complete));
+        return openRelease ? UpdatePromptChoice.OpenRelease : UpdatePromptChoice.Later;
+    }
 
     private void UpdateShowEditorMacroHeaderActions()
     {

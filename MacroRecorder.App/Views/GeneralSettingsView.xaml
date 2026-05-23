@@ -16,6 +16,23 @@
                       DisplayMemberPath="DisplayName"
                       SelectedValuePath="Code"
                       SelectedValue="{Binding SelectedLanguageCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Margin="0,24,0,0"
+                       Text="{loc:Loc Update_SectionHeader}" />
+            <TextBlock Style="{DynamicResource UiDialogDescription}"
+                       FontSize="13"
+                       Margin="0,0,0,8"
+                       Text="{Binding CurrentAppVersionDisplay}" />
+            <CheckBox Content="{loc:Loc Update_CheckOnStartup}"
+                      Margin="0,0,0,12"
+                      IsChecked="{Binding CheckForUpdatesOnStartup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button Content="{loc:Loc Update_CheckNow}"
+                    HorizontalAlignment="Left"
+                    MinWidth="160"
+                    Padding="12,6"
+                    Style="{DynamicResource UiButtonChrome}"
+                    Command="{Binding CheckForUpdatesNowCommand}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -53,6 +53,12 @@ public sealed class AppSettings
     /// <summary>Last normal (or restore) bounds of the main window; null = use default placement.</summary>
     [JsonPropertyName("mainWindowPlacement")]
     public MainWindowPlacement? MainWindowPlacement { get; set; }
+
+    [JsonPropertyName("checkForUpdatesOnStartup")]
+    public bool CheckForUpdatesOnStartup { get; set; } = true;
+
+    [JsonPropertyName("lastDismissedUpdateVersion")]
+    public string? LastDismissedUpdateVersion { get; set; }
 }
 
 public static class AppSettingsStore
@@ -118,6 +124,13 @@ public static class AppSettingsStore
         Save(s);
     }
 
+    public static void SaveLastDismissedUpdateVersion(string latestVersion)
+    {
+        var settings = Load();
+        settings.LastDismissedUpdateVersion = latestVersion;
+        Save(settings);
+    }
+
     private static AppSettings Normalize(AppSettings s)
     {
         s.UiCulture = s.UiCulture.Equals("de", StringComparison.OrdinalIgnoreCase) ? "de" : "en";
@@ -168,7 +181,8 @@ public static class AppSettingsStore
             RecordingMouseMoveMinPixels = 10,
             PlaybackUserInterruptGraceMs = 1000,
             PlaybackFocusBringWindowToForeground = true,
-            PlaybackFocusRestoreIfMinimized = true
+            PlaybackFocusRestoreIfMinimized = true,
+            CheckForUpdatesOnStartup = true
         };
     }
 

@@ -17,12 +17,14 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IUiLocalizer _loc;
     private readonly AppearanceService _appearance;
     private readonly IUserDialogService _dialogs;
+    private readonly UpdateCheckCoordinator _updateCheckCoordinator;
 
     private int _selectedSettingsTabIndex;
     private int _savedRecordingMouseMoveMinPixels = 10;
     private int _savedPlaybackInterruptGraceMs = 1000;
     private bool _savedPlaybackFocusBringWindowToForeground = true;
     private bool _savedPlaybackFocusRestoreIfMinimized = true;
+    private bool _savedCheckForUpdatesOnStartup = true;
 
     /// <summary>0 = General, 1 = Visuals, 2 = Macro. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
     public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
@@ -45,13 +47,22 @@ public partial class SettingsViewModel : ObservableObject
         return true;
     }
 
-    public SettingsViewModel(IUiLocalizer loc, AppearanceService appearance, IUserDialogService dialogs)
+    public SettingsViewModel(
+        IUiLocalizer loc,
+        AppearanceService appearance,
+        IUserDialogService dialogs,
+        UpdateCheckCoordinator updateCheckCoordinator)
     {
         _loc = loc;
         _appearance = appearance;
         _dialogs = dialogs;
+        _updateCheckCoordinator = updateCheckCoordinator;
         _appearance.PreviewChanged += OnAppearancePreviewChanged;
-        _loc.UiCultureChanged += (_, _) => RebuildLanguageOptions();
+        _loc.UiCultureChanged += (_, _) =>
+        {
+            RebuildLanguageOptions();
+            OnPropertyChanged(nameof(CurrentAppVersionDisplay));
+        };
         LoadStateFromPreferences();
     }
 
@@ -61,7 +72,12 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool HasUnsavedSettingsChanges =>
         HasPendingLanguageChange() || _appearance.HasPendingChanges || HasPendingMacroRecordingChange()
-        || HasPendingPlaybackGraceChange() || HasPendingPlaybackFocusChange();
+        || HasPendingPlaybackGraceChange() || HasPendingPlaybackFocusChange() || HasPendingUpdateCheckChange();
+
+    public string CurrentAppVersion => AppRuntimeInfo.Version;
+
+    public string CurrentAppVersionDisplay =>
+        string.Format(_loc.CurrentUiCulture, _loc.GetString("Update_CurrentVersion"), CurrentAppVersion);
 
     public bool IsLightMode
     {
@@ -114,6 +130,12 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnPlaybackFocusRestoreIfMinimizedChanged(bool value) =>
         OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
 
+    [ObservableProperty]
+    private bool checkForUpdatesOnStartup = true;
+
+    partial void OnCheckForUpdatesOnStartupChanged(bool value) =>
+        OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
+
     public void LoadStateFromPreferences()
     {
         var code = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
@@ -128,6 +150,8 @@ public partial class SettingsViewModel : ObservableObject
         _savedPlaybackFocusRestoreIfMinimized = prefs.PlaybackFocusRestoreIfMinimized;
         PlaybackFocusBringWindowToForeground = prefs.PlaybackFocusBringWindowToForeground;
         PlaybackFocusRestoreIfMinimized = prefs.PlaybackFocusRestoreIfMinimized;
+        _savedCheckForUpdatesOnStartup = prefs.CheckForUpdatesOnStartup;
+        CheckForUpdatesOnStartup = prefs.CheckForUpdatesOnStartup;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -164,6 +188,7 @@ public partial class SettingsViewModel : ObservableObject
         app.PlaybackUserInterruptGraceMs = ParsePlaybackGraceMsForSave();
         app.PlaybackFocusBringWindowToForeground = PlaybackFocusBringWindowToForeground;
         app.PlaybackFocusRestoreIfMinimized = PlaybackFocusRestoreIfMinimized;
+        app.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;
         AppSettingsStore.Save(app);
         var reloaded = AppSettingsStore.Load();
         _savedRecordingMouseMoveMinPixels = reloaded.RecordingMouseMoveMinPixels;
@@ -174,7 +199,15 @@ public partial class SettingsViewModel : ObservableObject
         _savedPlaybackFocusRestoreIfMinimized = reloaded.PlaybackFocusRestoreIfMinimized;
         PlaybackFocusBringWindowToForeground = reloaded.PlaybackFocusBringWindowToForeground;
         PlaybackFocusRestoreIfMinimized = reloaded.PlaybackFocusRestoreIfMinimized;
+        _savedCheckForUpdatesOnStartup = reloaded.CheckForUpdatesOnStartup;
+        CheckForUpdatesOnStartup = reloaded.CheckForUpdatesOnStartup;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesNowAsync()
+    {
+        await _updateCheckCoordinator.CheckNowAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -217,6 +250,7 @@ public partial class SettingsViewModel : ObservableObject
         PlaybackInterruptGraceMsText = _savedPlaybackInterruptGraceMs.ToString(CultureInfo.InvariantCulture);
         PlaybackFocusBringWindowToForeground = _savedPlaybackFocusBringWindowToForeground;
         PlaybackFocusRestoreIfMinimized = _savedPlaybackFocusRestoreIfMinimized;
+        CheckForUpdatesOnStartup = _savedCheckForUpdatesOnStartup;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -275,6 +309,14 @@ public partial class SettingsViewModel : ObservableObject
                 PlaybackFocusPairDisplay(PlaybackFocusBringWindowToForeground, PlaybackFocusRestoreIfMinimized)));
         }
 
+        if (HasPendingUpdateCheckChange())
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Update_CheckOnStartup"),
+                YesNo(_savedCheckForUpdatesOnStartup),
+                YesNo(CheckForUpdatesOnStartup)));
+        }
+
         var intro = _loc.GetString("Settings_UnsavedIntro");
         var outro = _loc.GetString("Settings_UnsavedOutro");
         if (lines.Count == 0)
@@ -300,6 +342,9 @@ public partial class SettingsViewModel : ObservableObject
     private bool HasPendingPlaybackFocusChange() =>
         PlaybackFocusBringWindowToForeground != _savedPlaybackFocusBringWindowToForeground
         || PlaybackFocusRestoreIfMinimized != _savedPlaybackFocusRestoreIfMinimized;
+
+    private bool HasPendingUpdateCheckChange() =>
+        CheckForUpdatesOnStartup != _savedCheckForUpdatesOnStartup;
 
     private string PlaybackFocusPairDisplay(bool bring, bool restore) =>
         string.Format(

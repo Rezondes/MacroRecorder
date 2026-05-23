@@ -19,7 +19,13 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/MacroRecorderByRezondes.sln",
+                "${workspaceFolder}/MacroRecorder.App/MacroRecorder.App.csproj",
+                "-c",
+                "Release",
+                "-r",
+                "win-x64",
+                "--self-contained",
+                "true",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],

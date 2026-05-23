@@ -23,6 +23,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<RecordingCoordinator>();
         builder.Services.AddSingleton<AppearanceService>();
         builder.Services.AddSingleton<InAppInfoMessageChannel>();
+        builder.Services.AddSingleton<UpdateCheckCoordinator>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddSingleton<IUiLocalizer, ResxUiLocalizer>();
         builder.Services.AddSingleton(sp =>
@@ -35,6 +36,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddTransient<QueueCreatorViewModel>();
         builder.Services.AddSingleton<ShellViewModel>();
         builder.Services.AddSingleton<IPlaybackUiFeedback>(sp => sp.GetRequiredService<ShellViewModel>());
+        builder.Services.AddSingleton<IUpdatePromptModalHost>(sp => sp.GetRequiredService<ShellViewModel>());
         builder.Services.AddSingleton(sp =>
             new Lazy<IUnsavedChangesModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>
@@ -49,6 +51,8 @@ public partial class App : System.Windows.Application
             new Lazy<IExportMacroJsonModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>
             new Lazy<IImportMacroJsonModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
+        builder.Services.AddSingleton(sp =>
+            new Lazy<IUpdatePromptModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton(sp =>
             new Lazy<IPromptPlaybackChordModalHost>(() => sp.GetRequiredService<ShellViewModel>()));
         builder.Services.AddSingleton<IUserDialogService>(sp =>
@@ -73,6 +77,7 @@ public partial class App : System.Windows.Application
         UiLocalizerHost.Current = _host.Services.GetRequiredService<IUiLocalizer>();
         MainWindow = _host.Services.GetRequiredService<MainWindow>();
         MainWindow.Show();
+        _host.Services.GetRequiredService<UpdateCheckCoordinator>().RunStartupCheckIfEnabled();
     }
 
     protected override void OnExit(ExitEventArgs exitEventArgs)

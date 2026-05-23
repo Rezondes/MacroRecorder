@@ -278,6 +278,16 @@ EN: dict[str, str] = {
     "QueueCreator_ErrorEmptyMacro": "Macro has no events: {0}",
     "QueueCreator_ConfirmMissingMacros": "Some steps reference macros that are not in your library. Run the queue anyway?",
     "QueueCreator_ConfirmLeaveWhileRunning": "A queue run is in progress. Stop the run and leave this page?",
+    "Update_SectionHeader": "Updates",
+    "Update_CurrentVersion": "Current version: {0}",
+    "Update_CheckOnStartup": "Check for updates on startup",
+    "Update_CheckNow": "Check for updates now",
+    "Update_AvailableTitle": "Update available",
+    "Update_AvailableBody": "Version {0} is available (installed: {1}). Open the release page in your browser to download the portable ZIP.",
+    "Update_OpenRelease": "Open release page",
+    "Update_Later": "Later",
+    "Update_UpToDate": "You are using the latest version.",
+    "Update_CheckFailed": "Could not check for updates. Check your internet connection or try again later.",
 }
 
 DE: dict[str, str] = {
@@ -552,6 +562,16 @@ DE: dict[str, str] = {
     "QueueCreator_ErrorEmptyMacro": "Makro ohne Ereignisse: {0}",
     "QueueCreator_ConfirmMissingMacros": "Einige Schritte verweisen auf Makros, die in der Bibliothek fehlen. Trotzdem ausführen?",
     "QueueCreator_ConfirmLeaveWhileRunning": "Die Warteschlange läuft noch. Ausführung beenden und die Seite verlassen?",
+    "Update_SectionHeader": "Updates",
+    "Update_CurrentVersion": "Aktuelle Version: {0}",
+    "Update_CheckOnStartup": "Beim Start nach Updates suchen",
+    "Update_CheckNow": "Jetzt nach Updates suchen",
+    "Update_AvailableTitle": "Update verfügbar",
+    "Update_AvailableBody": "Version {0} ist verfügbar (installiert: {1}). Öffnen Sie die Release-Seite im Browser, um das portable ZIP herunterzuladen.",
+    "Update_OpenRelease": "Release-Seite öffnen",
+    "Update_Later": "Später",
+    "Update_UpToDate": "Sie verwenden bereits die neueste Version.",
+    "Update_CheckFailed": "Update-Prüfung fehlgeschlagen. Internetverbindung prüfen oder später erneut versuchen.",
 }
 
 
