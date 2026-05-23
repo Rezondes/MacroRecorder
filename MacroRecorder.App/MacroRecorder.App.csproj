@@ -16,7 +16,15 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Fewer BCL/WPF satellite folders on publish (matches app localization: EN/DE). -->
     <SatelliteResourceLanguages>en;de</SatelliteResourceLanguages>
+    <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\app-icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MacroRecorder.Application\MacroRecorder.Application.csproj" />
