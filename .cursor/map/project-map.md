@@ -3,7 +3,7 @@
 ## 1. Projekt-Kern
 - **Ziel:** Windows-Desktop-App zum Aufzeichnen, Editieren, Wiedergeben und Verketten von Tastatur-/Maus-Makros (inkl. Fokus-/Fenstererkennung).
 - **Tech-Stack:** .NET 10, WPF (`net10.0-windows`, x64), MVVM (`CommunityToolkit.Mvvm`), `Microsoft.Extensions.Hosting`/DI, RESX-Lokalisierung (DE/EN), WinAPI Low-Level-Hooks + `SendInput`, JSON-Persistenz (`System.Text.Json`, `Ulid`).
-- **Aktueller Status:** Version `0.0.1` in csproj; Release via Tag `v0.0.1` + GitHub Actions (portable ZIP). In-App-Update-Check aktiv.
+- **Aktueller Status:** Version `0.0.2` in csproj; Release via Tag `v0.0.2` + GitHub Actions (portable ZIP). In-App-Update-Check aktiv (GitHub-JSON-Fix + Tests).
 
 ## 2. Architektur & Abhängigkeiten (DDD-Schichten)
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
@@ -52,5 +52,6 @@
 - [x] Fix: `IUpdatePromptModalHost` direkt im DI registriert (Startup-Crash behoben).
 - [x] Project-Map + Map-Update-Prompt unter `.cursor/` (committed).
 - [x] Version-Konsistenz-Check (Git-Tag ↔ `MacroRecorder.App.csproj` `<Version>`) im Release-Workflow.
-- [ ] Release `v0.0.1` pushen (Tag → CI baut `MacroRecorder-portable-win-x64-0.0.1.zip`).
+- [x] Release `v0.0.1` (portable ZIP auf GitHub Releases).
+- [ ] Release `v0.0.2` pushen (Update-Check-Fix, Branding, Queue-Experimentell-Hinweis, Tests).
 
