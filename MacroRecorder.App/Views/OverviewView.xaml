@@ -217,7 +217,7 @@
                                     </Border>
                                 </Grid>
                                 <Button Margin="4,0,0,0"
-                                        Style="{DynamicResource UiIconButtonSecondaryGlyph}"
+                                        Style="{DynamicResource UiIconButton}"
                                         ToolTip="{loc:Loc Main_Edit}"
                                         AutomationProperties.Name="{loc:Loc Main_Edit}"
                                         Command="{Binding DataContext.Overview.EditCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -225,12 +225,12 @@
                                     <TextBlock FontFamily="Segoe MDL2 Assets"
                                                Text="&#xE70F;"
                                                FontSize="18"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               Foreground="{DynamicResource UiBrush.TextPrimary}"
                                                VerticalAlignment="Center"
                                                HorizontalAlignment="Center" />
                                 </Button>
                                 <Button Margin="4,0,0,0"
-                                        Style="{DynamicResource UiIconButtonPrimaryGlyph}"
+                                        Style="{DynamicResource UiIconButton}"
                                         ToolTip="{loc:Loc Main_Export_ToolTip}"
                                         AutomationProperties.Name="{loc:Loc Main_Export_ToolTip}"
                                         Command="{Binding DataContext.Overview.ExportCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -238,7 +238,7 @@
                                     <TextBlock FontFamily="Segoe MDL2 Assets"
                                                Text="&#xE72D;"
                                                FontSize="18"
-                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                               Foreground="{DynamicResource UiBrush.TextPrimary}"
                                                VerticalAlignment="Center"
                                                HorizontalAlignment="Center" />
                                 </Button>

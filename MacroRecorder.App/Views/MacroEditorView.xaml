@@ -97,26 +97,26 @@
                                     Background="{DynamicResource UiBrush.Border}"
                                     VerticalAlignment="Center" />
                             <Button Margin="0,0,8,0"
-                                    Style="{DynamicResource UiIconButtonPrimaryGlyph}"
+                                    Style="{DynamicResource UiIconButton}"
                                     Command="{Binding UndoCommand}"
                                     ToolTip="{loc:Loc Editor_Undo}"
                                     AutomationProperties.Name="{loc:Loc Editor_Undo}">
                                 <TextBlock FontFamily="Segoe MDL2 Assets"
                                            Text="&#xE7A7;"
                                            FontSize="18"
-                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                           Foreground="{DynamicResource UiBrush.TextPrimary}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                             </Button>
                             <Button Margin="0,0,8,0"
-                                    Style="{DynamicResource UiIconButtonPrimaryGlyph}"
+                                    Style="{DynamicResource UiIconButton}"
                                     Command="{Binding RedoCommand}"
                                     ToolTip="{loc:Loc Editor_Redo}"
                                     AutomationProperties.Name="{loc:Loc Editor_Redo}">
                                 <TextBlock FontFamily="Segoe MDL2 Assets"
                                            Text="&#xE7A6;"
                                            FontSize="18"
-                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                           Foreground="{DynamicResource UiBrush.TextPrimary}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                             </Button>
