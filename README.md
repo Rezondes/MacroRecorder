@@ -1,4 +1,4 @@
-# Macro Recorder by Rezondes
+# Macro Recorder by Rezondes - WIP
 
 <img src="MacroRecorder.App/Assets/app-icon.ico" alt="Macro Recorder logo" width="96" height="96" align="right" />
 
