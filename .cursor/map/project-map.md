@@ -3,7 +3,7 @@
 ## 1. Projekt-Kern
 - **Ziel:** Windows-Desktop-App zum Aufzeichnen, Editieren, Wiedergeben und Verketten von Tastatur-/Maus-Makros (inkl. Fokus-/Fenstererkennung).
 - **Tech-Stack:** .NET 10, WPF (`net10.0-windows`, x64), MVVM (`CommunityToolkit.Mvvm`), `Microsoft.Extensions.Hosting`/DI, RESX-Lokalisierung (DE/EN), WinAPI Low-Level-Hooks + `SendInput`, JSON-Persistenz (`System.Text.Json`, `Ulid`).
-- **Aktueller Status:** Portable Single-Build (v0.0.2), MSI/WiX entfernt; In-App-Update-Check gegen GitHub Releases live.
+- **Aktueller Status:** Portable v0.0.2 released auf GitHub (Tag `v0.0.2`, CI-ZIP-Asset); In-App-Update-Check aktiv.
 
 ## 2. Architektur & Abhängigkeiten (DDD-Schichten)
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
@@ -21,6 +21,7 @@
 - `MacroRecorder.App/Localization/UiStrings{,.de}.resx` – **generiert**, nicht direkt editieren.
 - `scripts/build_ui_resx.py` – **Single Source of Truth** für UI-Strings (`python scripts/build_ui_resx.py`).
 - `scripts/build-portable.ps1` – self-contained win-x64 Publish → `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
+- `README.md` – user guide (portable setup, features) and developer entry point (build, release, localization).
 - `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check (Tag ↔ csproj) → portable ZIP → GitHub Release.
 - `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).
 - `.cursor/prompts/project-map-prompt.md` – Anweisung Map zu lesen/aktualisieren.
@@ -51,4 +52,5 @@
 - [x] Fix: `IUpdatePromptModalHost` direkt im DI registriert (Startup-Crash behoben).
 - [x] Project-Map + Map-Update-Prompt unter `.cursor/` (committed).
 - [x] Version-Konsistenz-Check (Git-Tag ↔ `MacroRecorder.App.csproj` `<Version>`) im Release-Workflow.
-- [ ] Erstes Tagging `v0.0.2` pushen und CI-Release validieren (End-to-End Update-Flow).
+- [x] Erstes Release `v0.0.2` gepusht; CI-Workflow grün (portable ZIP auf GitHub Releases).
+
