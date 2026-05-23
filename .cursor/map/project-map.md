@@ -3,7 +3,7 @@
 ## 1. Projekt-Kern
 - **Ziel:** Windows-Desktop-App zum Aufzeichnen, Editieren, Wiedergeben und Verketten von Tastatur-/Maus-Makros (inkl. Fokus-/Fenstererkennung).
 - **Tech-Stack:** .NET 10, WPF (`net10.0-windows`, x64), MVVM (`CommunityToolkit.Mvvm`), `Microsoft.Extensions.Hosting`/DI, RESX-Lokalisierung (DE/EN), WinAPI Low-Level-Hooks + `SendInput`, JSON-Persistenz (`System.Text.Json`, `Ulid`).
-- **Aktueller Status:** Version `0.0.2` in csproj; Release via Tag `v0.0.2` + GitHub Actions (portable ZIP). In-App-Update-Check aktiv (GitHub-JSON-Fix + Tests).
+- **Aktueller Status:** Version `0.0.3` in csproj; Release via Tag `v0.0.3` + GitHub Actions (portable ZIP). In-App-Update-Check aktiv (GitHub-JSON-Fix + Tests).
 
 ## 2. Architektur & Abhängigkeiten (DDD-Schichten)
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
@@ -20,6 +20,7 @@
 - `MacroRecorder.App/{ViewModels,Views,Services,Localization,Editor,Controls,Converters}/` – `App.xaml.cs` = Composition Root.
 - `MacroRecorder.App/Localization/UiStrings{,.de}.resx` – **generiert**, nicht direkt editieren.
 - `scripts/build_ui_resx.py` – **Single Source of Truth** für UI-Strings (`python scripts/build_ui_resx.py`).
+- `scripts/set-app-version.ps1` – set release version in csproj + project map (`.\scripts\set-app-version.ps1 0.0.3`).
 - `scripts/build-portable.ps1` – self-contained win-x64 **single-file** Publish → `MacroRecorderByRezondes.exe` in `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
 - `README.md` – user guide (portable setup, features) and developer entry point (build, release, localization).
 - `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check (Tag ↔ csproj) → portable ZIP → GitHub Release.
@@ -53,5 +54,5 @@
 - [x] Project-Map + Map-Update-Prompt unter `.cursor/` (committed).
 - [x] Version-Konsistenz-Check (Git-Tag ↔ `MacroRecorder.App.csproj` `<Version>`) im Release-Workflow.
 - [x] Release `v0.0.1` (portable ZIP auf GitHub Releases).
-- [ ] Release `v0.0.2` pushen (Update-Check-Fix, Branding, Queue-Experimentell-Hinweis, Tests).
-
+- [x] Release `v0.0.2` pushen (Update-Check-Fix, Branding, Queue-Experimentell-Hinweis, Tests).
+- [ ] Release `v0.0.3` pushen

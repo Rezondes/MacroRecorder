@@ -170,7 +170,7 @@ Branding: in-app vector in `MacroRecorder.Wpf/Branding/AppBrandMark.cs`; EXE/tas
 
 ### Publishing a release
 
-1. Bump `<Version>` in `MacroRecorder.App/MacroRecorder.App.csproj`.
+1. Run `.\scripts\set-app-version.ps1 <Version>` (updates `MacroRecorder.App.csproj` and project map).
 2. Commit and push.
 3. Create and push a tag that matches the version, e.g. `v0.0.3` for version `0.0.3`.
 4. GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)) verifies tag ↔ csproj, builds the ZIP, and publishes the release.
