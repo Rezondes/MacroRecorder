@@ -10,7 +10,7 @@
         xmlns:swc="clr-namespace:System.Windows.Controls;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="{Binding ShellTitle}"
-        Icon="Assets/app-icon.ico"
+        Icon="pack://application:,,,/Assets/app-icon.ico"
         Height="640" Width="960"
         MinHeight="400" MinWidth="640"
         Topmost="{Binding IsPinnedTopmost, Mode=OneWay}"

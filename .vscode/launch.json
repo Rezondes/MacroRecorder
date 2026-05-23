@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/MacroRecorder.App/bin/Debug/net10.0-windows/Macro Recorder by Rezondes.dll",
+            "program": "${workspaceFolder}/MacroRecorder.App/bin/Debug/net10.0-windows/MacroRecorderByRezondes.dll",
             "args": [],
             "cwd": "${workspaceFolder}/MacroRecorder.App",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

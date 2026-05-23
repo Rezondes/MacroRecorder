@@ -20,7 +20,7 @@
 - `MacroRecorder.App/{ViewModels,Views,Services,Localization,Editor,Controls,Converters}/` – `App.xaml.cs` = Composition Root.
 - `MacroRecorder.App/Localization/UiStrings{,.de}.resx` – **generiert**, nicht direkt editieren.
 - `scripts/build_ui_resx.py` – **Single Source of Truth** für UI-Strings (`python scripts/build_ui_resx.py`).
-- `scripts/build-portable.ps1` – self-contained win-x64 Publish → `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
+- `scripts/build-portable.ps1` – self-contained win-x64 **single-file** Publish → `MacroRecorderByRezondes.exe` in `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
 - `README.md` – user guide (portable setup, features) and developer entry point (build, release, localization).
 - `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check (Tag ↔ csproj) → portable ZIP → GitHub Release.
 - `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).

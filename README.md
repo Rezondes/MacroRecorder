@@ -16,8 +16,8 @@ Windows desktop app to record, edit, and replay keyboard and mouse macros — in
 
 1. **Download** the latest portable ZIP from [GitHub Releases](https://github.com/Rezondes/MacroRecorder/releases).
 2. **Choose a folder** — e.g. `D:\Apps\MacroRecorder\`. Any writable path works; Program Files is not required.
-3. **Extract** the ZIP completely. Keep all files in one folder (the .NET runtime is included).
-4. **Run** `Macro Recorder by Rezondes.exe`.
+3. **Extract** the ZIP. The folder contains a single **`MacroRecorderByRezondes.exe`** (self-contained; no separate .NET install).
+4. **Run** `MacroRecorderByRezondes.exe`.
 5. **Optional:** Pin a shortcut to the EXE or taskbar.
 
 Your macros and settings are **not** stored inside the portable folder. They live in:
@@ -158,7 +158,7 @@ dotnet run --project MacroRecorder.App/MacroRecorder.App.csproj
 .\scripts\build-portable.ps1
 ```
 
-Output: `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`
+Output: `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip` containing **`MacroRecorderByRezondes.exe`** (single-file, self-contained).
 
 After changing the logo, regenerate the Windows icon first:
 

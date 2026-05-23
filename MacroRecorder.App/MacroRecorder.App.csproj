@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>MacroRecorder.App</RootNamespace>
-    <AssemblyName>Macro Recorder by Rezondes</AssemblyName>
+    <AssemblyName>MacroRecorderByRezondes</AssemblyName>
     <ApplicationTitle>Macro Recorder by Rezondes</ApplicationTitle>
     <Version>0.0.2</Version>
     <AssemblyVersion>0.0.2.0</AssemblyVersion>
@@ -20,10 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\app-icon.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
+    <Resource Include="Assets\app-icon.ico" />
   </ItemGroup>
 
   <ItemGroup>

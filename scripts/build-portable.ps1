@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-  Builds a self-contained win-x64 portable ZIP for Macro Recorder.
+  Builds a self-contained win-x64 single-file portable ZIP for Macro Recorder.
 
 .DESCRIPTION
   Publishes MacroRecorder.App to artifacts\portable\staging, then creates
   artifacts\portable\MacroRecorder-portable-win-x64-<Version>.zip.
 
-  Extract the ZIP anywhere and run "Macro Recorder by Rezondes.exe".
+  Extract the ZIP anywhere and run "MacroRecorderByRezondes.exe".
   User data (macros, settings) stays in %LocalAppData%\MacroRecorderByRezondes\.
 
 .PARAMETER Configuration
@@ -25,6 +25,7 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $appProj = Join-Path $repoRoot "MacroRecorder.App\MacroRecorder.App.csproj"
 $stagingDir = Join-Path $repoRoot "artifacts\portable\staging"
 $outputDir = Join-Path $repoRoot "artifacts\portable"
+$expectedExeName = "MacroRecorderByRezondes.exe"
 
 $version = [string](
     dotnet msbuild $appProj -getProperty:Version -nologo -v:q
@@ -46,7 +47,23 @@ try {
         -c $Configuration `
         -r win-x64 `
         --self-contained true `
+        -p:PublishSingleFile=true `
+        -p:IncludeNativeLibrariesForSelfExtract=true `
+        -p:EnableCompressionInSingleFile=true `
+        -p:DebugType=none `
+        -p:DebugSymbols=false `
         -o $stagingDir
+
+    $stagingFiles = Get-ChildItem -LiteralPath $stagingDir -File -Recurse
+    $stagingFileCount = @($stagingFiles).Count
+    if ($stagingFileCount -gt 3) {
+        throw "Expected a single-file portable publish (at most 3 files in staging), but found $stagingFileCount files."
+    }
+
+    $publishedExe = Join-Path $stagingDir $expectedExeName
+    if (-not (Test-Path -LiteralPath $publishedExe)) {
+        throw "Expected published executable not found: $publishedExe"
+    }
 
     if (Test-Path -LiteralPath $zipPath) {
         Remove-Item -LiteralPath $zipPath -Force
@@ -61,3 +78,4 @@ finally {
 
 Write-Host "Portable ZIP: $zipPath" -ForegroundColor Green
 Write-Host "Version: $version" -ForegroundColor Green
+Write-Host "Published: $expectedExeName ($stagingFileCount file(s) in staging)" -ForegroundColor Green
