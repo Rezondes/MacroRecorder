@@ -25,13 +25,15 @@
                        Margin="0,0,0,8"
                        Text="{Binding CurrentAppVersionDisplay}" />
             <CheckBox Content="{loc:Loc Update_CheckOnStartup}"
-                      Margin="0,0,0,12"
+                      Margin="0,4,0,12"
+                      Foreground="{DynamicResource UiBrush.TextPrimary}"
+                      Style="{DynamicResource UiCheckBoxModern}"
                       IsChecked="{Binding CheckForUpdatesOnStartup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <Button Content="{loc:Loc Update_CheckNow}"
                     HorizontalAlignment="Left"
                     MinWidth="160"
                     Padding="12,6"
-                    Style="{DynamicResource UiButtonChrome}"
+                    Style="{DynamicResource UiPrimaryButton}"
                     Command="{Binding CheckForUpdatesNowCommand}" />
         </StackPanel>
     </ScrollViewer>
