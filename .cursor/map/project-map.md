@@ -21,7 +21,9 @@
 - `MacroRecorder.App/Localization/UiStrings{,.de}.resx` – **generiert**, nicht direkt editieren.
 - `scripts/build_ui_resx.py` – **Single Source of Truth** für UI-Strings (`python scripts/build_ui_resx.py`).
 - `scripts/build-portable.ps1` – self-contained win-x64 Publish → `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
-- `.github/workflows/release.yml` – Tag `v*.*.*` → CI baut ZIP + `softprops/action-gh-release`.
+- `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check (Tag ↔ csproj) → portable ZIP → GitHub Release.
+- `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).
+- `.cursor/prompts/project-map-prompt.md` – Anweisung Map zu lesen/aktualisieren.
 - `.cursor/rules/macro-recorder-{conventions,localization,git-commit}.mdc` – verbindliche Regeln.
 - `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, Queue-, Hotkey-Stores).
 
@@ -47,5 +49,6 @@
 - [x] `scripts/build-portable.ps1` + `.github/workflows/release.yml` (Tag-getriggerte ZIP-Releases).
 - [x] In-App-Update: `IUpdateCheckService` (GitHub API) + `UpdateCheckCoordinator` + `UpdateAvailableView`-Modal + Settings-Toggle.
 - [x] Fix: `IUpdatePromptModalHost` direkt im DI registriert (Startup-Crash behoben).
-- [ ] Erstes Tagging `v0.0.2` und CI-Release validieren (End-to-End Update-Flow).
-- [ ] Optional: Version-Konsistenz-Check (csproj ↔ Git-Tag) im Workflow.
+- [x] Project-Map + Map-Update-Prompt unter `.cursor/` (committed).
+- [x] Version-Konsistenz-Check (Git-Tag ↔ `MacroRecorder.App.csproj` `<Version>`) im Release-Workflow.
+- [ ] Erstes Tagging `v0.0.2` pushen und CI-Release validieren (End-to-End Update-Flow).

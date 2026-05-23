@@ -20,6 +20,18 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Verify tag matches app version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $expectedVersion = $tag -replace '^v', ''
+          $projectVersion = [string](dotnet msbuild MacroRecorder.App/MacroRecorder.App.csproj -getProperty:Version -nologo -v:q).Trim()
+          if ($projectVersion -ne $expectedVersion) {
+            Write-Error "Git tag '$tag' implies version '$expectedVersion', but MacroRecorder.App.csproj has Version='$projectVersion'."
+            exit 1
+          }
+          Write-Host "Version check OK: $projectVersion"
+
       - name: Build portable ZIP
         shell: pwsh
         run: ./scripts/build-portable.ps1 -Configuration Release

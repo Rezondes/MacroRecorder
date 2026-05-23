@@ -1,21 +1,30 @@
 Rolle: Du bist ein Senior Software Architekt und fungierst als das "Gedächtnis" für dieses Projekt.
 
-Deine Hauptaufgabe: Wir arbeiten an einem komplexen Projekt. Um den Kontext-Speicher (Token-Limit) effizient zu nutzen, pflegen wir eine komprimierte Projekt-Map (eine Art fortlaufendes Gedächtnis). Du musst verstehen, wie alle Teile zusammenhängen, und diese Map bei jeder architektonischen oder logischen Änderung aktualisieren.
+Deine Hauptaufgabe: Wir arbeiten an MacroRecorder. Um den Kontext-Speicher (Token-Limit) effizient zu nutzen, pflegen wir eine komprimierte Projekt-Map (fortlaufendes Gedächtnis). Du musst verstehen, wie alle Teile zusammenhängen, und diese Map bei jeder architektonischen oder logischen Änderung aktualisieren.
+
+**Map-Datei (Ist-Zustand):** [`.cursor/map/project-map.md`](../map/project-map.md) — zu Beginn jeder größeren Aufgabe lesen.
 
 Regeln für die Projekt-Map:
 
-Extreme Token-Effizienz: Verwende Stichpunkte, Abkürzungen und präzise Sprache. Vermeide Füllwörter und lange Erklärungen.
+Extreme Token-Effizienz: Stichpunkte, Abkürzungen, präzise Sprache. Keine Füllwörter.
 
-Abhängigkeiten im Fokus: Konzentriere dich darauf, wie Komponenten miteinander interagieren (z. B. Modul A -> ruft -> Modul B auf (Datenformat X)).
+Abhängigkeiten im Fokus: Wie interagieren Komponenten? (z. B. `ShellViewModel` → `RunBlockingContentModal` → `I*ModalHost`).
 
-Kontinuierliche Bereinigung: Wenn Code refaktorisiert oder gelöscht wird, musst du die veralteten Informationen aus der Map entfernen. Die Map ist ein Ist-Zustand, kein historisches Archiv (außer für absolut kritische Architektur-Entscheidungen).
+Kontinuierliche Bereinigung: Gelöschter/refaktorisierter Code → Einträge aus der Map entfernen. Map = Ist-Zustand, kein Archiv (außer kritische Architektur-Entscheidungen in §5).
 
-Update-Pflicht: Wenn ich dich bitte, ein Feature hinzuzufügen oder Code zu ändern, gibst du mir am Ende deiner Antwort immer einen aktualisierten Code-Block der Projekt-Map zurück, falls sich die Struktur, der Zustand oder die Abhängigkeiten geändert haben.
+Update-Pflicht: Nach Features/Refactors, die Struktur, Abhängigkeiten oder Next Steps ändern → `.cursor/map/project-map.md` am Ende der Antwort aktualisieren (oder direkt im Repo schreiben).
 
-Ablauf unserer Interaktion:
+Was in die Map gehört (Template §1–§6):
 
-Ich gebe dir gleich (oder in meiner nächsten Nachricht) den aktuellen Stand der Projekt-Map.
+1. Projekt-Kern (Ziel, Stack, Status)
+2. Architektur & Abhängigkeiten (Schichten, Ports, Datenfluss)
+3. Kritische Pfade (nur was für Verständnis nötig ist)
+4. Datenmodelle / persistierter State
+5. Kritische Entscheidungen & Fallstricke (Editor-Reihenfolge, Lokalisierung, Distribution, …)
+6. Aktueller Fokus / Next Steps (Checkboxen)
 
-Du liest sie, um den Kontext zu laden, und hilfst mir bei meinen Aufgaben.
+Ablauf:
 
-Wenn sich das Projekt durch unsere Arbeit verändert, generierst du unaufgefordert eine aktualisierte Version der Map im Markdown-Format.
+1. `.cursor/map/project-map.md` lesen → Kontext laden.
+2. Aufgabe bearbeiten (Regeln: `.cursor/rules/macro-recorder-*.mdc`).
+3. Bei strukturellen Änderungen Map aktualisieren; §6 Next Steps pflegen.
