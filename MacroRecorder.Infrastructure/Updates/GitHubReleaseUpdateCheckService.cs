@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 
@@ -81,8 +82,13 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
 
     private sealed class GitHubReleaseResponse
     {
+        [JsonPropertyName("tag_name")]
         public string? TagName { get; set; }
+
+        [JsonPropertyName("html_url")]
         public string? HtmlUrl { get; set; }
+
+        [JsonPropertyName("body")]
         public string? Body { get; set; }
     }
 }
