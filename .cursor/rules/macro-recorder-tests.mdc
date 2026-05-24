@@ -34,4 +34,4 @@ alwaysApply: false
 
 ## CI
 
-Push und Pull Request führen `dotnet test MacroRecorderByRezondes.sln -c Release` aus (`.github/workflows/ci.yml`).
+Pull Requests gegen `master` führen `dotnet test MacroRecorderByRezondes.sln -c Release` aus (`.github/workflows/ci.yml`); Release-Tags zusätzlich in `release.yml`.

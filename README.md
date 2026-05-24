@@ -159,7 +159,7 @@ dotnet run --project MacroRecorder.App/MacroRecorder.App.csproj
 dotnet test MacroRecorderByRezondes.sln -c Release
 ```
 
-Push and pull requests run the same command on `windows-latest` via [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Test conventions: [`.cursor/rules/macro-recorder-tests.mdc`](.cursor/rules/macro-recorder-tests.mdc).
+Pull requests targeting `master` run `dotnet test MacroRecorderByRezondes.sln -c Release` on `windows-latest` via [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Release tags run tests again in [`.github/workflows/release.yml`](.github/workflows/release.yml) before building the portable ZIP. Test conventions: [`.cursor/rules/macro-recorder-tests.mdc`](.cursor/rules/macro-recorder-tests.mdc).
 
 ### Portable release build
 

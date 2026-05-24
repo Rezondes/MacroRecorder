@@ -32,6 +32,9 @@ jobs:
           }
           Write-Host "Version check OK: $projectVersion"
 
+      - name: Test
+        run: dotnet test MacroRecorderByRezondes.sln -c Release
+
       - name: Build portable ZIP
         shell: pwsh
         run: ./scripts/build-portable.ps1 -Configuration Release

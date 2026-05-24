@@ -26,8 +26,8 @@
 - `scripts/set-app-version.ps1` – set release version in csproj + project map (`.\scripts\set-app-version.ps1 0.0.3`).
 - `scripts/build-portable.ps1` – self-contained win-x64 Publish → `MacroRecorderByRezondes.exe` + `MacroRecorderByRezondes.Updater.exe` in `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
 - `README.md` – user guide (portable setup, features) and developer entry point (build, release, localization).
-- `.github/workflows/ci.yml` – Push/PR → `dotnet test MacroRecorderByRezondes.sln -c Release` auf `windows-latest`.
-- `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check (Tag ↔ csproj) → portable ZIP → GitHub Release.
+- `.github/workflows/ci.yml` – PR gegen `master` → `dotnet test MacroRecorderByRezondes.sln -c Release` auf `windows-latest`.
+- `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check → `dotnet test` → portable ZIP → GitHub Release.
 - `MacroRecorder.Domain.Tests` / `MacroRecorder.Application.Tests` (`net10.0`) / `MacroRecorder.Infrastructure.Tests` (`net10.0-windows`) – xUnit + coverlet; Regeln in `.cursor/rules/macro-recorder-tests.mdc`.
 - `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).
 - `.cursor/prompts/project-map-prompt.md` – Anweisung Map zu lesen/aktualisieren.
@@ -55,7 +55,4 @@
 - **Mausbewegungs-Reduktion:** Live in `LowLevelRecordingEngine` (Mindestabstand + Collinearity-Skip, Drag-Schutz via Button-State, Anchor-Flush vor Klick/Rad). Nachbearbeitung: `MouseMovePathSimplifier` (RDP, epsilon = `recordingMouseMoveMinPixels`) nach Stop/Save/Share; Drag-Segmente (Moves zwischen Button-Down/Up) unangetastet. Share-JSON: pretty (`MacroJsonFileFormat.Serialize`, `WriteIndented=true`).
 
 ## 6. Aktueller Fokus / Next Steps
-- [ ] Release `v0.0.7` pushen
-- [x] Schichtweise Unit-Tests + CI (`dotnet test` auf Push/PR)
-- [x] Recording: Fokus vor Mausklick, delayBefore=0, Hotkeys außerhalb macros/
-- [x] Mausbewegungs-Reduktion (Live-Filter + RDP-Simplify, Drag-Schutz)
+- [ ] Release `v0.0.8` pushen
