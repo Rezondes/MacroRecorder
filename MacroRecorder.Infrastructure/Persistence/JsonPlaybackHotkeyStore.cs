@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Persistence;
 
@@ -15,10 +16,12 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
         PropertyNameCaseInsensitive = true
     };
 
+    private readonly ILogger<JsonPlaybackHotkeyStore> _logger;
     private readonly string _filePath;
 
-    public JsonPlaybackHotkeyStore()
+    public JsonPlaybackHotkeyStore(ILogger<JsonPlaybackHotkeyStore> logger)
     {
+        _logger = logger;
         var root = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MacroRecorderByRezondes",
@@ -69,8 +72,9 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
 
             return map;
         }
-        catch
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to load playback hotkeys from {FilePath}", _filePath);
             return new Dictionary<MacroId, PlaybackKeyChord>();
         }
     }
@@ -102,24 +106,32 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
 
     private void WriteAll(IReadOnlyDictionary<MacroId, PlaybackKeyChord> map)
     {
-        var dto = new HotkeyFileDto
+        try
         {
-            Assignments = map
-                .Select(static pair => new HotkeyEntryDto
-                {
-                    MacroId = pair.Key.Value,
-                    Ctrl = pair.Value.Ctrl,
-                    Alt = pair.Value.Alt,
-                    Shift = pair.Value.Shift,
-                    Win = pair.Value.Win,
-                    Vk = pair.Value.VirtualKey
-                })
-                .ToList()
-        };
+            var dto = new HotkeyFileDto
+            {
+                Assignments = map
+                    .Select(static pair => new HotkeyEntryDto
+                    {
+                        MacroId = pair.Key.Value,
+                        Ctrl = pair.Value.Ctrl,
+                        Alt = pair.Value.Alt,
+                        Shift = pair.Value.Shift,
+                        Win = pair.Value.Win,
+                        Vk = pair.Value.VirtualKey
+                    })
+                    .ToList()
+            };
 
-        var tempPath = _filePath + ".tmp";
-        File.WriteAllText(tempPath, JsonSerializer.Serialize(dto, JsonOptions));
-        File.Move(tempPath, _filePath, overwrite: true);
+            var tempPath = _filePath + ".tmp";
+            File.WriteAllText(tempPath, JsonSerializer.Serialize(dto, JsonOptions));
+            File.Move(tempPath, _filePath, overwrite: true);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to save playback hotkeys to {FilePath}", _filePath);
+            throw;
+        }
     }
 
     private static bool ChordsEqual(PlaybackKeyChord a, PlaybackKeyChord b) =>

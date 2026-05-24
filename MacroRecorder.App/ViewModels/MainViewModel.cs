@@ -8,6 +8,7 @@ using MacroRecorder.Application.Ports;
 using MacroRecorder.App.Localization;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.App.ViewModels;
 
@@ -23,6 +24,7 @@ public partial class MainViewModel : ObservableObject
     private readonly Lazy<IPromptPlaybackChordModalHost> _promptChordHost;
     private readonly MacroPlaybackHotkeyRegistrar _playbackHotkeyRegistrar;
     private readonly IUiLocalizer _loc;
+    private readonly ILogger<MainViewModel> _logger;
 
     public MainViewModel(
         MacroWorkspaceService workspace,
@@ -34,7 +36,8 @@ public partial class MainViewModel : ObservableObject
         Lazy<IImportMacroJsonModalHost> importModalHost,
         Lazy<IPromptPlaybackChordModalHost> promptChordHost,
         MacroPlaybackHotkeyRegistrar playbackHotkeyRegistrar,
-        IUiLocalizer loc)
+        IUiLocalizer loc,
+        ILogger<MainViewModel> logger)
     {
         _workspace = workspace;
         _playback = playback;
@@ -46,6 +49,7 @@ public partial class MainViewModel : ObservableObject
         _promptChordHost = promptChordHost;
         _playbackHotkeyRegistrar = playbackHotkeyRegistrar;
         _loc = loc;
+        _logger = logger;
         _loc.UiCultureChanged += (_, _) => OnUiCultureChanged();
     }
 
@@ -157,6 +161,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Overview playback failed");
             _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
         }
     }
@@ -259,6 +264,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Macro import failed");
             _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorLoad", exception.Message));
             return false;
         }
@@ -284,6 +290,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to remove playback hotkey");
             _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
         }
     }
@@ -340,6 +347,7 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to save playback hotkey");
             _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
         }
     }

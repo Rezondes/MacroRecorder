@@ -10,6 +10,7 @@ using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 using MacroRecorder.Domain.MacroQueue;
 using MacroRecorder.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace MacroRecorder.App.ViewModels;
@@ -22,6 +23,7 @@ public partial class QueueCreatorViewModel : ObservableObject
     private readonly IUiLocalizer _loc;
     private readonly MacroQueueFileStore _queueFiles;
     private readonly InAppInfoMessageChannel _inApp;
+    private readonly ILogger<QueueCreatorViewModel> _logger;
     private readonly MacroQueuePauseController _pause = new();
     private CancellationTokenSource? _runCts;
     private HashSet<MacroId> _knownMacroIds = new();
@@ -32,7 +34,8 @@ public partial class QueueCreatorViewModel : ObservableObject
         IUserDialogService dialogs,
         IUiLocalizer loc,
         MacroQueueFileStore queueFiles,
-        InAppInfoMessageChannel inApp)
+        InAppInfoMessageChannel inApp,
+        ILogger<QueueCreatorViewModel> logger)
     {
         _workspace = workspace;
         _playback = playback;
@@ -40,6 +43,7 @@ public partial class QueueCreatorViewModel : ObservableObject
         _loc = loc;
         _queueFiles = queueFiles;
         _inApp = inApp;
+        _logger = logger;
         _loc.UiCultureChanged += (_, _) =>
         {
             RefreshDerivedState();
@@ -313,6 +317,7 @@ public partial class QueueCreatorViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to save macro queue");
             _dialogs.ShowInfo(_loc.GetString("QueueCreator_ErrorSave", exception.Message));
         }
     }
@@ -338,6 +343,7 @@ public partial class QueueCreatorViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to load macro queue");
             _dialogs.ShowInfo(_loc.GetString("QueueCreator_ErrorLoad", exception.Message));
         }
     }
@@ -438,6 +444,7 @@ public partial class QueueCreatorViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Macro queue playback failed");
             _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
         }
         finally

@@ -13,6 +13,7 @@ using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.App.ViewModels;
 
@@ -261,7 +262,8 @@ public partial class ShellViewModel : ObservableObject,
                 currentEvent,
                 _loc,
                 msg => _inAppInfo.RequestInfo(msg, _loc.GetString("DialogEditEvent_Title")),
-                complete),
+                complete,
+                _services.GetRequiredService<ILogger<EditSingleEventView>>()),
             (ok, v) =>
             {
                 if (ok && v is EditSingleEventView ev)
@@ -672,7 +674,13 @@ public partial class ShellViewModel : ObservableObject,
         if (string.IsNullOrWhiteSpace(json))
             return;
         var macroName = string.IsNullOrWhiteSpace(macroNameForFileDialog) ? "macro" : macroNameForFileDialog.Trim();
-        RunBlockingContentModal(complete => new MacroJsonShareView(_loc, _dialogs, macroName, json, complete));
+        RunBlockingContentModal(complete => new MacroJsonShareView(
+            _loc,
+            _dialogs,
+            macroName,
+            json,
+            complete,
+            _services.GetRequiredService<ILogger<MacroJsonShareView>>()));
     }
 
     void IImportMacroJsonModalHost.ShowImportMacroModal(Func<string, Task<bool>> importJsonAsync)
@@ -690,7 +698,12 @@ public partial class ShellViewModel : ObservableObject,
     }
 
     private void ShowImportMacroModalOnUiThread(Func<string, Task<bool>> importJsonAsync) =>
-        RunBlockingContentModal(complete => new MacroJsonImportView(_loc, _dialogs, importJsonAsync, complete));
+        RunBlockingContentModal(complete => new MacroJsonImportView(
+            _loc,
+            _dialogs,
+            importJsonAsync,
+            complete,
+            _services.GetRequiredService<ILogger<MacroJsonImportView>>()));
 
     UpdatePromptChoice IUpdatePromptModalHost.ShowUpdateAvailable(UpdateCheckResult result)
     {
@@ -727,6 +740,7 @@ public partial class ShellViewModel : ObservableObject,
             _services.GetRequiredService<RecordingCoordinator>(),
             _services.GetRequiredService<IUiLocalizer>(),
             _services.GetRequiredService<InAppInfoMessageChannel>(),
+            _services.GetRequiredService<ILogger<MacroEditorViewModel>>(),
             macroId,
             loadFromDisk,
             inMemoryMacro,

@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http.Headers;
+using MacroRecorder.Logging;
+using Serilog;
+using Serilog.Events;
 
 namespace MacroRecorder.Updater;
 
@@ -8,38 +11,49 @@ internal static class Program
 {
     private const int ParentWaitTimeoutSeconds = 120;
     private const string UpdatesFolderName = "updates";
-    private const string LogFileName = "updater.log";
 
     public static async Task<int> Main(string[] args)
     {
-        var logPath = Path.Combine(GetUpdatesRootDirectory(), LogFileName);
+        Log.Logger = LoggingBootstrap.CreateFileLogger(LogPaths.UpdaterLogFileName, LogEventLevel.Information, "1.0");
+        var logger = Log.ForContext("Component", "Updater");
+
         UpdaterArguments? updaterArguments = null;
         try
         {
-            await WriteLogAsync(logPath, $"Started with {args.Length} argument(s): {string.Join(' ', args)}")
-                .ConfigureAwait(false);
+            logger.Information("ParseArgs: received {ArgumentCount} argument(s)", args.Length);
 
             if (!UpdaterArguments.TryParse(args, out updaterArguments, out var parseError)
                 || updaterArguments is null)
             {
-                await WriteLogAsync(logPath, parseError ?? "Invalid arguments.").ConfigureAwait(false);
+                logger.Error("ParseArgs failed: {ParseError}", parseError ?? "Invalid arguments.");
                 return 1;
             }
 
-            await WaitForParentProcessAsync(updaterArguments.WaitPid).ConfigureAwait(false);
-            await RunUpdateAsync(updaterArguments, logPath).ConfigureAwait(false);
+            logger.Information(
+                "ParseArgs succeeded. WaitPid {WaitPid}, ZipHost {ZipHost}, ZipFile {ZipFile}, InstallDirectory {InstallDirectory}",
+                updaterArguments.WaitPid,
+                SafeZipHost(updaterArguments.ZipUrl),
+                SafeZipFileName(updaterArguments.ZipUrl),
+                updaterArguments.InstallDirectory);
+
+            await WaitForParentProcessAsync(updaterArguments.WaitPid, logger).ConfigureAwait(false);
+            await RunUpdateAsync(updaterArguments, logger).ConfigureAwait(false);
             return 0;
         }
         catch (Exception exception)
         {
-            await WriteLogAsync(logPath, exception.ToString()).ConfigureAwait(false);
+            logger.Fatal(exception, "Failed");
             if (updaterArguments is not null)
                 TryStartMainApplication(updaterArguments.InstallDirectory, updaterArguments.MainExe);
             return 1;
         }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
 
-    private static async Task RunUpdateAsync(UpdaterArguments arguments, string logPath)
+    private static async Task RunUpdateAsync(UpdaterArguments arguments, Serilog.ILogger logger)
     {
         var updatesRoot = GetUpdatesRootDirectory();
         Directory.CreateDirectory(updatesRoot);
@@ -53,16 +67,24 @@ internal static class Program
 
         try
         {
-            await DownloadZipAsync(arguments.ZipUrl, zipPath).ConfigureAwait(false);
+            await DownloadZipAsync(arguments.ZipUrl, zipPath, logger).ConfigureAwait(false);
+            logger.Information("Extract: target directory {ExtractDirectory}", extractDirectory);
             Directory.CreateDirectory(extractDirectory);
             ZipFile.ExtractToDirectory(zipPath, extractDirectory, overwriteFiles: true);
 
-            SyncInstallDirectory(
+            var syncStats = SyncInstallDirectory(
                 arguments.InstallDirectory,
                 extractDirectory,
                 arguments.MainExe,
                 arguments.UpdaterExe);
+            logger.Information(
+                "Sync: deleted {DeletedCount} file(s), copied {CopiedCount} file(s) into {InstallDirectory}",
+                syncStats.DeletedCount,
+                syncStats.CopiedCount,
+                arguments.InstallDirectory);
 
+            var mainExePath = Path.Combine(arguments.InstallDirectory, arguments.MainExe);
+            logger.Information("Restart: main executable {MainExePath}", mainExePath);
             StartMainApplication(arguments.InstallDirectory, arguments.MainExe);
         }
         finally
@@ -72,23 +94,27 @@ internal static class Program
         }
     }
 
-    private static async Task DownloadZipAsync(string zipUrl, string zipPath)
+    private static async Task DownloadZipAsync(string zipUrl, string zipPath, Serilog.ILogger logger)
     {
         using var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MacroRecorderUpdater", "1.0"));
         using var response = await httpClient.GetAsync(zipUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+        logger.Information("Download: HTTP {StatusCode}", (int)response.StatusCode);
         response.EnsureSuccessStatusCode();
         await using var responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
         await using var fileStream = File.Create(zipPath);
         await responseStream.CopyToAsync(fileStream).ConfigureAwait(false);
+        logger.Information("Download: wrote {ByteCount} byte(s) to {ZipPath}", fileStream.Length, zipPath);
     }
 
-    private static void SyncInstallDirectory(
+    private static SyncStats SyncInstallDirectory(
         string installDirectory,
         string extractDirectory,
         string mainExeFileName,
         string updaterExeFileName)
     {
+        var deletedCount = 0;
+        var copiedCount = 0;
         var preservedUpdaterPath = Path.Combine(installDirectory, updaterExeFileName);
         foreach (var existingFile in Directory.EnumerateFiles(installDirectory))
         {
@@ -97,6 +123,7 @@ internal static class Program
                 continue;
 
             File.Delete(existingFile);
+            deletedCount++;
         }
 
         foreach (var extractedFile in Directory.EnumerateFiles(extractDirectory))
@@ -107,6 +134,7 @@ internal static class Program
 
             var destinationPath = Path.Combine(installDirectory, fileName);
             File.Copy(extractedFile, destinationPath, overwrite: true);
+            copiedCount++;
         }
 
         var extractedMainExe = Path.Combine(extractDirectory, mainExeFileName);
@@ -119,6 +147,8 @@ internal static class Program
             if (File.Exists(extractedUpdater))
                 File.Copy(extractedUpdater, preservedUpdaterPath, overwrite: true);
         }
+
+        return new SyncStats(deletedCount, copiedCount);
     }
 
     private static void StartMainApplication(string installDirectory, string mainExeFileName) =>
@@ -138,21 +168,23 @@ internal static class Program
         });
     }
 
-    private static async Task WaitForParentProcessAsync(int parentProcessId)
+    private static async Task WaitForParentProcessAsync(int parentProcessId, Serilog.ILogger logger)
     {
+        logger.Information("WaitParent: pid {ParentProcessId}, timeout {TimeoutSeconds}s", parentProcessId, ParentWaitTimeoutSeconds);
         try
         {
             using var parentProcess = Process.GetProcessById(parentProcessId);
             using var cancellationSource = new CancellationTokenSource(TimeSpan.FromSeconds(ParentWaitTimeoutSeconds));
             await parentProcess.WaitForExitAsync(cancellationSource.Token).ConfigureAwait(false);
+            logger.Information("WaitParent: parent process exited");
         }
         catch (ArgumentException)
         {
-            // Parent already exited.
+            logger.Information("WaitParent: parent process already exited");
         }
         catch (OperationCanceledException)
         {
-            // Timed out waiting; continue with update.
+            logger.Information("WaitParent: timed out waiting for parent process");
         }
     }
 
@@ -162,19 +194,18 @@ internal static class Program
         return Path.Combine(localAppData, "MacroRecorderByRezondes", UpdatesFolderName);
     }
 
-    private static async Task WriteLogAsync(string logPath, string message)
+    private static string SafeZipHost(string zipUrl)
     {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
-            await File.AppendAllTextAsync(
-                logPath,
-                $"[{DateTimeOffset.Now:u}] {message}{Environment.NewLine}").ConfigureAwait(false);
-        }
-        catch
-        {
-            // Best effort only.
-        }
+        if (!Uri.TryCreate(zipUrl, UriKind.Absolute, out var uri))
+            return "unknown";
+        return uri.Host;
+    }
+
+    private static string SafeZipFileName(string zipUrl)
+    {
+        if (!Uri.TryCreate(zipUrl, UriKind.Absolute, out var uri))
+            return "unknown";
+        return Path.GetFileName(uri.LocalPath);
     }
 
     private static void TryDeleteFile(string? path)
@@ -206,4 +237,6 @@ internal static class Program
             // Best effort only.
         }
     }
+
+    private readonly record struct SyncStats(int DeletedCount, int CopiedCount);
 }

@@ -5,6 +5,7 @@ using MacroRecorder.Infrastructure.Playback;
 using MacroRecorder.Infrastructure.Recording;
 using MacroRecorder.Infrastructure.Updates;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure;
 
@@ -17,7 +18,9 @@ public static class DependencyInjection
         services.AddSingleton<MacroQueueFileStore>();
         services.AddSingleton<IRecordingEngine, LowLevelRecordingEngine>();
         services.AddSingleton<IPlaybackService>(sp =>
-            new SendInputPlaybackService(() => sp.GetService<IPlaybackUiFeedback>()));
+            new SendInputPlaybackService(
+                () => sp.GetService<IPlaybackUiFeedback>(),
+                sp.GetRequiredService<ILogger<SendInputPlaybackService>>()));
         services.AddSingleton<IExternalUriOpener, ProcessExternalUriOpener>();
         services.AddSingleton(_ =>
         {

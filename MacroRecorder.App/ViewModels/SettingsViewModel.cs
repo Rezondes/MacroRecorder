@@ -25,6 +25,7 @@ public partial class SettingsViewModel : ObservableObject
     private bool _savedPlaybackFocusBringWindowToForeground = true;
     private bool _savedPlaybackFocusRestoreIfMinimized = true;
     private bool _savedCheckForUpdatesOnStartup = true;
+    private bool _savedEnableVerboseLogging;
 
     /// <summary>0 = General, 1 = Visuals, 2 = Macro. OneWay-bound from VM; tab changes use <see cref="TryChangeSettingsTab"/>.</summary>
     public int SelectedSettingsTabIndex => _selectedSettingsTabIndex;
@@ -72,7 +73,8 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool HasUnsavedSettingsChanges =>
         HasPendingLanguageChange() || _appearance.HasPendingChanges || HasPendingMacroRecordingChange()
-        || HasPendingPlaybackGraceChange() || HasPendingPlaybackFocusChange() || HasPendingUpdateCheckChange();
+        || HasPendingPlaybackGraceChange() || HasPendingPlaybackFocusChange() || HasPendingUpdateCheckChange()
+        || HasPendingVerboseLoggingChange();
 
     public string CurrentAppVersion => AppRuntimeInfo.Version;
 
@@ -136,6 +138,12 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnCheckForUpdatesOnStartupChanged(bool value) =>
         OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
 
+    [ObservableProperty]
+    private bool enableVerboseLogging;
+
+    partial void OnEnableVerboseLoggingChanged(bool value) =>
+        OnPropertyChanged(nameof(HasUnsavedSettingsChanges));
+
     public void LoadStateFromPreferences()
     {
         var code = UiCultureSettings.ResolveUiCulture().TwoLetterISOLanguageName;
@@ -152,6 +160,8 @@ public partial class SettingsViewModel : ObservableObject
         PlaybackFocusRestoreIfMinimized = prefs.PlaybackFocusRestoreIfMinimized;
         _savedCheckForUpdatesOnStartup = prefs.CheckForUpdatesOnStartup;
         CheckForUpdatesOnStartup = prefs.CheckForUpdatesOnStartup;
+        _savedEnableVerboseLogging = prefs.EnableVerboseLogging;
+        EnableVerboseLogging = prefs.EnableVerboseLogging;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -189,6 +199,7 @@ public partial class SettingsViewModel : ObservableObject
         app.PlaybackFocusBringWindowToForeground = PlaybackFocusBringWindowToForeground;
         app.PlaybackFocusRestoreIfMinimized = PlaybackFocusRestoreIfMinimized;
         app.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;
+        app.EnableVerboseLogging = EnableVerboseLogging;
         AppSettingsStore.Save(app);
         var reloaded = AppSettingsStore.Load();
         _savedRecordingMouseMoveMinPixels = reloaded.RecordingMouseMoveMinPixels;
@@ -201,8 +212,13 @@ public partial class SettingsViewModel : ObservableObject
         PlaybackFocusRestoreIfMinimized = reloaded.PlaybackFocusRestoreIfMinimized;
         _savedCheckForUpdatesOnStartup = reloaded.CheckForUpdatesOnStartup;
         CheckForUpdatesOnStartup = reloaded.CheckForUpdatesOnStartup;
+        _savedEnableVerboseLogging = reloaded.EnableVerboseLogging;
+        EnableVerboseLogging = reloaded.EnableVerboseLogging;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
+
+    [RelayCommand]
+    private void OpenLogFolder() => LogFolderOpener.OpenLogsDirectory();
 
     [RelayCommand]
     private async Task CheckForUpdatesNowAsync()
@@ -251,6 +267,7 @@ public partial class SettingsViewModel : ObservableObject
         PlaybackFocusBringWindowToForeground = _savedPlaybackFocusBringWindowToForeground;
         PlaybackFocusRestoreIfMinimized = _savedPlaybackFocusRestoreIfMinimized;
         CheckForUpdatesOnStartup = _savedCheckForUpdatesOnStartup;
+        EnableVerboseLogging = _savedEnableVerboseLogging;
         OnAppearancePreviewChanged(this, EventArgs.Empty);
     }
 
@@ -317,6 +334,14 @@ public partial class SettingsViewModel : ObservableObject
                 YesNo(CheckForUpdatesOnStartup)));
         }
 
+        if (HasPendingVerboseLoggingChange())
+        {
+            lines.Add(string.Format(_loc.CurrentUiCulture, fmt,
+                _loc.GetString("Settings_EnableVerboseLogging"),
+                YesNo(_savedEnableVerboseLogging),
+                YesNo(EnableVerboseLogging)));
+        }
+
         var intro = _loc.GetString("Settings_UnsavedIntro");
         var outro = _loc.GetString("Settings_UnsavedOutro");
         if (lines.Count == 0)
@@ -345,6 +370,9 @@ public partial class SettingsViewModel : ObservableObject
 
     private bool HasPendingUpdateCheckChange() =>
         CheckForUpdatesOnStartup != _savedCheckForUpdatesOnStartup;
+
+    private bool HasPendingVerboseLoggingChange() =>
+        EnableVerboseLogging != _savedEnableVerboseLogging;
 
     private string PlaybackFocusPairDisplay(bool bring, bool restore) =>
         string.Format(

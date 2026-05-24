@@ -5,8 +5,12 @@ using MacroRecorder.App.ViewModels;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Infrastructure;
+using MacroRecorder.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
 
 namespace MacroRecorder.App;
 
@@ -16,8 +20,15 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs startupEventArgs)
     {
+        var settings = AppSettingsStore.Load();
+        var minLevel = settings.EnableVerboseLogging ? LogEventLevel.Debug : LogEventLevel.Information;
+        var version = AppRuntimeInfo.Version;
+        Log.Logger = LoggingBootstrap.CreateFileLogger(LogPaths.AppLogFileName, minLevel, version);
+
         base.OnStartup(startupEventArgs);
         var builder = Host.CreateApplicationBuilder();
+        builder.Logging.ClearProviders();
+        builder.Logging.AddSerilog(Log.Logger, dispose: true);
         builder.Services.AddMacroRecorderInfrastructure();
         builder.Services.AddSingleton<MacroWorkspaceService>();
         builder.Services.AddSingleton<RecordingCoordinator>();
@@ -72,6 +83,16 @@ public partial class App : System.Windows.Application
             sp.GetRequiredService<MacroPlaybackHotkeyRegistrar>()));
 
         _host = builder.Build();
+        var logger = _host.Services.GetRequiredService<ILogger<App>>();
+        logger.LogInformation(
+            "Application starting. Version {Version}, LogsDirectory {LogsDirectory}, VerboseLogging {VerboseLogging}",
+            version,
+            LogPaths.LogsDirectory,
+            settings.EnableVerboseLogging);
+        WpfGlobalExceptionHandler.Register(
+            this,
+            logger,
+            _host.Services.GetRequiredService<IUiLocalizer>());
         var appearance = _host.Services.GetRequiredService<AppearanceService>();
         appearance.Initialize(this);
         UiLocalizerHost.Current = _host.Services.GetRequiredService<IUiLocalizer>();
@@ -83,6 +104,7 @@ public partial class App : System.Windows.Application
     protected override void OnExit(ExitEventArgs exitEventArgs)
     {
         _host?.Dispose();
+        Log.CloseAndFlush();
         base.OnExit(exitEventArgs);
     }
 }

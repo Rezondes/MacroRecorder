@@ -35,6 +35,25 @@
                     Padding="12,6"
                     Style="{DynamicResource UiPrimaryButton}"
                     Command="{Binding CheckForUpdatesNowCommand}" />
+
+            <TextBlock Style="{DynamicResource UiSettingsSectionHeader}"
+                       Margin="0,24,0,0"
+                       Text="{loc:Loc Settings_LoggingHeader}" />
+            <CheckBox Content="{loc:Loc Settings_EnableVerboseLogging}"
+                      Margin="0,4,0,4"
+                      Foreground="{DynamicResource UiBrush.TextPrimary}"
+                      Style="{DynamicResource UiCheckBoxModern}"
+                      IsChecked="{Binding EnableVerboseLogging, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Style="{DynamicResource UiDialogDescription}"
+                       FontSize="13"
+                       Margin="0,0,0,12"
+                       Text="{loc:Loc Settings_EnableVerboseLoggingNote}" />
+            <Button Content="{loc:Loc Settings_OpenLogFolder}"
+                    HorizontalAlignment="Left"
+                    MinWidth="160"
+                    Padding="12,6"
+                    Style="{DynamicResource UiPrimaryButton}"
+                    Command="{Binding OpenLogFolderCommand}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

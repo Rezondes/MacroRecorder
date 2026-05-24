@@ -192,6 +192,10 @@ Compressed architecture notes for agents: [`.cursor/map/project-map.md`](.cursor
 
 | Path | Content |
 |------|---------|
-| `%LocalAppData%\MacroRecorderByRezondes\settings.json` | UI language, theme, macro/playback prefs, update prefs |
+| `%LocalAppData%\MacroRecorderByRezondes\settings.json` | UI language, theme, macro/playback prefs, update prefs, verbose logging toggle |
 | `%LocalAppData%\MacroRecorderByRezondes\macros\` | Saved macro JSON files |
+| `%LocalAppData%\MacroRecorderByRezondes\logs\app.log` | Rolling main app log (5 × 5 MB); enable **Verbose logging (Debug)** in Settings → General (applies after restart) |
+| `%LocalAppData%\MacroRecorderByRezondes\logs\updater.log` | Rolling updater log during in-app updates |
 | Same folder (other files) | Playback hotkey assignments, queue documents |
+
+Use **Open log folder** in Settings → General when reporting issues. Logs never contain macro JSON, window titles, or raw input events.

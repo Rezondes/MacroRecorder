@@ -295,6 +295,11 @@ EN: dict[str, str] = {
     "Update_ApplyFailedNoAsset": "The release on GitHub does not include a portable ZIP for this version.",
     "Update_UpToDate": "You are using the latest version.",
     "Update_CheckFailed": "Could not check for updates. Check your internet connection or try again later.",
+    "Settings_LoggingHeader": "Logging",
+    "Settings_EnableVerboseLogging": "Verbose logging (Debug)",
+    "Settings_EnableVerboseLoggingNote": "Applies after you restart the app.",
+    "Settings_OpenLogFolder": "Open log folder",
+    "Crash_UnexpectedError": "Unexpected error — details are in the log file: {0}",
 }
 
 DE: dict[str, str] = {
@@ -586,6 +591,11 @@ DE: dict[str, str] = {
     "Update_ApplyFailedNoAsset": "Das Release auf GitHub enthält kein passendes portables ZIP für diese Version.",
     "Update_UpToDate": "Sie verwenden bereits die neueste Version.",
     "Update_CheckFailed": "Update-Prüfung fehlgeschlagen. Internetverbindung prüfen oder später erneut versuchen.",
+    "Settings_LoggingHeader": "Logging",
+    "Settings_EnableVerboseLogging": "Ausführliches Logging (Debug)",
+    "Settings_EnableVerboseLoggingNote": "Wird erst nach einem Neustart der App wirksam.",
+    "Settings_OpenLogFolder": "Logordner öffnen",
+    "Crash_UnexpectedError": "Unerwarteter Fehler — Details in Logdatei: {0}",
 }
 
 

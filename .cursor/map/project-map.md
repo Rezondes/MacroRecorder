@@ -9,8 +9,9 @@
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
 - **`MacroRecorder.Application`** – Ports + Orchestrierung. `IPlaybackService`, `IRecordingEngine`, `IMacroRepository`, `IPlaybackHotkeyStore`, `IUserDialogService`, `IUiLocalizer`, `IUpdateCheckService`, `IAppUpdateService`, `IExternalUriOpener`, Modal-Host-Ports (`I*ModalHost`). Services: `RecordingCoordinator`, `MacroWorkspaceService`, `MacroQueueRunner`, `TimelineNormalizer`, `PlaybackDurationEstimator`. → ruft Domain.
 - **`MacroRecorder.Infrastructure`** – Port-Impls. `LowLevelRecordingEngine` (WH_KEYBOARD_LL/WH_MOUSE_LL), `SendInputPlaybackService`, `JsonMacroRepository`/`JsonPlaybackHotkeyStore`/`MacroQueueFileStore` (in `%LocalAppData%/MacroRecorderByRezondes/`), `FocusWindowMatcher`, `Updates/GitHubReleaseUpdateCheckService` + `PortableAppUpdateLauncher`, `ProcessExternalUriOpener`. → registriert in `AddMacroRecorderInfrastructure()`.
-- **`MacroRecorder.Updater`** – kleines Konsolen-EXE (`MacroRecorderByRezondes.Updater.exe`): wartet auf App-Exit, lädt Release-ZIP, ersetzt Installationsdateien außer Updater, startet Haupt-EXE neu.
-- **`MacroRecorder.App`** (WPF) – Shell + ViewModels. Ein `MainWindow` mit `ShellViewModel.CurrentPage` (DataTemplates für Overview/Editor/Settings/Record/QueueCreator). `ShellViewModel` implementiert alle Modal-Host-Ports (Content-Modal über `RunBlockingContentModal` mit `DispatcherFrame`). `App.xaml.cs` = Composition Root (DI), `UpdateCheckCoordinator` startet nach `MainWindow.Show()`.
+- **`MacroRecorder.Logging`** – shared Serilog file bootstrap (`LoggingBootstrap`, `LogPaths`, privacy notes). Used by App, Infrastructure, and Updater. Logs under `%LocalAppData%/MacroRecorderByRezondes/logs/` (`app.log`, `updater.log`; rolling 5 × 5 MB).
+- **`MacroRecorder.Updater`** – kleines Konsolen-EXE (`MacroRecorderByRezondes.Updater.exe`): wartet auf App-Exit, lädt Release-ZIP, ersetzt Installationsdateien außer Updater, startet Haupt-EXE neu; strukturiertes Phasen-Logging via `MacroRecorder.Logging`.
+- **`MacroRecorder.App`** (WPF) – Shell + ViewModels. Ein `MainWindow` mit `ShellViewModel.CurrentPage` (DataTemplates für Overview/Editor/Settings/Record/QueueCreator). `ShellViewModel` implementiert alle Modal-Host-Ports (Content-Modal über `RunBlockingContentModal` mit `DispatcherFrame`). `App.xaml.cs` = Composition Root (Serilog, DI, `WpfGlobalExceptionHandler`), `UpdateCheckCoordinator` startet nach `MainWindow.Show()`.
 - **`MacroRecorder.Wpf`** – wiederverwendbare UI-Bausteine: `ThemeCatalog`/`ThemeResourceBuilder`/`ThemePalettes`, `Controls/DigitsOnlyNumericBox`, `Controls/IconButton`. Wird von App referenziert.
 
 ## 3. Dateistruktur (kritisch)
@@ -28,12 +29,12 @@
 - `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).
 - `.cursor/prompts/project-map-prompt.md` – Anweisung Map zu lesen/aktualisieren.
 - `.cursor/rules/macro-recorder-{conventions,localization,git-commit}.mdc` – verbindliche Regeln.
-- `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, Queue-, Hotkey-Stores).
+- `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, `logs/`, Queue-, Hotkey-Stores).
 
 ## 4. Wichtige Datenmodelle / State
 - **`Macro`:** `Id`, `Name`, `Metadata`, `Events` (List<`RecordedInputEvent`>), `DocumentVersion` (Ulid, bumped bei Struktur-/Inhaltsänderung), `CreatedAtUtc`, `LastModifiedAtUtc`, `WasModifiedAfterRecording`. Events polymorph: `KeyDown/Up`, `MouseMove`, `MouseButtonDown/Up`, `MouseWheel`, `FocusChanged` (Hwnd null = Fokus verloren; `ReferenceClientWidth/Height` + Toleranz für fokusgebundene Playback-Matching), `SyntheticWait`. Jeder Event: `DelayBefore` + `Sequence`.
 - **`RecordingMetadata`:** `SchemaVersion=2`, `RecordedAtUtc`, `StopwatchFrequency`, `UseFocusBoundMouseCoordinates`, `MouseAnchor`, `RecordMouseMoves`, optional `RecordingEnvironment`.
-- **`AppSettings`** (`AppSettingsStore`): `uiCulture` (de/en), `appearanceTheme`+`appearanceIsDark`, `recordingMouseMoveMinPixels`, `playbackUserInterruptGraceMs`, `playbackFocusBringWindowToForeground`/`RestoreIfMinimized`, `mainWindowPlacement`, `checkForUpdatesOnStartup`, `lastDismissedUpdateVersion`.
+- **`AppSettings`** (`AppSettingsStore`): `uiCulture` (de/en), `appearanceTheme`+`appearanceIsDark`, `recordingMouseMoveMinPixels`, `playbackUserInterruptGraceMs`, `playbackFocusBringWindowToForeground`/`RestoreIfMinimized`, `mainWindowPlacement`, `checkForUpdatesOnStartup`, `lastDismissedUpdateVersion`, `enableVerboseLogging`.
 - **`UpdateCheckResult`:** `CurrentVersion`, `LatestVersion`, `IsUpdateAvailable`, `ReleasePageUrl`, `PortableZipDownloadUrl?`, `ReleaseNotes?`.
 - **`MacroQueueDocument`/`QueueStep`:** Persistierte Queue-Definition (Wiederholungen, Pausen, Loop) für `MacroQueueRunner`.
 

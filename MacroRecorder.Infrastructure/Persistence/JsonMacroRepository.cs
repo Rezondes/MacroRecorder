@@ -2,6 +2,7 @@ using System.Text.Json;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Persistence;
 
@@ -14,10 +15,12 @@ public sealed class JsonMacroRepository : IMacroRepository
         WriteIndented = true
     };
 
+    private readonly ILogger<JsonMacroRepository> _logger;
     private readonly string _root;
 
-    public JsonMacroRepository()
+    public JsonMacroRepository(ILogger<JsonMacroRepository> logger)
     {
+        _logger = logger;
         _root = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MacroRecorderByRezondes",
@@ -76,9 +79,9 @@ public sealed class JsonMacroRepository : IMacroRepository
                         macro.LastModifiedAtUtc,
                         playbackDuration));
                 }
-                catch
+                catch (Exception exception)
                 {
-                    // skip corrupt files
+                    _logger.LogError(exception, "Skipping corrupt macro file at {FilePath}", macroFilePath);
                 }
             }
 
@@ -90,18 +93,26 @@ public sealed class JsonMacroRepository : IMacroRepository
     public async Task SaveAsync(Macro macro, CancellationToken cancellationToken = default)
     {
         var macroFilePath = PathFor(macro.Id);
-        var wasNew = !File.Exists(macroFilePath);
-        await using (var stream = File.Create(macroFilePath))
+        try
         {
-            await JsonSerializer.SerializeAsync(
-                stream,
-                MacroJsonFileFormat.ToDto(macro),
-                MacroJsonFileFormat.JsonOptions,
-                cancellationToken).ConfigureAwait(false);
-        }
+            var wasNew = !File.Exists(macroFilePath);
+            await using (var stream = File.Create(macroFilePath))
+            {
+                await JsonSerializer.SerializeAsync(
+                    stream,
+                    MacroJsonFileFormat.ToDto(macro),
+                    MacroJsonFileFormat.JsonOptions,
+                    cancellationToken).ConfigureAwait(false);
+            }
 
-        if (wasNew)
-            await Task.Run(() => AppendIdToOrderIfMissing(macro.Id), cancellationToken).ConfigureAwait(false);
+            if (wasNew)
+                await Task.Run(() => AppendIdToOrderIfMissing(macro.Id), cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to save macro file at {FilePath}", macroFilePath);
+            throw;
+        }
     }
 
     public Task SaveDisplayOrderAsync(IReadOnlyList<MacroId> orderedIds, CancellationToken cancellationToken = default) =>
@@ -138,8 +149,9 @@ public sealed class JsonMacroRepository : IMacroRepository
 
             return list;
         }
-        catch
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to load macro overview order from {FilePath}", OrderFilePath);
             return new List<MacroId>();
         }
     }

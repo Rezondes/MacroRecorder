@@ -4,6 +4,7 @@ using System.Text;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Interop;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Recording;
 
@@ -37,9 +38,11 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private TimeSpan _playbackTimelineEnd;
     private bool _useFocusBoundMouseCoordinates;
     private bool _useClientSpaceForMouse;
+    private readonly ILogger<LowLevelRecordingEngine> _logger;
 
-    public LowLevelRecordingEngine()
+    public LowLevelRecordingEngine(ILogger<LowLevelRecordingEngine> logger)
     {
+        _logger = logger;
         _keyboardProc = KeyboardHook;
         _mouseProc = MouseHook;
     }
@@ -103,6 +106,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _foregroundTask = null;
             _hookThread = null;
             _hookThreadId = 0;
+            _logger.LogError("Global input hooks could not be installed (keyboard/mouse)");
             throw new InvalidOperationException("Global input hooks could not be installed (keyboard/mouse).");
         }
     }
@@ -133,7 +137,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         _foregroundCts = null;
         _foregroundTask = null;
 
-        var env = RecordingEnvironmentCapture.Capture();
+        var env = RecordingEnvironmentCapture.Capture(_logger);
         List<RecordedInputEvent> copy;
         lock (_lock)
         {
@@ -264,6 +268,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _running = false;
             _onEventRecorded = null;
             _hooksReady = false;
+            _logger.LogError("Hook thread failed to install keyboard or mouse hook");
             ready.Set();
             return;
         }

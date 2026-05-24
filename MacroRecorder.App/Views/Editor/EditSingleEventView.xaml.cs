@@ -9,6 +9,7 @@ using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Input;
 using MacroRecorder.Wpf.Controls;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.App.Views.Editor;
 
@@ -18,6 +19,7 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
     private readonly IUiLocalizer _loc;
     private readonly Action<string> _showValidationError;
     private readonly Action<bool> _onCompleted;
+    private readonly ILogger<EditSingleEventView> _logger;
     private readonly Dictionary<string, FrameworkElement> _fields = new();
     private ComboBox? _mouseButtonCombo;
 
@@ -32,12 +34,14 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         RecordedInputEvent original,
         IUiLocalizer loc,
         Action<string> showValidationError,
-        Action<bool> onCompleted)
+        Action<bool> onCompleted,
+        ILogger<EditSingleEventView> logger)
     {
         _original = original;
         _loc = loc;
         _showValidationError = showValidationError;
         _onCompleted = onCompleted;
+        _logger = logger;
         InitializeComponent();
         PreviewKeyDown += OnRootPreviewKeyDown;
         Unloaded += OnUnloaded;
@@ -125,6 +129,7 @@ public partial class EditSingleEventView : UserControl, IContentModalEscape
         }
         catch (Exception exception)
         {
+            _logger.LogWarning(exception, "Single event validation failed");
             _showValidationError(exception.Message);
             return;
         }

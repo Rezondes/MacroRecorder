@@ -4,6 +4,7 @@ using MacroRecorder.Application.Ports;
 using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Interop;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Playback;
 
@@ -26,6 +27,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
     private readonly NativeMethods.LowLevelProc _interruptKbProc;
     private readonly NativeMethods.LowLevelProc _interruptMsProc;
     private readonly Func<IPlaybackUiFeedback?> _resolveFeedback;
+    private readonly ILogger<SendInputPlaybackService> _logger;
     private CancellationTokenSource? _interruptCts;
     private volatile bool _explicitPlaybackAbortFromHost;
     private nint _interruptKeyboardHook;
@@ -33,9 +35,12 @@ public sealed class SendInputPlaybackService : IPlaybackService
     private Stopwatch? _userInterruptGraceStopwatch;
     private int _userInterruptGraceMs;
 
-    public SendInputPlaybackService(Func<IPlaybackUiFeedback?> resolveFeedback)
+    public SendInputPlaybackService(
+        Func<IPlaybackUiFeedback?> resolveFeedback,
+        ILogger<SendInputPlaybackService> logger)
     {
         _resolveFeedback = resolveFeedback;
+        _logger = logger;
         _interruptKbProc = InterruptKeyboardLowLevelHook;
         _interruptMsProc = InterruptMouseLowLevelHook;
     }
@@ -160,6 +165,11 @@ public sealed class SendInputPlaybackService : IPlaybackService
 
             throw new PlaybackInterruptedByUserException();
         }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Playback failed");
+            throw;
+        }
         finally
         {
             _explicitPlaybackAbortFromHost = false;
@@ -187,6 +197,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
             return;
 
         CleanupInterruptHooks();
+        _logger.LogError("Failed to install low-level keyboard or mouse hooks for user-interrupt detection");
         throw new InvalidOperationException(
             "Playback: failed to install low-level keyboard or mouse hooks for user-interrupt detection.");
     }
@@ -320,7 +331,7 @@ public sealed class SendInputPlaybackService : IPlaybackService
                 {
                     nint? resolvedHwnd = null;
                     if (focusBoundState is not null && focusChanged.Hwnd is not null)
-                        resolvedHwnd = FocusWindowMatcher.ResolveForPlayback(focusChanged);
+                        resolvedHwnd = FocusWindowMatcher.ResolveForPlayback(focusChanged, _logger);
 
                     if (focusChanged.Hwnd is not null)
                     {

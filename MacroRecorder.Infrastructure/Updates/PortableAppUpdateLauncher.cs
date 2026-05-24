@@ -1,10 +1,11 @@
 using System.Diagnostics;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Updates;
 
-public sealed class PortableAppUpdateLauncher : IAppUpdateService
+public sealed class PortableAppUpdateLauncher(ILogger<PortableAppUpdateLauncher> logger) : IAppUpdateService
 {
     public const string MainExecutableFileName = "MacroRecorderByRezondes.exe";
     public const string UpdaterExecutableFileName = "MacroRecorderByRezondes.Updater.exe";
@@ -26,15 +27,29 @@ public sealed class PortableAppUpdateLauncher : IAppUpdateService
 
         var updaterPath = Path.Combine(installDirectory, UpdaterExecutableFileName);
         if (!File.Exists(updaterPath))
+        {
+            logger.LogError("Portable update failed: updater missing at {UpdaterPath}", updaterPath);
             return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.UpdaterMissing));
+        }
 
         if (!IsDirectoryWritable(installDirectory))
+        {
+            logger.LogError("Portable update failed: install directory not writable at {InstallDirectory}", installDirectory);
             return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.InstallDirectoryNotWritable));
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
+            var zipUri = result.PortableZipDownloadUrl;
+            logger.LogInformation(
+                "Launching portable updater. WaitPid {WaitPid}, ZipHost {ZipHost}, ZipFile {ZipFile}, InstallDirectory {InstallDirectory}",
+                Environment.ProcessId,
+                zipUri.Host,
+                Path.GetFileName(zipUri.LocalPath),
+                installDirectory);
+
             var startInfo = new ProcessStartInfo
             {
                 FileName = updaterPath,
@@ -55,10 +70,14 @@ public sealed class PortableAppUpdateLauncher : IAppUpdateService
 
             var startedProcess = Process.Start(startInfo);
             if (startedProcess is null)
+            {
+                logger.LogError("Portable update failed: Process.Start returned null for updater");
                 return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.LaunchFailed));
+            }
         }
-        catch
+        catch (Exception exception)
         {
+            logger.LogError(exception, "Portable update failed to start updater");
             return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.LaunchFailed));
         }
 

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using MacroRecorder.Infrastructure.Updates;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace MacroRecorder.Infrastructure.Tests.Updates;
 
@@ -28,7 +29,7 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
         {
             Content = new StringContent(SampleGitHubReleaseJson, Encoding.UTF8, "application/json")
         });
-        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
 
         var result = await service.CheckForUpdateAsync();
 
@@ -65,7 +66,7 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
         {
             Content = new StringContent(releaseWithoutZipAsset, Encoding.UTF8, "application/json")
         });
-        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
 
         var result = await service.CheckForUpdateAsync();
 
@@ -88,7 +89,7 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
         {
             Content = new StringContent(newerVersionJson, Encoding.UTF8, "application/json")
         });
-        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
 
         var result = await service.CheckForUpdateAsync();
 
@@ -111,7 +112,7 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
         {
             Content = new StringContent(olderVersionJson, Encoding.UTF8, "application/json")
         });
-        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
 
         var result = await service.CheckForUpdateAsync();
 
@@ -124,7 +125,7 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
     public async Task CheckForUpdateAsync_whenGitHubReturnsNotFound_returnsNull()
     {
         var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
-        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
 
         var result = await service.CheckForUpdateAsync();
 
@@ -143,7 +144,7 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
                 Content = new StringContent(SampleGitHubReleaseJson, Encoding.UTF8, "application/json")
             };
         });
-        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
 
         _ = await service.CheckForUpdateAsync();
 

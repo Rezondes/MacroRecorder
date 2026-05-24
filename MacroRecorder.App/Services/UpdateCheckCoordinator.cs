@@ -2,6 +2,7 @@ using System.Windows;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.App.Services;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.App.Services;
 
@@ -12,19 +13,22 @@ public sealed class UpdateCheckCoordinator
     private readonly IAppUpdateService _appUpdateService;
     private readonly IUserDialogService _dialogs;
     private readonly IUiLocalizer _loc;
+    private readonly ILogger<UpdateCheckCoordinator> _logger;
 
     public UpdateCheckCoordinator(
         IUpdateCheckService updateCheckService,
         IUpdatePromptModalHost updatePromptHost,
         IAppUpdateService appUpdateService,
         IUserDialogService dialogs,
-        IUiLocalizer loc)
+        IUiLocalizer loc,
+        ILogger<UpdateCheckCoordinator> logger)
     {
         _updateCheckService = updateCheckService;
         _updatePromptHost = updatePromptHost;
         _appUpdateService = appUpdateService;
         _dialogs = dialogs;
         _loc = loc;
+        _logger = logger;
     }
 
     public void RunStartupCheckIfEnabled()
@@ -47,7 +51,10 @@ public sealed class UpdateCheckCoordinator
         if (result is null)
         {
             if (isManual)
+            {
+                _logger.LogWarning("Manual update check failed");
                 _dialogs.ShowInfo(_loc.GetString("Update_CheckFailed"));
+            }
             return;
         }
 
@@ -82,6 +89,9 @@ public sealed class UpdateCheckCoordinator
         var launchResult = await _appUpdateService.LaunchPortableUpdateAsync(result).ConfigureAwait(true);
         if (!launchResult.IsSuccess)
         {
+            _logger.LogError(
+                "Portable update launch failed with reason {FailureReason}",
+                launchResult.FailureReason);
             var messageKey = launchResult.FailureReason switch
             {
                 AppUpdateLaunchFailureReason.UpdaterMissing => "Update_ApplyFailedUpdaterMissing",
@@ -93,6 +103,7 @@ public sealed class UpdateCheckCoordinator
             return;
         }
 
+        _logger.LogInformation("Portable update launched successfully; shutting down main application");
         System.Windows.Application.Current.Shutdown();
     }
 }

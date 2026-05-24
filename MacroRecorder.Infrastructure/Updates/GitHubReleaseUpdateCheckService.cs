@@ -3,10 +3,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Updates;
 
-public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUpdateCheckService
+public sealed class GitHubReleaseUpdateCheckService(
+    HttpClient httpClient,
+    ILogger<GitHubReleaseUpdateCheckService> logger) : IUpdateCheckService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -20,7 +23,12 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
             using var response = await httpClient.GetAsync(UpdateConstants.LatestReleaseApiUri, cancellationToken)
                 .ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning(
+                    "GitHub release check failed with HTTP {StatusCode}",
+                    (int)response.StatusCode);
                 return null;
+            }
 
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             var release = await JsonSerializer.DeserializeAsync<GitHubReleaseResponse>(stream, JsonOptions, cancellationToken)
@@ -38,6 +46,11 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
 
             var portableZipDownloadUrl = TryGetPortableZipDownloadUrl(release.Assets, latestVersion);
             var isUpdateAvailable = IsRemoteVersionNewer(latestVersion, currentVersion);
+            logger.LogInformation(
+                "Update check completed. Current {CurrentVersion}, latest {LatestVersion}, updateAvailable {UpdateAvailable}",
+                currentVersion,
+                latestVersion,
+                isUpdateAvailable);
             return new UpdateCheckResult(
                 currentVersion,
                 latestVersion,
@@ -46,8 +59,9 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
                 portableZipDownloadUrl,
                 release.Body);
         }
-        catch
+        catch (Exception exception)
         {
+            logger.LogWarning(exception, "GitHub release check failed");
             return null;
         }
     }

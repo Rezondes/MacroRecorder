@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Infrastructur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Updater", "MacroRecorder.Updater\MacroRecorder.Updater.csproj", "{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Logging", "MacroRecorder.Logging\MacroRecorder.Logging.csproj", "{D3597189-18C3-48BA-9AC9-527AADFB954D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,6 +111,18 @@ Global
 		{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}.Release|x64.Build.0 = Release|Any CPU
 		{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}.Release|x86.ActiveCfg = Release|Any CPU
 		{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}.Release|x86.Build.0 = Release|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Debug|x64.Build.0 = Debug|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Debug|x86.Build.0 = Debug|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Release|x64.ActiveCfg = Release|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Release|x64.Build.0 = Release|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Release|x86.ActiveCfg = Release|Any CPU
+		{D3597189-18C3-48BA-9AC9-527AADFB954D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

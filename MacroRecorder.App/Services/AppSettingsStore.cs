@@ -59,6 +59,9 @@ public sealed class AppSettings
 
     [JsonPropertyName("lastDismissedUpdateVersion")]
     public string? LastDismissedUpdateVersion { get; set; }
+
+    [JsonPropertyName("enableVerboseLogging")]
+    public bool EnableVerboseLogging { get; set; }
 }
 
 public static class AppSettingsStore

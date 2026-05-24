@@ -1,11 +1,12 @@
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Interop;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Recording;
 
 internal static class RecordingEnvironmentCapture
 {
-    public static RecordingEnvironment Capture()
+    public static RecordingEnvironment Capture(ILogger? logger = null)
     {
         var virtualScreenX = NativeMethods.GetSystemMetrics(NativeMethods.SM_XVIRTUALSCREEN);
         var virtualScreenY = NativeMethods.GetSystemMetrics(NativeMethods.SM_YVIRTUALSCREEN);
@@ -18,8 +19,9 @@ internal static class RecordingEnvironmentCapture
         {
             systemDpi = NativeMethods.GetDpiForSystem();
         }
-        catch
+        catch (Exception exception)
         {
+            logger?.LogWarning(exception, "Failed to read system DPI; defaulting to 96");
             systemDpi = 96;
         }
 

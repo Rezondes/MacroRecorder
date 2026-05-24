@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace MacroRecorder.App.Views.Editor;
@@ -14,18 +15,21 @@ public partial class MacroJsonShareView : UserControl, IContentModalEscape
     private readonly IUserDialogService _dialogs;
     private readonly string _macroName;
     private readonly Action<bool> _onCompleted;
+    private readonly ILogger<MacroJsonShareView> _logger;
 
     public MacroJsonShareView(
         IUiLocalizer loc,
         IUserDialogService dialogs,
         string macroName,
         string json,
-        Action<bool> onCompleted)
+        Action<bool> onCompleted,
+        ILogger<MacroJsonShareView> logger)
     {
         _loc = loc;
         _dialogs = dialogs;
         _macroName = macroName;
         _onCompleted = onCompleted;
+        _logger = logger;
         InitializeComponent();
         JsonBox.Text = json;
         JsonBox.SetResourceReference(ForegroundProperty, "UiBrush.TextPrimary");
@@ -61,6 +65,7 @@ public partial class MacroJsonShareView : UserControl, IContentModalEscape
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Macro JSON export failed");
             _dialogs.ShowInfo(_loc.GetString("Main_Export_ErrorWrite", exception.Message));
         }
     }

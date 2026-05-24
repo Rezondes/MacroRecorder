@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using MacroRecorder.App.Services;
 using MacroRecorder.Application.Ports;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace MacroRecorder.App.Views.Editor;
@@ -13,17 +14,20 @@ public partial class MacroJsonImportView : UserControl, IContentModalEscape
     private readonly IUserDialogService _dialogs;
     private readonly Func<string, Task<bool>> _importJsonAsync;
     private readonly Action<bool> _onCompleted;
+    private readonly ILogger<MacroJsonImportView> _logger;
 
     public MacroJsonImportView(
         IUiLocalizer loc,
         IUserDialogService dialogs,
         Func<string, Task<bool>> importJsonAsync,
-        Action<bool> onCompleted)
+        Action<bool> onCompleted,
+        ILogger<MacroJsonImportView> logger)
     {
         _loc = loc;
         _dialogs = dialogs;
         _importJsonAsync = importJsonAsync;
         _onCompleted = onCompleted;
+        _logger = logger;
         InitializeComponent();
         JsonBox.SetResourceReference(ForegroundProperty, "UiBrush.TextPrimary");
         Loaded += (_, _) => JsonBox.Focus();
@@ -53,6 +57,7 @@ public partial class MacroJsonImportView : UserControl, IContentModalEscape
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Failed to read macro JSON import file");
             _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorLoad", exception.Message));
         }
     }
@@ -66,6 +71,7 @@ public partial class MacroJsonImportView : UserControl, IContentModalEscape
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Macro JSON import failed");
             _dialogs.ShowInfo(_loc.GetString("Main_Import_ErrorLoad", exception.Message));
         }
     }

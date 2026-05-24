@@ -3,6 +3,7 @@ using System.Text;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Interop;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Playback;
 
@@ -50,21 +51,23 @@ internal static class FocusWindowMatcher
         return nint.Zero;
     }
 
-    public static nint ResolveForPlayback(MousePlaybackAnchor anchor) =>
+    public static nint ResolveForPlayback(MousePlaybackAnchor anchor, ILogger? logger = null) =>
         Resolve(new PlaybackWindowMatchSpec(
             anchor.ProcessName,
             anchor.WindowTitle,
             anchor.ReferenceClientWidth,
-            anchor.ReferenceClientHeight));
+            anchor.ReferenceClientHeight),
+            logger);
 
-    public static nint ResolveForPlayback(FocusChangedRecordedEvent focusChanged) =>
+    public static nint ResolveForPlayback(FocusChangedRecordedEvent focusChanged, ILogger? logger = null) =>
         Resolve(new PlaybackWindowMatchSpec(
             focusChanged.ProcessName,
             focusChanged.WindowTitle,
             focusChanged.ReferenceClientWidth,
             focusChanged.ReferenceClientHeight,
             focusChanged.ReferenceClientWidthTolerance,
-            focusChanged.ReferenceClientHeightTolerance));
+            focusChanged.ReferenceClientHeightTolerance),
+            logger);
 
     /// <summary>Throws <see cref="PlaybackFocusTargetException"/> on first resolution failure.</summary>
     public static void ValidateFocusBoundTimeline(Macro macro, IReadOnlyList<RecordedInputEvent> orderedBySequence)
@@ -87,7 +90,7 @@ internal static class FocusWindowMatcher
         }
     }
 
-    private static nint Resolve(PlaybackWindowMatchSpec spec)
+    private static nint Resolve(PlaybackWindowMatchSpec spec, ILogger? logger = null)
     {
         nint found = nint.Zero;
         var expectedTitle = spec.WindowTitle;
@@ -113,8 +116,9 @@ internal static class FocusWindowMatcher
                 using var process = Process.GetProcessById((int)processId);
                 processName = process.ProcessName;
             }
-            catch
+            catch (Exception exception)
             {
+                logger?.LogWarning(exception, "Failed to resolve process for focus window candidate");
                 return true;
             }
 

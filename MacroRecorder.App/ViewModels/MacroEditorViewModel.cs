@@ -14,6 +14,7 @@ using MacroRecorder.Application.Recording;
 using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.App.ViewModels;
 
@@ -27,6 +28,7 @@ public partial class MacroEditorViewModel : ObservableObject
     private readonly RecordingCoordinator _recording;
     private readonly IUiLocalizer _loc;
     private readonly InAppInfoMessageChannel _inAppInfo;
+    private readonly ILogger<MacroEditorViewModel> _logger;
     private readonly Dispatcher _uiDispatcher;
     private readonly List<RecordedInputEvent> _flatEvents = new();
     private readonly Stack<List<RecordedInputEvent>> _undo = new();
@@ -52,6 +54,7 @@ public partial class MacroEditorViewModel : ObservableObject
         RecordingCoordinator recording,
         IUiLocalizer uiLocalizer,
         InAppInfoMessageChannel inAppInfo,
+        ILogger<MacroEditorViewModel> logger,
         MacroId macroId,
         bool loadFromDisk,
         Macro? inMemoryMacro,
@@ -64,6 +67,7 @@ public partial class MacroEditorViewModel : ObservableObject
         _recording = recording;
         _loc = uiLocalizer;
         _inAppInfo = inAppInfo;
+        _logger = logger;
         _onMacroSaved = onMacroSaved;
         _uiDispatcher = Dispatcher.CurrentDispatcher;
         MacroId = macroId;
@@ -921,6 +925,7 @@ public partial class MacroEditorViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Recording failed to start");
             if (_recording.IsRecording)
                 _recording.AbortRecording();
             if (_recordingSnapshot is not null)
@@ -968,8 +973,9 @@ public partial class MacroEditorViewModel : ObservableObject
         {
             result = _recording.StopRecording();
         }
-        catch (Exception)
+        catch (Exception exception)
         {
+            _logger.LogError(exception, "Recording failed to stop");
             _dialogs.ShowInfo(_loc.GetString("Editor_RecordingStopError"));
             IsRecording = false;
             RefreshCommandStates();
@@ -1070,6 +1076,7 @@ public partial class MacroEditorViewModel : ObservableObject
         }
         catch (Exception exception)
         {
+            _logger.LogError(exception, "Editor play test failed");
             _dialogs.ShowInfo(_loc.GetString("Editor_PlayTest_ErrorFormat", exception.Message));
         }
     }
@@ -1157,37 +1164,46 @@ public partial class MacroEditorViewModel : ObservableObject
         if (IsRecording || _macro is null)
             return false;
 
-        if (!_persistedOnDisk)
+        try
         {
-            var name = _dialogs.PromptText(
-                _loc.GetString("Editor_FirstSaveTitle"),
-                _loc.GetString("Editor_FirstSaveMessage"),
-                _macro.Name);
-            if (string.IsNullOrWhiteSpace(name))
-                return false;
-            _macro.AssignNameOnly(name.Trim());
-            WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
-        }
+            if (!_persistedOnDisk)
+            {
+                var name = _dialogs.PromptText(
+                    _loc.GetString("Editor_FirstSaveTitle"),
+                    _loc.GetString("Editor_FirstSaveMessage"),
+                    _macro.Name);
+                if (string.IsNullOrWhiteSpace(name))
+                    return false;
+                _macro.AssignNameOnly(name.Trim());
+                WindowTitle = _loc.GetString("Editor_WindowTitleFormat", _macro.Name);
+            }
 
-        if (_isDirty)
-            TimelineNormalizer.NormalizeInPlace(_flatEvents);
-        var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
-        var versionBump = _isDirty || !_persistedOnDisk;
-        _macro!.ApplyPersistedEditorState(ordered, markRecordedDirty: true, bumpDocumentVersion: versionBump);
-        await _workspace.SaveAsync(_macro).ConfigureAwait(true);
-        _flatEvents.Clear();
-        _flatEvents.AddRange(ordered);
-        _isDirty = false;
-        _persistedOnDisk = true;
-        _undo.Clear();
-        _redo.Clear();
-        RebuildRows();
-        UndoCommand.NotifyCanExecuteChanged();
-        RedoCommand.NotifyCanExecuteChanged();
-        NotifySaveCanExecute();
-        if (showSavedToast)
-            _dialogs.ShowInfo(_loc.GetString("Editor_Saved"));
-        _onMacroSaved?.Invoke();
-        return true;
+            if (_isDirty)
+                TimelineNormalizer.NormalizeInPlace(_flatEvents);
+            var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
+            var versionBump = _isDirty || !_persistedOnDisk;
+            _macro!.ApplyPersistedEditorState(ordered, markRecordedDirty: true, bumpDocumentVersion: versionBump);
+            await _workspace.SaveAsync(_macro).ConfigureAwait(true);
+            _flatEvents.Clear();
+            _flatEvents.AddRange(ordered);
+            _isDirty = false;
+            _persistedOnDisk = true;
+            _undo.Clear();
+            _redo.Clear();
+            RebuildRows();
+            UndoCommand.NotifyCanExecuteChanged();
+            RedoCommand.NotifyCanExecuteChanged();
+            NotifySaveCanExecute();
+            if (showSavedToast)
+                _dialogs.ShowInfo(_loc.GetString("Editor_Saved"));
+            _onMacroSaved?.Invoke();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Failed to save macro from editor");
+            _dialogs.ShowInfo(_loc.GetString("Main_Play_ErrorDetail", exception.Message));
+            return false;
+        }
     }
 }

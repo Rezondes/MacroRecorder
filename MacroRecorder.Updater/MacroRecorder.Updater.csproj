@@ -14,4 +14,8 @@
     <InternalsVisibleTo Include="MacroRecorder.Infrastructure.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MacroRecorder.Logging\MacroRecorder.Logging.csproj" />
+  </ItemGroup>
+
 </Project>
