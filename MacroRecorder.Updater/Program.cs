@@ -13,9 +13,13 @@ internal static class Program
     public static async Task<int> Main(string[] args)
     {
         var logPath = Path.Combine(GetUpdatesRootDirectory(), LogFileName);
+        UpdaterArguments? updaterArguments = null;
         try
         {
-            if (!UpdaterArguments.TryParse(args, out var updaterArguments, out var parseError)
+            await WriteLogAsync(logPath, $"Started with {args.Length} argument(s): {string.Join(' ', args)}")
+                .ConfigureAwait(false);
+
+            if (!UpdaterArguments.TryParse(args, out updaterArguments, out var parseError)
                 || updaterArguments is null)
             {
                 await WriteLogAsync(logPath, parseError ?? "Invalid arguments.").ConfigureAwait(false);
@@ -29,6 +33,8 @@ internal static class Program
         catch (Exception exception)
         {
             await WriteLogAsync(logPath, exception.ToString()).ConfigureAwait(false);
+            if (updaterArguments is not null)
+                TryStartMainApplication(updaterArguments.InstallDirectory, updaterArguments.MainExe);
             return 1;
         }
     }
@@ -115,9 +121,15 @@ internal static class Program
         }
     }
 
-    private static void StartMainApplication(string installDirectory, string mainExeFileName)
+    private static void StartMainApplication(string installDirectory, string mainExeFileName) =>
+        TryStartMainApplication(installDirectory, mainExeFileName);
+
+    private static void TryStartMainApplication(string installDirectory, string mainExeFileName)
     {
         var mainExePath = Path.Combine(installDirectory, mainExeFileName);
+        if (!File.Exists(mainExePath))
+            return;
+
         Process.Start(new ProcessStartInfo
         {
             FileName = mainExePath,

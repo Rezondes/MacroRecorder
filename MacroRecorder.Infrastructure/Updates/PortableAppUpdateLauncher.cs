@@ -33,24 +33,29 @@ public sealed class PortableAppUpdateLauncher : IAppUpdateService
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var currentProcessId = Environment.ProcessId;
-        var arguments = string.Join(' ',
-            $"--wait-pid {currentProcessId}",
-            $"--zip-url \"{result.PortableZipDownloadUrl.AbsoluteUri}\"",
-            $"--install-dir \"{installDirectory}\"",
-            $"--main-exe {MainExecutableFileName}",
-            $"--updater-exe {UpdaterExecutableFileName}");
-
         try
         {
-            Process.Start(new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 FileName = updaterPath,
-                Arguments = arguments,
                 WorkingDirectory = installDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true
-            });
+            };
+            startInfo.ArgumentList.Add("--wait-pid");
+            startInfo.ArgumentList.Add(Environment.ProcessId.ToString());
+            startInfo.ArgumentList.Add("--zip-url");
+            startInfo.ArgumentList.Add(result.PortableZipDownloadUrl.AbsoluteUri);
+            startInfo.ArgumentList.Add("--install-dir");
+            startInfo.ArgumentList.Add(installDirectory);
+            startInfo.ArgumentList.Add("--main-exe");
+            startInfo.ArgumentList.Add(MainExecutableFileName);
+            startInfo.ArgumentList.Add("--updater-exe");
+            startInfo.ArgumentList.Add(UpdaterExecutableFileName);
+
+            var startedProcess = Process.Start(startInfo);
+            if (startedProcess is null)
+                return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.LaunchFailed));
         }
         catch
         {

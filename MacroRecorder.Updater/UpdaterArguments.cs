@@ -13,59 +13,82 @@ internal sealed class UpdaterArguments
         arguments = null;
         error = null;
 
-        int? waitPid = null;
-        string? zipUrl = null;
-        string? installDirectory = null;
-        string? mainExe = null;
-        string? updaterExe = null;
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         for (var index = 0; index < args.Length; index++)
         {
-            if (TryReadOptionValue(args, ref index, "--wait-pid", out var waitPidValue))
+            var argument = args[index];
+            if (!argument.StartsWith("--", StringComparison.Ordinal))
             {
-                if (waitPidValue is not null && int.TryParse(waitPidValue, out var parsedPid))
-                    waitPid = parsedPid;
-                continue;
+                error = $"Unknown argument: {argument}";
+                return false;
             }
 
-            if (TryReadOptionValue(args, ref index, "--zip-url", out zipUrl))
-                continue;
-            if (TryReadOptionValue(args, ref index, "--install-dir", out installDirectory))
-                continue;
-            if (TryReadOptionValue(args, ref index, "--main-exe", out mainExe))
-                continue;
-            if (TryReadOptionValue(args, ref index, "--updater-exe", out updaterExe))
-                continue;
+            var optionBody = argument[2..];
+            if (string.IsNullOrWhiteSpace(optionBody))
+            {
+                error = $"Invalid option: {argument}";
+                return false;
+            }
 
-            error = $"Unknown argument: {args[index]}";
-            return false;
+            string optionName;
+            string? optionValue;
+            var equalsIndex = optionBody.IndexOf('=');
+            if (equalsIndex >= 0)
+            {
+                optionName = optionBody[..equalsIndex];
+                optionValue = optionBody[(equalsIndex + 1)..];
+            }
+            else
+            {
+                optionName = optionBody;
+                if (index + 1 >= args.Length)
+                {
+                    error = $"Missing value for --{optionName}.";
+                    return false;
+                }
+
+                optionValue = args[++index];
+            }
+
+            if (string.IsNullOrWhiteSpace(optionName))
+            {
+                error = $"Invalid option: {argument}";
+                return false;
+            }
+
+            values[optionName] = optionValue;
         }
 
-        if (waitPid is null or <= 0)
+        if (!values.TryGetValue("wait-pid", out var waitPidValue)
+            || !int.TryParse(waitPidValue, out var waitPid)
+            || waitPid <= 0)
         {
             error = "Missing or invalid --wait-pid.";
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(zipUrl))
+        if (!values.TryGetValue("zip-url", out var zipUrl) || string.IsNullOrWhiteSpace(zipUrl))
         {
             error = "Missing --zip-url.";
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(installDirectory) || !Directory.Exists(installDirectory))
+        if (!values.TryGetValue("install-dir", out var installDirectory)
+            || string.IsNullOrWhiteSpace(installDirectory)
+            || !Directory.Exists(installDirectory))
         {
             error = "Missing or invalid --install-dir.";
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(mainExe))
+        if (!values.TryGetValue("main-exe", out var mainExe) || string.IsNullOrWhiteSpace(mainExe))
         {
             error = "Missing --main-exe.";
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(updaterExe))
+        if (!values.TryGetValue("updater-exe", out var updaterExe) || string.IsNullOrWhiteSpace(updaterExe))
         {
             error = "Missing --updater-exe.";
             return false;
@@ -73,29 +96,12 @@ internal sealed class UpdaterArguments
 
         arguments = new UpdaterArguments
         {
-            WaitPid = waitPid.Value,
+            WaitPid = waitPid,
             ZipUrl = zipUrl,
             InstallDirectory = Path.GetFullPath(installDirectory),
             MainExe = mainExe,
             UpdaterExe = updaterExe
         };
-        return true;
-    }
-
-    private static bool TryReadOptionValue(
-        string[] args,
-        ref int index,
-        string optionName,
-        out string? value)
-    {
-        value = null;
-        if (!string.Equals(args[index], optionName, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        if (index + 1 >= args.Length)
-            return true;
-
-        value = args[++index];
         return true;
     }
 }
