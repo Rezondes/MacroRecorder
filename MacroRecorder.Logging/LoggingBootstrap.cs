@@ -9,10 +9,15 @@ public static class LoggingBootstrap
     private const long FileSizeLimitBytes = 5 * 1024 * 1024;
     private const int RetainedFileCountLimit = 5;
 
-    public static Serilog.ILogger CreateFileLogger(string logFileName, LogEventLevel minLevel, string version)
+    public static Serilog.ILogger CreateFileLogger(
+        string logFileName,
+        LogEventLevel minLevel,
+        string version,
+        string? logsDirectoryOverride = null)
     {
-        Directory.CreateDirectory(LogPaths.LogsDirectory);
-        var logPath = Path.Combine(LogPaths.LogsDirectory, logFileName);
+        var logsDirectory = logsDirectoryOverride ?? LogPaths.LogsDirectory;
+        Directory.CreateDirectory(logsDirectory);
+        var logPath = Path.Combine(logsDirectory, logFileName);
 
         return new LoggerConfiguration()
             .MinimumLevel.Is(minLevel)

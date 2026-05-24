@@ -10,10 +10,10 @@ public sealed class MacroQueueFileStore
     private readonly ILogger<MacroQueueFileStore> _logger;
     private readonly string _root;
 
-    public MacroQueueFileStore(ILogger<MacroQueueFileStore> logger)
+    public MacroQueueFileStore(ILogger<MacroQueueFileStore> logger, string? rootOverride = null)
     {
         _logger = logger;
-        _root = Path.Combine(
+        _root = rootOverride ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MacroRecorderByRezondes",
             "queues");

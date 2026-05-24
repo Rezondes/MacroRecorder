@@ -1,0 +1,37 @@
+---
+description: MacroRecorder test projects, layer rules, and commit guidance for new features
+alwaysApply: false
+---
+
+# MacroRecorder – Tests
+
+## Pflicht mit jedem Feature
+
+- Jedes neue **System, Feature oder Port-Implementierung** liefert passende Tests im zugehörigen `*.Tests`-Projekt **im selben PR-/Commit-Zyklus** wie der Produktionscode.
+- Keine Makro-Inhalte, Fenstertitel oder Roh-Input-Events in Test-Fixtures (Privacy wie `LoggingPrivacy`).
+
+## Test-Projekte (Schichten)
+
+| Projekt | TFM | Referenz | Inhalt |
+|---------|-----|----------|--------|
+| `MacroRecorder.Domain.Tests` | `net10.0` | Domain | Reine Domain-Logik, schnell, ohne Windows |
+| `MacroRecorder.Application.Tests` | `net10.0` | Application, Domain | Orchestrierung, Timeline, Queue — Test-Doubles für Ports |
+| `MacroRecorder.Infrastructure.Tests` | `net10.0-windows` | Infrastructure, … | Serialization, HTTP-Stubs, Temp-Verzeichnisse |
+
+**Ordner:** Spiegel der Produktionsstruktur (`Timeline/`, `MacroQueue/`, `Updates/`, `Persistence/`).
+
+## Stil
+
+- **Domain / Application:** bevorzugt **reine Unit-Tests** ohne Mocks, wo möglich.
+- **Infrastructure:** `HttpClient`-Stub (z. B. `StubHttpMessageHandler`), temporäre Verzeichnisse, `NullLogger`.
+- **Keine Tests** für reines XAML/Styles; ViewModel-Tests nur bei nicht-trivialer Orchestrierung.
+- WinAPI, Low-Level-Hooks, `SendInput` und WPF-UI nicht direkt testen — Fakes + Orchestrierung reichen.
+
+## Commits
+
+- Nur Tests ergänzt/refaktoriert → `test(<scope>): …`
+- Feature oder Bugfix **mit** Tests → `feat` / `fix` im selben Change (Tests nicht separat „nachziehen“).
+
+## CI
+
+Push und Pull Request führen `dotnet test MacroRecorderByRezondes.sln -c Release` aus (`.github/workflows/ci.yml`).

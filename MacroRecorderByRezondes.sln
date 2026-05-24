@@ -13,6 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Wpf", "MacroR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Infrastructure.Tests", "MacroRecorder.Infrastructure.Tests\MacroRecorder.Infrastructure.Tests.csproj", "{DD0C5355-FF2E-4491-8A27-F5067FE93409}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Domain.Tests", "MacroRecorder.Domain.Tests\MacroRecorder.Domain.Tests.csproj", "{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Application.Tests", "MacroRecorder.Application.Tests\MacroRecorder.Application.Tests.csproj", "{A2B3C4D5-E6F7-8901-BCDE-F12345678902}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Updater", "MacroRecorder.Updater\MacroRecorder.Updater.csproj", "{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroRecorder.Logging", "MacroRecorder.Logging\MacroRecorder.Logging.csproj", "{D3597189-18C3-48BA-9AC9-527AADFB954D}"
@@ -99,6 +103,30 @@ Global
 		{DD0C5355-FF2E-4491-8A27-F5067FE93409}.Release|x64.Build.0 = Release|Any CPU
 		{DD0C5355-FF2E-4491-8A27-F5067FE93409}.Release|x86.ActiveCfg = Release|Any CPU
 		{DD0C5355-FF2E-4491-8A27-F5067FE93409}.Release|x86.Build.0 = Release|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Debug|x64.Build.0 = Debug|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Debug|x86.Build.0 = Debug|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Release|x64.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Release|x64.Build.0 = Release|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Release|x86.ActiveCfg = Release|Any CPU
+		{F1A2B3C4-D5E6-7890-ABCD-EF1234567891}.Release|x86.Build.0 = Release|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Debug|x64.Build.0 = Debug|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Debug|x86.Build.0 = Debug|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Release|x64.ActiveCfg = Release|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Release|x64.Build.0 = Release|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Release|x86.ActiveCfg = Release|Any CPU
+		{A2B3C4D5-E6F7-8901-BCDE-F12345678902}.Release|x86.Build.0 = Release|Any CPU
 		{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1F2A3B4-C5D6-7890-EFAB-123456789ABC}.Debug|x64.ActiveCfg = Debug|Any CPU

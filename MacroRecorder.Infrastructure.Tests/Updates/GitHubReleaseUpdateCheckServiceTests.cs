@@ -133,6 +133,17 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
     }
 
     [Fact]
+    public async Task CheckForUpdateAsync_whenGitHubReturnsServerError_returnsNull()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler), NullLogger<GitHubReleaseUpdateCheckService>.Instance);
+
+        var result = await service.CheckForUpdateAsync();
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task CheckForUpdateAsync_requestsLatestReleaseEndpoint()
     {
         Uri? requestedUri = null;

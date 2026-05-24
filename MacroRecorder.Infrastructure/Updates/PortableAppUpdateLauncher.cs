@@ -5,8 +5,12 @@ using Microsoft.Extensions.Logging;
 
 namespace MacroRecorder.Infrastructure.Updates;
 
-public sealed class PortableAppUpdateLauncher(ILogger<PortableAppUpdateLauncher> logger) : IAppUpdateService
+public sealed class PortableAppUpdateLauncher(
+    ILogger<PortableAppUpdateLauncher> logger,
+    Func<string?>? processPathProvider = null) : IAppUpdateService
 {
+    private readonly Func<string?> _processPathProvider = processPathProvider ?? (() => Environment.ProcessPath);
+
     public const string MainExecutableFileName = "MacroRecorderByRezondes.exe";
     public const string UpdaterExecutableFileName = "MacroRecorderByRezondes.Updater.exe";
 
@@ -17,7 +21,7 @@ public sealed class PortableAppUpdateLauncher(ILogger<PortableAppUpdateLauncher>
         if (result.PortableZipDownloadUrl is null)
             return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.PortableZipUrlMissing));
 
-        var processPath = Environment.ProcessPath;
+        var processPath = _processPathProvider();
         if (string.IsNullOrWhiteSpace(processPath))
             return Task.FromResult(new AppUpdateLaunchResult(false, AppUpdateLaunchFailureReason.LaunchFailed));
 

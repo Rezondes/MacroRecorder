@@ -13,6 +13,7 @@
 - **`MacroRecorder.Updater`** – kleines Konsolen-EXE (`MacroRecorderByRezondes.Updater.exe`): wartet auf App-Exit, lädt Release-ZIP, ersetzt Installationsdateien außer Updater, startet Haupt-EXE neu; strukturiertes Phasen-Logging via `MacroRecorder.Logging`.
 - **`MacroRecorder.App`** (WPF) – Shell + ViewModels. Ein `MainWindow` mit `ShellViewModel.CurrentPage` (DataTemplates für Overview/Editor/Settings/Record/QueueCreator). `ShellViewModel` implementiert alle Modal-Host-Ports (Content-Modal über `RunBlockingContentModal` mit `DispatcherFrame`). `App.xaml.cs` = Composition Root (Serilog, DI, `WpfGlobalExceptionHandler`), `UpdateCheckCoordinator` startet nach `MainWindow.Show()`.
 - **`MacroRecorder.Wpf`** – wiederverwendbare UI-Bausteine: `ThemeCatalog`/`ThemeResourceBuilder`/`ThemePalettes`, `Controls/DigitsOnlyNumericBox`, `Controls/IconButton`. Wird von App referenziert.
+- **Tests:** `MacroRecorder.Domain.Tests` (`net10.0` → Domain), `MacroRecorder.Application.Tests` (`net10.0` → Application + Domain), `MacroRecorder.Infrastructure.Tests` (`net10.0-windows` → Infrastructure + Updater). Ordner spiegeln Produktionsstruktur. Regeln: `.cursor/rules/macro-recorder-tests.mdc`.
 
 ## 3. Dateistruktur (kritisch)
 - `MacroRecorder.Domain/` – Modelle, JSON-Polymorphismus.
@@ -25,10 +26,12 @@
 - `scripts/set-app-version.ps1` – set release version in csproj + project map (`.\scripts\set-app-version.ps1 0.0.3`).
 - `scripts/build-portable.ps1` – self-contained win-x64 Publish → `MacroRecorderByRezondes.exe` + `MacroRecorderByRezondes.Updater.exe` in `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip`.
 - `README.md` – user guide (portable setup, features) and developer entry point (build, release, localization).
+- `.github/workflows/ci.yml` – Push/PR → `dotnet test MacroRecorderByRezondes.sln -c Release` auf `windows-latest`.
 - `.github/workflows/release.yml` – Tag `v*.*.*` → Version-Check (Tag ↔ csproj) → portable ZIP → GitHub Release.
+- `MacroRecorder.Domain.Tests` / `MacroRecorder.Application.Tests` (`net10.0`) / `MacroRecorder.Infrastructure.Tests` (`net10.0-windows`) – xUnit + coverlet; Regeln in `.cursor/rules/macro-recorder-tests.mdc`.
 - `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).
 - `.cursor/prompts/project-map-prompt.md` – Anweisung Map zu lesen/aktualisieren.
-- `.cursor/rules/macro-recorder-{conventions,localization,git-commit}.mdc` – verbindliche Regeln.
+- `.cursor/rules/macro-recorder-{conventions,tests,localization,git-commit}.mdc` – verbindliche Regeln.
 - `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, `logs/`, Queue-, Hotkey-Stores).
 
 ## 4. Wichtige Datenmodelle / State
@@ -49,15 +52,5 @@
 - **Commit-Konvention:** Karma/Angular (`<type>(<scope>): <subject>`), max. 72 Zeichen, kein `Co-authored-by: Cursor`.
 
 ## 6. Aktueller Fokus / Next Steps
-- [x] WiX-Installer + MSI-Skripte entfernt (Solution + `.gitignore` bereinigt).
-- [x] `scripts/build-portable.ps1` + `.github/workflows/release.yml` (Tag-getriggerte ZIP-Releases).
-- [x] In-App-Update: `IUpdateCheckService` (GitHub API) + `UpdateCheckCoordinator` + `UpdateAvailableView`-Modal + Settings-Toggle.
-- [x] Fix: `IUpdatePromptModalHost` direkt im DI registriert (Startup-Crash behoben).
-- [x] Project-Map + Map-Update-Prompt unter `.cursor/` (committed).
-- [x] Version-Konsistenz-Check (Git-Tag ↔ `MacroRecorder.App.csproj` `<Version>`) im Release-Workflow.
-- [x] Release `v0.0.1` (portable ZIP auf GitHub Releases).
-- [x] Release `v0.0.2` pushen (Update-Check-Fix, Branding, Queue-Experimentell-Hinweis, Tests).
-- [x] Release `v0.0.3` pushen
-- [x] Release `v0.0.4` pushen
-- [x] Release `v0.0.5` pushen
-- [ ] Release `v0.0.6` pushen
+- [ ] Release `v0.0.7` pushen
+- [x] Schichtweise Unit-Tests + CI (`dotnet test` auf Push/PR)

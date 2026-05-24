@@ -153,6 +153,14 @@ dotnet build MacroRecorderByRezondes.sln
 dotnet run --project MacroRecorder.App/MacroRecorder.App.csproj
 ```
 
+### Running tests
+
+```powershell
+dotnet test MacroRecorderByRezondes.sln -c Release
+```
+
+Push and pull requests run the same command on `windows-latest` via [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Test conventions: [`.cursor/rules/macro-recorder-tests.mdc`](.cursor/rules/macro-recorder-tests.mdc).
+
 ### Portable release build
 
 ```powershell
@@ -184,7 +192,7 @@ Branding: in-app vector in `MacroRecorder.Wpf/Branding/AppBrandMark.cs`; EXE/tas
 
 ### Conventions
 
-Project rules live in [`.cursor/rules/`](.cursor/rules/) (`macro-recorder-conventions.mdc`, `macro-recorder-localization.mdc`, `macro-recorder-git-commit.mdc`). Commits follow [Karma Runner](https://karma-runner.github.io/6.4/dev/git-commit-msg.html) format.
+Project rules live in [`.cursor/rules/`](.cursor/rules/) (`macro-recorder-conventions.mdc`, `macro-recorder-tests.mdc`, `macro-recorder-localization.mdc`, `macro-recorder-git-commit.mdc`). Commits follow [Karma Runner](https://karma-runner.github.io/6.4/dev/git-commit-msg.html) format.
 
 Compressed architecture notes for agents: [`.cursor/map/project-map.md`](.cursor/map/project-map.md).
 

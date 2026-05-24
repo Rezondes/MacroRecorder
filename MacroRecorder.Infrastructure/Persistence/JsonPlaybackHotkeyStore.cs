@@ -19,10 +19,10 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
     private readonly ILogger<JsonPlaybackHotkeyStore> _logger;
     private readonly string _filePath;
 
-    public JsonPlaybackHotkeyStore(ILogger<JsonPlaybackHotkeyStore> logger)
+    public JsonPlaybackHotkeyStore(ILogger<JsonPlaybackHotkeyStore> logger, string? rootOverride = null)
     {
         _logger = logger;
-        var root = Path.Combine(
+        var root = rootOverride ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MacroRecorderByRezondes",
             "macros");

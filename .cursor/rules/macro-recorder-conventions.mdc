@@ -53,6 +53,14 @@ alwaysApply: true
 - Nutzer sichtbare Texte: **Lokalisierung DE/EN** über `IUiLocalizer`, RESX und XAML `{loc:Loc …}`; Details und Schichtenregeln siehe [macro-recorder-localization.mdc](macro-recorder-localization.mdc).
 - Text-Prompts (`IUserDialogService.PromptText`): im Shell-Overlay; Schaltflächen aus RESX (`Common_Ok` / `Common_Cancel`).
 
+## Tests
+
+- Jedes neue Feature oder System liefert passende Tests im zugehörigen `*.Tests`-Projekt — Details und Schichtenregeln siehe [macro-recorder-tests.mdc](macro-recorder-tests.mdc).
+
+## Tests
+
+- Neue Features und Port-Implementierungen bringen passende Tests im zugehörigen `*.Tests`-Projekt mit — siehe [macro-recorder-tests.mdc](macro-recorder-tests.mdc).
+
 ## Git-Commits
 
 - Commit-Nachrichten: [macro-recorder-git-commit.mdc](macro-recorder-git-commit.mdc) (Karma Runner / Angular-Format; Referenz: [Karma – Git Commit Msg](https://karma-runner.github.io/6.4/dev/git-commit-msg.html)).

@@ -18,10 +18,10 @@ public sealed class JsonMacroRepository : IMacroRepository
     private readonly ILogger<JsonMacroRepository> _logger;
     private readonly string _root;
 
-    public JsonMacroRepository(ILogger<JsonMacroRepository> logger)
+    public JsonMacroRepository(ILogger<JsonMacroRepository> logger, string? rootOverride = null)
     {
         _logger = logger;
-        _root = Path.Combine(
+        _root = rootOverride ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MacroRecorderByRezondes",
             "macros");

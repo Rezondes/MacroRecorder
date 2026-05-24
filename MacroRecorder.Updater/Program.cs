@@ -72,7 +72,7 @@ internal static class Program
             Directory.CreateDirectory(extractDirectory);
             ZipFile.ExtractToDirectory(zipPath, extractDirectory, overwriteFiles: true);
 
-            var syncStats = SyncInstallDirectory(
+            var syncStats = InstallDirectorySync.Sync(
                 arguments.InstallDirectory,
                 extractDirectory,
                 arguments.MainExe,
@@ -105,50 +105,6 @@ internal static class Program
         await using var fileStream = File.Create(zipPath);
         await responseStream.CopyToAsync(fileStream).ConfigureAwait(false);
         logger.Information("Download: wrote {ByteCount} byte(s) to {ZipPath}", fileStream.Length, zipPath);
-    }
-
-    private static SyncStats SyncInstallDirectory(
-        string installDirectory,
-        string extractDirectory,
-        string mainExeFileName,
-        string updaterExeFileName)
-    {
-        var deletedCount = 0;
-        var copiedCount = 0;
-        var preservedUpdaterPath = Path.Combine(installDirectory, updaterExeFileName);
-        foreach (var existingFile in Directory.EnumerateFiles(installDirectory))
-        {
-            var fileName = Path.GetFileName(existingFile);
-            if (string.Equals(fileName, updaterExeFileName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            File.Delete(existingFile);
-            deletedCount++;
-        }
-
-        foreach (var extractedFile in Directory.EnumerateFiles(extractDirectory))
-        {
-            var fileName = Path.GetFileName(extractedFile);
-            if (string.Equals(fileName, updaterExeFileName, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            var destinationPath = Path.Combine(installDirectory, fileName);
-            File.Copy(extractedFile, destinationPath, overwrite: true);
-            copiedCount++;
-        }
-
-        var extractedMainExe = Path.Combine(extractDirectory, mainExeFileName);
-        if (!File.Exists(extractedMainExe))
-            throw new InvalidOperationException($"Extracted release does not contain '{mainExeFileName}'.");
-
-        if (!File.Exists(preservedUpdaterPath))
-        {
-            var extractedUpdater = Path.Combine(extractDirectory, updaterExeFileName);
-            if (File.Exists(extractedUpdater))
-                File.Copy(extractedUpdater, preservedUpdaterPath, overwrite: true);
-        }
-
-        return new SyncStats(deletedCount, copiedCount);
     }
 
     private static void StartMainApplication(string installDirectory, string mainExeFileName) =>
@@ -238,5 +194,4 @@ internal static class Program
         }
     }
 
-    private readonly record struct SyncStats(int DeletedCount, int CopiedCount);
 }
