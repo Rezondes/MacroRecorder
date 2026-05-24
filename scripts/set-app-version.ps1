@@ -93,6 +93,9 @@ if (Test-Path -LiteralPath $projectMap) {
     Write-Host "  $projectMap" -ForegroundColor DarkGray
 }
 Write-Host ""
+Write-Host "Commit message:" -ForegroundColor Cyan
+Write-Host "build: set version to v$Version" -ForegroundColor Cyan
+Write-Host ""
 Write-Host "Next: commit, push, then:" -ForegroundColor Cyan
 Write-Host "  git tag v$Version" -ForegroundColor Cyan
 Write-Host "  git push origin v$Version" -ForegroundColor Cyan

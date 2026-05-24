@@ -3,7 +3,7 @@
 ## 1. Projekt-Kern
 - **Ziel:** Windows-Desktop-App zum Aufzeichnen, Editieren, Wiedergeben und Verketten von Tastatur-/Maus-Makros (inkl. Fokus-/Fenstererkennung).
 - **Tech-Stack:** .NET 10, WPF (`net10.0-windows`, x64), MVVM (`CommunityToolkit.Mvvm`), `Microsoft.Extensions.Hosting`/DI, RESX-Lokalisierung (DE/EN), WinAPI Low-Level-Hooks + `SendInput`, JSON-Persistenz (`System.Text.Json`, `Ulid`).
-- **Aktueller Status:** Version `0.0.5` in csproj; Release via Tag `v0.0.5` + GitHub Actions (portable ZIP). In-App-Update: Check + **Jetzt aktualisieren** via stabiler `MacroRecorderByRezondes.Updater.exe`.
+- **Aktueller Status:** Version `0.0.6` in csproj; Release via Tag `v0.0.6` + GitHub Actions (portable ZIP). In-App-Update: Check + **Jetzt aktualisieren** via stabiler `MacroRecorderByRezondes.Updater.exe`.
 
 ## 2. Architektur & Abhängigkeiten (DDD-Schichten)
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
@@ -58,4 +58,5 @@
 - [x] Release `v0.0.2` pushen (Update-Check-Fix, Branding, Queue-Experimentell-Hinweis, Tests).
 - [x] Release `v0.0.3` pushen
 - [x] Release `v0.0.4` pushen
-- [ ] Release `v0.0.5` pushen
+- [x] Release `v0.0.5` pushen
+- [ ] Release `v0.0.6` pushen
