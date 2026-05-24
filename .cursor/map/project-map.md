@@ -32,10 +32,10 @@
 - `.cursor/map/project-map.md` – komprimierte Projekt-Memory-Map (Ist-Zustand für Agenten).
 - `.cursor/prompts/project-map-prompt.md` – Anweisung Map zu lesen/aktualisieren.
 - `.cursor/rules/macro-recorder-{conventions,tests,localization,git-commit}.mdc` – verbindliche Regeln.
-- `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, `logs/`, Queue-, Hotkey-Stores).
+- `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, `playback-hotkeys.json`, `logs/`, Queue-Store).
 
 ## 4. Wichtige Datenmodelle / State
-- **`Macro`:** `Id`, `Name`, `Metadata`, `Events` (List<`RecordedInputEvent`>), `DocumentVersion` (Ulid, bumped bei Struktur-/Inhaltsänderung), `CreatedAtUtc`, `LastModifiedAtUtc`, `WasModifiedAfterRecording`. Events polymorph: `KeyDown/Up`, `MouseMove`, `MouseButtonDown/Up`, `MouseWheel`, `FocusChanged` (Hwnd null = Fokus verloren; `ReferenceClientWidth/Height` + Toleranz für fokusgebundene Playback-Matching), `SyntheticWait`. Jeder Event: `DelayBefore` + `Sequence`.
+- **`Macro`:** `Id`, `Name`, `Metadata`, `Events` (List<`RecordedInputEvent`>), `DocumentVersion` (Ulid, bumped bei Struktur-/Inhaltsänderung), `CreatedAtUtc`, `LastModifiedAtUtc`, `WasModifiedAfterRecording`. Events polymorph: `KeyDown/Up`, `MouseMove`, `MouseButtonDown/Up`, `MouseWheel`, `FocusChanged` (Hwnd null = Fokus verloren; `ReferenceClientWidth/Height` + Toleranz für fokusgebundene Playback-Matching), `SyntheticWait`. Jeder Event: `DelayBefore` + `Sequence`. **Aufnahme:** `DelayBefore=0` (nur manuell im Editor); `SyntheticWait.AdditionalDelay` bei Anchor-Modus ohne Mausbewegungen bleibt automatisch.
 - **`RecordingMetadata`:** `SchemaVersion=2`, `RecordedAtUtc`, `StopwatchFrequency`, `UseFocusBoundMouseCoordinates`, `MouseAnchor`, `RecordMouseMoves`, optional `RecordingEnvironment`.
 - **`AppSettings`** (`AppSettingsStore`): `uiCulture` (de/en), `appearanceTheme`+`appearanceIsDark`, `recordingMouseMoveMinPixels`, `playbackUserInterruptGraceMs`, `playbackFocusBringWindowToForeground`/`RestoreIfMinimized`, `mainWindowPlacement`, `checkForUpdatesOnStartup`, `lastDismissedUpdateVersion`, `enableVerboseLogging`.
 - **`UpdateCheckResult`:** `CurrentVersion`, `LatestVersion`, `IsUpdateAvailable`, `ReleasePageUrl`, `PortableZipDownloadUrl?`, `ReleaseNotes?`.
@@ -45,6 +45,8 @@
 - **Ein Hauptfenster** (`MainWindow`) — keine weiteren Top-Level-`Window`s. Dialoge = Overlays via `ShellViewModel` (Content-/Confirm-/Info-/Unsaved-Modal).
 - **Editor-Reihenfolge:** `EditorTimelineGrouper` darf **nicht** nach `Sequence` sortieren (neue Aufnahmen vergeben kleine Sequenznummern → Reihenfolge folgt `_flatEvents`). `OrderBy(Sequence)` nur beim Laden/Speichern/Playback. Zeile↔Event-Mapping via `ReferenceEquals` (doppelte Sequenznummern möglich).
 - **Playback-Interrupt:** Echte Nutzer-Eingabe während Playback → `PlaybackInterruptedByUserException` (RESX-Key, nicht `OperationCanceledException`).
+- **Fokusgebundene Aufnahme:** Maus-Down → `WindowFromPoint` vor Koordinaten; Client-Koordinaten via `_lastForeground`; Tastatur → `GetForegroundWindow`. Kein 120-ms-Fokus-Poll in diesem Modus (verhindert Oszillation mit `WindowFromPoint`). Fokus-Handles immer `GA_ROOT`; transientes Fokus-verloren (hwnd 0) wird nicht aufgezeichnet.
+- **Hotkeys-Persistenz:** `playback-hotkeys.json` im App-Root (nicht `macros/`); Legacy-Migration aus `macros/` beim Start; `JsonMacroRepository.ListAsync` überspringt diese Datei.
 - **Lokalisierung:** ausschließlich `scripts/build_ui_resx.py` editieren, danach ausführen. `UiStrings*.resx` werden überschrieben. Keine harten Strings in ViewModels/XAML (außer tiefe technische Exceptions).
 - **Numerische Eingaben:** immer `MacroRecorder.Wpf.Controls.DigitsOnlyNumericBox` (mit `MinimumValue`/`MaximumValue`), kein rohes `TextBox`.
 - **Distribution:** ausschließlich portable ZIP (2 EXEs). MSI/WiX entfernt. Updates: `UpdateCheckCoordinator` → Modal **Jetzt aktualisieren** → `IAppUpdateService` startet `Updater.exe` → Download/Sync → Neustart; `%LocalAppData%` unberührt.
@@ -54,3 +56,4 @@
 ## 6. Aktueller Fokus / Next Steps
 - [ ] Release `v0.0.7` pushen
 - [x] Schichtweise Unit-Tests + CI (`dotnet test` auf Push/PR)
+- [x] Recording: Fokus vor Mausklick, delayBefore=0, Hotkeys außerhalb macros/

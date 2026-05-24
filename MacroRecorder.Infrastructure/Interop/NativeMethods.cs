@@ -160,6 +160,9 @@ internal static class NativeMethods
     [DllImport("user32.dll", SetLastError = true)]
     public static extern nint GetForegroundWindow();
 
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern nint WindowFromPoint(POINT point);
+
     [DllImport("user32.dll")]
     public static extern nint GetAncestor(nint hwnd, uint gaFlags);
 

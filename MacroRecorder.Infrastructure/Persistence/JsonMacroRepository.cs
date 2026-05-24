@@ -8,8 +8,6 @@ namespace MacroRecorder.Infrastructure.Persistence;
 
 public sealed class JsonMacroRepository : IMacroRepository
 {
-    private const string OverviewOrderFileName = "overview-order.json";
-
     private static readonly JsonSerializerOptions OrderJsonOptions = new()
     {
         WriteIndented = true
@@ -60,7 +58,7 @@ public sealed class JsonMacroRepository : IMacroRepository
             foreach (var macroFilePath in Directory.EnumerateFiles(_root, "*.json"))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (string.Equals(Path.GetFileName(macroFilePath), OverviewOrderFileName, StringComparison.OrdinalIgnoreCase))
+                if (IsNonMacroJsonFile(macroFilePath))
                     continue;
 
                 try
@@ -118,7 +116,14 @@ public sealed class JsonMacroRepository : IMacroRepository
     public Task SaveDisplayOrderAsync(IReadOnlyList<MacroId> orderedIds, CancellationToken cancellationToken = default) =>
         Task.Run(() => WriteOrderFromIds(orderedIds), cancellationToken);
 
-    private string OrderFilePath => Path.Combine(_root, OverviewOrderFileName);
+    private string OrderFilePath => Path.Combine(_root, PersistenceFileNames.OverviewOrderFileName);
+
+    private static bool IsNonMacroJsonFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        return string.Equals(fileName, PersistenceFileNames.OverviewOrderFileName, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fileName, PersistenceFileNames.PlaybackHotkeysFileName, StringComparison.OrdinalIgnoreCase);
+    }
 
     private List<MacroId> LoadOrderIds()
     {

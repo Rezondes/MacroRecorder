@@ -7,8 +7,6 @@ namespace MacroRecorder.Infrastructure.Persistence;
 
 public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
 {
-    private const string FileName = "playback-hotkeys.json";
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -18,16 +16,19 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
 
     private readonly ILogger<JsonPlaybackHotkeyStore> _logger;
     private readonly string _filePath;
+    private readonly string _legacyFilePath;
 
-    public JsonPlaybackHotkeyStore(ILogger<JsonPlaybackHotkeyStore> logger, string? rootOverride = null)
+    public JsonPlaybackHotkeyStore(ILogger<JsonPlaybackHotkeyStore> logger, string? appRootOverride = null)
     {
         _logger = logger;
-        var root = rootOverride ?? Path.Combine(
+        var appRoot = appRootOverride ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "MacroRecorderByRezondes",
-            "macros");
-        Directory.CreateDirectory(root);
-        _filePath = Path.Combine(root, FileName);
+            "MacroRecorderByRezondes");
+        Directory.CreateDirectory(appRoot);
+        Directory.CreateDirectory(Path.Combine(appRoot, "macros"));
+        _filePath = Path.Combine(appRoot, PersistenceFileNames.PlaybackHotkeysFileName);
+        _legacyFilePath = Path.Combine(appRoot, "macros", PersistenceFileNames.PlaybackHotkeysFileName);
+        MigrateLegacyFileIfNeeded();
     }
 
     public Task<IReadOnlyDictionary<MacroId, PlaybackKeyChord>> LoadAsync(CancellationToken cancellationToken = default) =>
@@ -38,6 +39,52 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
 
     public Task RemoveAsync(MacroId macroId, CancellationToken cancellationToken = default) =>
         SetAsync(macroId, null, cancellationToken);
+
+    private void MigrateLegacyFileIfNeeded()
+    {
+        if (File.Exists(_filePath))
+        {
+            TryDeleteLegacyFile();
+            return;
+        }
+
+        if (!File.Exists(_legacyFilePath))
+            return;
+
+        try
+        {
+            File.Move(_legacyFilePath, _filePath);
+            _logger.LogInformation(
+                "Migrated playback hotkeys from legacy path {LegacyPath} to {CurrentPath}",
+                _legacyFilePath,
+                _filePath);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Failed to migrate playback hotkeys from legacy path {LegacyPath}",
+                _legacyFilePath);
+        }
+    }
+
+    private void TryDeleteLegacyFile()
+    {
+        if (!File.Exists(_legacyFilePath))
+            return;
+
+        try
+        {
+            File.Delete(_legacyFilePath);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogWarning(
+                exception,
+                "Failed to remove legacy playback hotkeys file at {LegacyPath}",
+                _legacyFilePath);
+        }
+    }
 
     private IReadOnlyDictionary<MacroId, PlaybackKeyChord> ReadAll()
     {
@@ -126,6 +173,7 @@ public sealed class JsonPlaybackHotkeyStore : IPlaybackHotkeyStore
             var tempPath = _filePath + ".tmp";
             File.WriteAllText(tempPath, JsonSerializer.Serialize(dto, JsonOptions));
             File.Move(tempPath, _filePath, overwrite: true);
+            TryDeleteLegacyFile();
         }
         catch (Exception exception)
         {

@@ -76,7 +76,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
         _onEventRecorded = onEventRecorded;
         _hooksReady = false;
-        _lastForeground = NativeMethods.GetForegroundWindow();
+        _lastForeground = NormalizeToRootWindow(NativeMethods.GetForegroundWindow());
         _running = true;
         _foregroundCts = new CancellationTokenSource();
         var token = _foregroundCts.Token;
@@ -158,6 +158,9 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             try
             {
                 Thread.Sleep(120);
+                if (_useFocusBoundMouseCoordinates)
+                    continue;
+
                 RecordForegroundDelta(NativeMethods.GetForegroundWindow());
             }
             catch
@@ -167,8 +170,22 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         }
     }
 
+    private static nint NormalizeToRootWindow(nint windowHandle)
+    {
+        if (windowHandle == nint.Zero || !NativeMethods.IsWindow(windowHandle))
+            return nint.Zero;
+
+        var rootWindow = NativeMethods.GetAncestor(windowHandle, NativeMethods.GA_ROOT);
+        return rootWindow != nint.Zero ? rootWindow : windowHandle;
+    }
+
     private void RecordForegroundDelta(nint newForegroundWindow)
     {
+        newForegroundWindow = NormalizeToRootWindow(newForegroundWindow);
+
+        if (_useFocusBoundMouseCoordinates && newForegroundWindow == nint.Zero)
+            return;
+
         if (newForegroundWindow == _lastForeground)
             return;
 
@@ -326,16 +343,26 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
 
-    private static bool ShouldRecordForegroundChangeBeforeEvent(RecordedInputEvent eventTemplate) =>
-        eventTemplate is MouseMoveRecordedEvent
-            or MouseButtonDownRecordedEvent
-            or MouseButtonUpRecordedEvent
-            or MouseWheelRecordedEvent
-            or KeyDownRecordedEvent
-            or KeyUpRecordedEvent;
+    private static bool ShouldRecordForegroundChangeBeforeKeyboardEvent(RecordedInputEvent eventTemplate) =>
+        eventTemplate is KeyDownRecordedEvent or KeyUpRecordedEvent;
 
-    /// <summary>When focus-bound, inserts a <see cref="FocusChangedRecordedEvent"/> before input if
-    /// <see cref="NativeMethods.GetForegroundWindow"/> changed (avoids losing focus vs. mouse order vs. the 120 ms poll).</summary>
+    /// <summary>When focus-bound, inserts a focus row for the window under the cursor before mouse down
+    /// (clicks often change focus after mousedown; <see cref="NativeMethods.GetForegroundWindow"/> lags).</summary>
+    private void EnsureFocusAtMouseTarget(int screenX, int screenY)
+    {
+        if (!_running || !_useFocusBoundMouseCoordinates)
+            return;
+
+        var point = new NativeMethods.POINT { X = screenX, Y = screenY };
+        var windowAtPoint = NativeMethods.WindowFromPoint(point);
+        if (windowAtPoint == nint.Zero)
+            return;
+
+        RecordForegroundDelta(windowAtPoint);
+    }
+
+    /// <summary>When focus-bound, inserts a <see cref="FocusChangedRecordedEvent"/> before keyboard input if
+    /// <see cref="NativeMethods.GetForegroundWindow"/> changed (avoids losing focus vs. the 120 ms poll).</summary>
     private void EnsureForegroundFocusChangeRecorded()
     {
         if (!_running)
@@ -346,8 +373,13 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
     private void AppendStamped(RecordedInputEvent eventTemplate)
     {
-        if (_useFocusBoundMouseCoordinates && ShouldRecordForegroundChangeBeforeEvent(eventTemplate))
-            EnsureForegroundFocusChangeRecorded();
+        if (_useFocusBoundMouseCoordinates)
+        {
+            if (eventTemplate is MouseButtonDownRecordedEvent mouseButtonDown)
+                EnsureFocusAtMouseTarget(mouseButtonDown.ScreenX, mouseButtonDown.ScreenY);
+            else if (ShouldRecordForegroundChangeBeforeKeyboardEvent(eventTemplate))
+                EnsureForegroundFocusChangeRecorded();
+        }
 
         eventTemplate = ConvertMouseScreenToClientIfNeeded(eventTemplate);
         Action<RecordedInputEvent>? live;
@@ -386,10 +418,6 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
                 var gap = elapsed - _lastAnchorElapsed;
                 if (gap >= MinAnchorGap)
                 {
-                    var waitDelayBefore = elapsed - _playbackTimelineEnd;
-                    if (waitDelayBefore < TimeSpan.Zero)
-                        waitDelayBefore = TimeSpan.Zero;
-
                     var waitSequence = (ulong)Interlocked.Increment(ref _sequence);
                     var waitStamped = Stamp(
                         new SyntheticWaitRecordedEvent
@@ -398,17 +426,15 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
                             Sequence = 0,
                             AdditionalDelay = gap
                         },
-                        waitDelayBefore,
+                        TimeSpan.Zero,
                         waitSequence);
                     _events.Add(waitStamped);
                     pendingCallbacks.Add(waitStamped);
-                    _playbackTimelineEnd += waitDelayBefore + gap;
+                    _playbackTimelineEnd += gap;
                 }
             }
 
-            var delayBefore = elapsed - _playbackTimelineEnd;
-            if (delayBefore < TimeSpan.Zero)
-                delayBefore = TimeSpan.Zero;
+            var delayBefore = TimeSpan.Zero;
 
             var nextSequence = (ulong)Interlocked.Increment(ref _sequence);
             var stampedEvent = Stamp(eventTemplate, delayBefore, nextSequence);
@@ -482,26 +508,28 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         };
 
     /// <summary>When focus-bound recording is on, mouse X/Y are global screen coordinates until a window focus row;
-    /// after that they are client coordinates relative to <see cref="NativeMethods.GetForegroundWindow"/> at capture time
+    /// after that they are client coordinates relative to the recorded focus window
     /// (after any inserted focus row).</summary>
     private RecordedInputEvent ConvertMouseScreenToClientIfNeeded(RecordedInputEvent eventTemplate)
     {
         if (!_useFocusBoundMouseCoordinates || !_useClientSpaceForMouse)
             return eventTemplate;
 
-        var foregroundHwnd = NativeMethods.GetForegroundWindow();
-        if (foregroundHwnd == nint.Zero)
+        var clientSpaceHwnd = _lastForeground != nint.Zero
+            ? _lastForeground
+            : NormalizeToRootWindow(NativeMethods.GetForegroundWindow());
+        if (clientSpaceHwnd == nint.Zero)
             return eventTemplate;
 
         return eventTemplate switch
         {
-            MouseMoveRecordedEvent mouseMove => ApplyClient(foregroundHwnd, mouseMove, mouseMove.ScreenX, mouseMove.ScreenY),
+            MouseMoveRecordedEvent mouseMove => ApplyClient(clientSpaceHwnd, mouseMove, mouseMove.ScreenX, mouseMove.ScreenY),
             MouseButtonDownRecordedEvent mouseButtonDown =>
-                ApplyClient(foregroundHwnd, mouseButtonDown, mouseButtonDown.ScreenX, mouseButtonDown.ScreenY),
+                ApplyClient(clientSpaceHwnd, mouseButtonDown, mouseButtonDown.ScreenX, mouseButtonDown.ScreenY),
             MouseButtonUpRecordedEvent mouseButtonUp =>
-                ApplyClient(foregroundHwnd, mouseButtonUp, mouseButtonUp.ScreenX, mouseButtonUp.ScreenY),
+                ApplyClient(clientSpaceHwnd, mouseButtonUp, mouseButtonUp.ScreenX, mouseButtonUp.ScreenY),
             MouseWheelRecordedEvent mouseWheel =>
-                ApplyClient(foregroundHwnd, mouseWheel, mouseWheel.ScreenX, mouseWheel.ScreenY),
+                ApplyClient(clientSpaceHwnd, mouseWheel, mouseWheel.ScreenX, mouseWheel.ScreenY),
             _ => eventTemplate
         };
     }

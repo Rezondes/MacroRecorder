@@ -82,6 +82,17 @@ public sealed class JsonMacroRepositoryTests : IDisposable
         Assert.Equal(first.Id, summaries[1].Id);
     }
 
+    [Fact]
+    public async Task ListAsync_skips_playback_hotkeys_json_in_macros_folder()
+    {
+        var hotkeysPath = Path.Combine(_root, "playback-hotkeys.json");
+        await File.WriteAllTextAsync(hotkeysPath, """{"assignments":[]}""");
+
+        var summaries = await _repository.ListAsync();
+
+        Assert.Empty(summaries);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
