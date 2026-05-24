@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.Application.Recording;
+using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 
 namespace MacroRecorder.Application;
@@ -19,7 +20,7 @@ public sealed class RecordingCoordinator(IRecordingEngine engine)
     /// <summary>Stops the engine and returns this session's events (throws if not running).</summary>
     public RecordingEngineResult StopRecording() => engine.Stop();
 
-    public Macro FinishRecording(string macroName)
+    public Macro FinishRecording(string macroName, int mouseMoveSimplifyEpsilonPixels = 10)
     {
         var result = StopRecording();
         var events = result.Events.ToList();
@@ -29,6 +30,8 @@ public sealed class RecordingCoordinator(IRecordingEngine engine)
             UseFocusBoundMouseCoordinates = result.UseFocusBoundMouseCoordinates,
             MouseAnchor = null
         };
+        if (metadata.RecordMouseMoves)
+            MouseMovePathSimplifier.SimplifyInPlace(events, mouseMoveSimplifyEpsilonPixels);
         return new Macro(MacroId.New(), macroName, metadata, events, wasModifiedAfterRecording: false);
     }
 

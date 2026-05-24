@@ -61,7 +61,8 @@ public partial class RecordViewModel : ObservableObject
             return;
         }
 
-        var macro = _recording.FinishRecording(name.Trim());
+        var minMouseMovePixels = AppSettingsStore.Load().RecordingMouseMoveMinPixels;
+        var macro = _recording.FinishRecording(name.Trim(), minMouseMovePixels);
         IsRecording = false;
         await _workspace.SaveAsync(macro).ConfigureAwait(true);
         _dialogs.ShowInfo(_loc.GetString("Record_Saved"));

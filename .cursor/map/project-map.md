@@ -7,7 +7,7 @@
 
 ## 2. Architektur & Abhängigkeiten (DDD-Schichten)
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
-- **`MacroRecorder.Application`** – Ports + Orchestrierung. `IPlaybackService`, `IRecordingEngine`, `IMacroRepository`, `IPlaybackHotkeyStore`, `IUserDialogService`, `IUiLocalizer`, `IUpdateCheckService`, `IAppUpdateService`, `IExternalUriOpener`, Modal-Host-Ports (`I*ModalHost`). Services: `RecordingCoordinator`, `MacroWorkspaceService`, `MacroQueueRunner`, `TimelineNormalizer`, `PlaybackDurationEstimator`. → ruft Domain.
+- **`MacroRecorder.Application`** – Ports + Orchestrierung. `IPlaybackService`, `IRecordingEngine`, `IMacroRepository`, `IPlaybackHotkeyStore`, `IUserDialogService`, `IUiLocalizer`, `IUpdateCheckService`, `IAppUpdateService`, `IExternalUriOpener`, Modal-Host-Ports (`I*ModalHost`). Services: `RecordingCoordinator`, `MacroWorkspaceService`, `MacroQueueRunner`, `TimelineNormalizer`, `MouseMovePathSimplifier`, `MouseMoveRecordingFilter`, `PlaybackDurationEstimator`. → ruft Domain.
 - **`MacroRecorder.Infrastructure`** – Port-Impls. `LowLevelRecordingEngine` (WH_KEYBOARD_LL/WH_MOUSE_LL), `SendInputPlaybackService`, `JsonMacroRepository`/`JsonPlaybackHotkeyStore`/`MacroQueueFileStore` (in `%LocalAppData%/MacroRecorderByRezondes/`), `FocusWindowMatcher`, `Updates/GitHubReleaseUpdateCheckService` + `PortableAppUpdateLauncher`, `ProcessExternalUriOpener`. → registriert in `AddMacroRecorderInfrastructure()`.
 - **`MacroRecorder.Logging`** – shared Serilog file bootstrap (`LoggingBootstrap`, `LogPaths`, privacy notes). Used by App, Infrastructure, and Updater. Logs under `%LocalAppData%/MacroRecorderByRezondes/logs/` (`app.log`, `updater.log`; rolling 5 × 5 MB).
 - **`MacroRecorder.Updater`** – kleines Konsolen-EXE (`MacroRecorderByRezondes.Updater.exe`): wartet auf App-Exit, lädt Release-ZIP, ersetzt Installationsdateien außer Updater, startet Haupt-EXE neu; strukturiertes Phasen-Logging via `MacroRecorder.Logging`.
@@ -18,7 +18,7 @@
 ## 3. Dateistruktur (kritisch)
 - `MacroRecorder.Domain/` – Modelle, JSON-Polymorphismus.
 - `MacroRecorder.Application/Ports/` – alle Interfaces (UI + Infrastructure binden hier an).
-- `MacroRecorder.Application/Timeline/` – `TimelineNormalizer`, `EventPlaybackSchedule`, `LegacyElapsedTimingMigration`.
+- `MacroRecorder.Application/Timeline/` – `TimelineNormalizer`, `EventPlaybackSchedule`, `LegacyElapsedTimingMigration`, `MouseMovePathSimplifier`, `MouseMoveRecordingFilter`, `RecordingTimelineDelay`.
 - `MacroRecorder.Infrastructure/{Recording,Playback,Persistence,Interop,Input,Updates}/`.
 - `MacroRecorder.App/{ViewModels,Views,Services,Localization,Editor,Controls,Converters}/` – `App.xaml.cs` = Composition Root.
 - `MacroRecorder.App/Localization/UiStrings{,.de}.resx` – **generiert**, nicht direkt editieren.
@@ -35,7 +35,7 @@
 - `%LocalAppData%/MacroRecorderByRezondes/` – Laufzeitdaten (`settings.json`, `macros/`, `playback-hotkeys.json`, `logs/`, Queue-Store).
 
 ## 4. Wichtige Datenmodelle / State
-- **`Macro`:** `Id`, `Name`, `Metadata`, `Events` (List<`RecordedInputEvent`>), `DocumentVersion` (Ulid, bumped bei Struktur-/Inhaltsänderung), `CreatedAtUtc`, `LastModifiedAtUtc`, `WasModifiedAfterRecording`. Events polymorph: `KeyDown/Up`, `MouseMove`, `MouseButtonDown/Up`, `MouseWheel`, `FocusChanged` (Hwnd null = Fokus verloren; `ReferenceClientWidth/Height` + Toleranz für fokusgebundene Playback-Matching), `SyntheticWait`. Jeder Event: `DelayBefore` + `Sequence`. **Aufnahme:** `DelayBefore=0` (nur manuell im Editor); `SyntheticWait.AdditionalDelay` bei Anchor-Modus ohne Mausbewegungen bleibt automatisch.
+- **`Macro`:** `Id`, `Name`, `Metadata`, `Events` (List<`RecordedInputEvent`>), `DocumentVersion` (Ulid, bumped bei Struktur-/Inhaltsänderung), `CreatedAtUtc`, `LastModifiedAtUtc`, `WasModifiedAfterRecording`. Events polymorph: `KeyDown/Up`, `MouseMove`, `MouseButtonDown/Up`, `MouseWheel`, `FocusChanged` (Hwnd null = Fokus verloren; `ReferenceClientWidth/Height` + Toleranz für fokusgebundene Playback-Matching), `SyntheticWait`. Jeder Event: `DelayBefore` + `Sequence`. **Aufnahme:** `DelayBefore` = Stopwatch-Abstand seit letztem gespeichertem Event (`RecordingTimelineDelay`); gefilterte/übersprungene Moves akkumulieren Wartezeit auf den nächsten gespeicherten Schritt. `SyntheticWait.AdditionalDelay` bei Anchor-Modus ohne Mausbewegungen bleibt automatisch.
 - **`RecordingMetadata`:** `SchemaVersion=2`, `RecordedAtUtc`, `StopwatchFrequency`, `UseFocusBoundMouseCoordinates`, `MouseAnchor`, `RecordMouseMoves`, optional `RecordingEnvironment`.
 - **`AppSettings`** (`AppSettingsStore`): `uiCulture` (de/en), `appearanceTheme`+`appearanceIsDark`, `recordingMouseMoveMinPixels`, `playbackUserInterruptGraceMs`, `playbackFocusBringWindowToForeground`/`RestoreIfMinimized`, `mainWindowPlacement`, `checkForUpdatesOnStartup`, `lastDismissedUpdateVersion`, `enableVerboseLogging`.
 - **`UpdateCheckResult`:** `CurrentVersion`, `LatestVersion`, `IsUpdateAvailable`, `ReleasePageUrl`, `PortableZipDownloadUrl?`, `ReleaseNotes?`.
@@ -52,8 +52,10 @@
 - **Distribution:** ausschließlich portable ZIP (2 EXEs). MSI/WiX entfernt. Updates: `UpdateCheckCoordinator` → Modal **Jetzt aktualisieren** → `IAppUpdateService` startet `Updater.exe` → Download/Sync → Neustart; `%LocalAppData%` unberührt.
 - **Versionsquelle:** `MacroRecorder.App.csproj` `<Version>` = Single Source. CI-Tag `v0.0.x` muss matchen.
 - **Commit-Konvention:** Karma/Angular (`<type>(<scope>): <subject>`), max. 72 Zeichen, kein `Co-authored-by: Cursor`.
+- **Mausbewegungs-Reduktion:** Live in `LowLevelRecordingEngine` (Mindestabstand + Collinearity-Skip, Drag-Schutz via Button-State, Anchor-Flush vor Klick/Rad). Nachbearbeitung: `MouseMovePathSimplifier` (RDP, epsilon = `recordingMouseMoveMinPixels`) nach Stop/Save/Share; Drag-Segmente (Moves zwischen Button-Down/Up) unangetastet. Share-JSON: pretty (`MacroJsonFileFormat.Serialize`, `WriteIndented=true`).
 
 ## 6. Aktueller Fokus / Next Steps
 - [ ] Release `v0.0.7` pushen
 - [x] Schichtweise Unit-Tests + CI (`dotnet test` auf Push/PR)
 - [x] Recording: Fokus vor Mausklick, delayBefore=0, Hotkeys außerhalb macros/
+- [x] Mausbewegungs-Reduktion (Live-Filter + RDP-Simplify, Drag-Schutz)

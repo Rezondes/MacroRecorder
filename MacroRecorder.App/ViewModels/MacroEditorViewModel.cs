@@ -97,6 +97,7 @@ public partial class MacroEditorViewModel : ObservableObject
         var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).Select(CloneEvent).ToList();
         if (_isDirty)
             TimelineNormalizer.NormalizeInPlace(ordered);
+        SimplifyMouseMovesIfEnabled(ordered);
 
         var snapshot = new Macro(
             _macro.Id,
@@ -108,6 +109,14 @@ public partial class MacroEditorViewModel : ObservableObject
             _macro.CreatedAtUtc,
             _macro.LastModifiedAtUtc);
         return MacroJsonFileFormat.Serialize(snapshot);
+    }
+
+    private void SimplifyMouseMovesIfEnabled(List<RecordedInputEvent> events)
+    {
+        if (!RecordMouseMoves)
+            return;
+        var epsilonPixels = AppSettingsStore.Load().RecordingMouseMoveMinPixels;
+        MouseMovePathSimplifier.SimplifyInPlace(events, epsilonPixels);
     }
 
     private void OnUiCultureChanged()
@@ -998,6 +1007,7 @@ public partial class MacroEditorViewModel : ObservableObject
         if (_recordingSnapshot is not null)
             merged.AddRange(_recordingSnapshot.Select(CloneEvent));
         merged.AddRange(newSessionEvents);
+        SimplifyMouseMovesIfEnabled(merged);
         TimelineNormalizer.NormalizeInPlace(merged);
 
         _flatEvents.Clear();
@@ -1181,6 +1191,7 @@ public partial class MacroEditorViewModel : ObservableObject
             if (_isDirty)
                 TimelineNormalizer.NormalizeInPlace(_flatEvents);
             var ordered = _flatEvents.OrderBy(recordedEvent => recordedEvent.Sequence).ToList();
+            SimplifyMouseMovesIfEnabled(ordered);
             var versionBump = _isDirty || !_persistedOnDisk;
             _macro!.ApplyPersistedEditorState(ordered, markRecordedDirty: true, bumpDocumentVersion: versionBump);
             await _workspace.SaveAsync(_macro).ConfigureAwait(true);

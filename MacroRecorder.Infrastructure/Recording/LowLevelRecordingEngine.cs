@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using MacroRecorder.Application.Ports;
+using MacroRecorder.Application.Timeline;
 using MacroRecorder.Domain;
 using MacroRecorder.Infrastructure.Interop;
 using Microsoft.Extensions.Logging;
@@ -30,6 +31,12 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private bool _haveLastRecordedMouseMove;
     private int _lastRecordedMouseMoveX;
     private int _lastRecordedMouseMoveY;
+    private bool _haveSecondLastRecordedMouseMove;
+    private int _secondLastRecordedMouseMoveX;
+    private int _secondLastRecordedMouseMoveY;
+    private bool _leftMouseButtonDown;
+    private bool _rightMouseButtonDown;
+    private bool _middleMouseButtonDown;
     private Action<RecordedInputEvent>? _onEventRecorded;
     private bool _recordMouseMoves = true;
     private int _mouseMoveMinPixelDelta = 5;
@@ -65,6 +72,10 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _events.Clear();
             Interlocked.Exchange(ref _sequence, 0);
             _haveLastRecordedMouseMove = false;
+            _haveSecondLastRecordedMouseMove = false;
+            _leftMouseButtonDown = false;
+            _rightMouseButtonDown = false;
+            _middleMouseButtonDown = false;
             _recordMouseMoves = recordMouseMoves;
             _mouseMoveMinPixelDelta = clampedMinPixels;
             _haveAnchor = false;
@@ -388,6 +399,9 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         {
             live = _onEventRecorded;
 
+            if (_recordMouseMoves && TryGetAnchorMousePosition(eventTemplate, out var anchorScreenX, out var anchorScreenY))
+                FlushMouseMoveAt(anchorScreenX, anchorScreenY, pendingCallbacks);
+
             if (!_recordMouseMoves && eventTemplate is MouseMoveRecordedEvent)
                 return;
 
@@ -395,21 +409,19 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
                 && IsKeyboardAutorepeatKeyDown(_events, keyDownAutorepeat))
                 return;
 
-            if (eventTemplate is MouseMoveRecordedEvent mouseMoveEvent && _recordMouseMoves)
-            {
-                if (_haveLastRecordedMouseMove)
-                {
-                    if (mouseMoveEvent.ScreenX == _lastRecordedMouseMoveX &&
-                        mouseMoveEvent.ScreenY == _lastRecordedMouseMoveY)
-                        return;
-
-                    var dx = mouseMoveEvent.ScreenX - _lastRecordedMouseMoveX;
-                    var dy = mouseMoveEvent.ScreenY - _lastRecordedMouseMoveY;
-                    var minSq = (long)_mouseMoveMinPixelDelta * _mouseMoveMinPixelDelta;
-                    if ((long)dx * dx + (long)dy * dy < minSq)
-                        return;
-                }
-            }
+            if (eventTemplate is MouseMoveRecordedEvent mouseMoveEvent && _recordMouseMoves
+                && MouseMoveRecordingFilter.ShouldSkipMove(
+                    mouseMoveEvent.ScreenX,
+                    mouseMoveEvent.ScreenY,
+                    _lastRecordedMouseMoveX,
+                    _lastRecordedMouseMoveY,
+                    _haveLastRecordedMouseMove,
+                    _secondLastRecordedMouseMoveX,
+                    _secondLastRecordedMouseMoveY,
+                    _haveSecondLastRecordedMouseMove,
+                    _mouseMoveMinPixelDelta,
+                    _leftMouseButtonDown || _rightMouseButtonDown || _middleMouseButtonDown))
+                return;
 
             var elapsed = _stopwatch?.Elapsed ?? TimeSpan.Zero;
 
@@ -434,35 +446,124 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
                 }
             }
 
-            var delayBefore = TimeSpan.Zero;
-
-            var nextSequence = (ulong)Interlocked.Increment(ref _sequence);
-            var stampedEvent = Stamp(eventTemplate, delayBefore, nextSequence);
-            _events.Add(stampedEvent);
-            if (_useFocusBoundMouseCoordinates && stampedEvent is FocusChangedRecordedEvent appendedFocus)
-                _useClientSpaceForMouse = appendedFocus.Hwnd is not null;
-
-            pendingCallbacks.Add(stampedEvent);
-            _playbackTimelineEnd += delayBefore;
-            if (stampedEvent is SyntheticWaitRecordedEvent syntheticAfterMain)
-                _playbackTimelineEnd += syntheticAfterMain.AdditionalDelay;
-
-            if (stampedEvent is MouseMoveRecordedEvent storedMove && _recordMouseMoves)
-            {
-                _lastRecordedMouseMoveX = storedMove.ScreenX;
-                _lastRecordedMouseMoveY = storedMove.ScreenY;
-                _haveLastRecordedMouseMove = true;
-            }
+            StoreStampedEvent(eventTemplate, pendingCallbacks);
 
             if (!_recordMouseMoves && IsAnchorEvent(eventTemplate))
             {
                 _haveAnchor = true;
                 _lastAnchorElapsed = elapsed;
             }
+
+            UpdateMouseButtonState(eventTemplate);
         }
 
         foreach (var recordedEvent in pendingCallbacks)
             live?.Invoke(CloneForCallback(recordedEvent));
+    }
+
+    private static bool TryGetAnchorMousePosition(RecordedInputEvent eventTemplate, out int screenX, out int screenY)
+    {
+        switch (eventTemplate)
+        {
+            case MouseButtonDownRecordedEvent mouseButtonDown:
+                screenX = mouseButtonDown.ScreenX;
+                screenY = mouseButtonDown.ScreenY;
+                return true;
+            case MouseButtonUpRecordedEvent mouseButtonUp:
+                screenX = mouseButtonUp.ScreenX;
+                screenY = mouseButtonUp.ScreenY;
+                return true;
+            case MouseWheelRecordedEvent mouseWheel:
+                screenX = mouseWheel.ScreenX;
+                screenY = mouseWheel.ScreenY;
+                return true;
+            default:
+                screenX = 0;
+                screenY = 0;
+                return false;
+        }
+    }
+
+    private void FlushMouseMoveAt(int screenX, int screenY, List<RecordedInputEvent> pendingCallbacks)
+    {
+        if (!_recordMouseMoves)
+            return;
+
+        if (_haveLastRecordedMouseMove
+            && _lastRecordedMouseMoveX == screenX
+            && _lastRecordedMouseMoveY == screenY)
+            return;
+
+        var moveEvent = new MouseMoveRecordedEvent
+        {
+            DelayBefore = default,
+            Sequence = 0,
+            ScreenX = screenX,
+            ScreenY = screenY
+        };
+        StoreStampedEvent(moveEvent, pendingCallbacks);
+    }
+
+    private void StoreStampedEvent(RecordedInputEvent eventTemplate, List<RecordedInputEvent> pendingCallbacks)
+    {
+        var elapsed = _stopwatch?.Elapsed ?? TimeSpan.Zero;
+        var delayBefore = RecordingTimelineDelay.ComputeDelayBefore(elapsed, _playbackTimelineEnd);
+        var nextSequence = (ulong)Interlocked.Increment(ref _sequence);
+        var stampedEvent = Stamp(eventTemplate, delayBefore, nextSequence);
+        _events.Add(stampedEvent);
+        if (_useFocusBoundMouseCoordinates && stampedEvent is FocusChangedRecordedEvent appendedFocus)
+            _useClientSpaceForMouse = appendedFocus.Hwnd is not null;
+
+        pendingCallbacks.Add(stampedEvent);
+        _playbackTimelineEnd += delayBefore;
+        if (stampedEvent is SyntheticWaitRecordedEvent syntheticAfterMain)
+            _playbackTimelineEnd += syntheticAfterMain.AdditionalDelay;
+
+        if (stampedEvent is MouseMoveRecordedEvent storedMove && _recordMouseMoves)
+            RememberRecordedMouseMove(storedMove.ScreenX, storedMove.ScreenY);
+    }
+
+    private void RememberRecordedMouseMove(int screenX, int screenY)
+    {
+        if (_haveLastRecordedMouseMove)
+        {
+            _secondLastRecordedMouseMoveX = _lastRecordedMouseMoveX;
+            _secondLastRecordedMouseMoveY = _lastRecordedMouseMoveY;
+            _haveSecondLastRecordedMouseMove = true;
+        }
+
+        _lastRecordedMouseMoveX = screenX;
+        _lastRecordedMouseMoveY = screenY;
+        _haveLastRecordedMouseMove = true;
+    }
+
+    private void UpdateMouseButtonState(RecordedInputEvent eventTemplate)
+    {
+        switch (eventTemplate)
+        {
+            case MouseButtonDownRecordedEvent mouseButtonDown:
+                SetMouseButtonDown(mouseButtonDown.Button, true);
+                break;
+            case MouseButtonUpRecordedEvent mouseButtonUp:
+                SetMouseButtonDown(mouseButtonUp.Button, false);
+                break;
+        }
+    }
+
+    private void SetMouseButtonDown(MouseButtonKind button, bool isDown)
+    {
+        switch (button)
+        {
+            case MouseButtonKind.Left:
+                _leftMouseButtonDown = isDown;
+                break;
+            case MouseButtonKind.Right:
+                _rightMouseButtonDown = isDown;
+                break;
+            case MouseButtonKind.Middle:
+                _middleMouseButtonDown = isDown;
+                break;
+        }
     }
 
     private static bool IsAnchorEvent(RecordedInputEvent recordedEvent) =>
