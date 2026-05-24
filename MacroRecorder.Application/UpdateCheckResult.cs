@@ -5,4 +5,5 @@ public sealed record UpdateCheckResult(
     string LatestVersion,
     bool IsUpdateAvailable,
     Uri ReleasePageUrl,
+    Uri? PortableZipDownloadUrl,
     string? ReleaseNotes);

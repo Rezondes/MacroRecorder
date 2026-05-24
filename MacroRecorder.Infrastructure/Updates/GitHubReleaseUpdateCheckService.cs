@@ -36,12 +36,14 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
             if (!Uri.TryCreate(release.HtmlUrl, UriKind.Absolute, out var releaseUri))
                 return null;
 
+            var portableZipDownloadUrl = TryGetPortableZipDownloadUrl(release.Assets, latestVersion);
             var isUpdateAvailable = IsRemoteVersionNewer(latestVersion, currentVersion);
             return new UpdateCheckResult(
                 currentVersion,
                 latestVersion,
                 isUpdateAvailable,
                 releaseUri,
+                portableZipDownloadUrl,
                 release.Body);
         }
         catch
@@ -68,6 +70,26 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
         return latest > current;
     }
 
+    private static Uri? TryGetPortableZipDownloadUrl(GitHubReleaseAssetResponse[]? assets, string latestVersion)
+    {
+        if (assets is null || assets.Length == 0)
+            return null;
+
+        var expectedName = PortableReleaseAssetNames.ZipFileName(latestVersion);
+        foreach (var asset in assets)
+        {
+            if (string.IsNullOrWhiteSpace(asset.Name) || string.IsNullOrWhiteSpace(asset.BrowserDownloadUrl))
+                continue;
+            if (!string.Equals(asset.Name, expectedName, StringComparison.OrdinalIgnoreCase))
+                continue;
+            return Uri.TryCreate(asset.BrowserDownloadUrl, UriKind.Absolute, out var downloadUri)
+                ? downloadUri
+                : null;
+        }
+
+        return null;
+    }
+
     private static string NormalizeForVersionParse(string version)
     {
         var core = version.Split('+', 2)[0];
@@ -90,5 +112,17 @@ public sealed class GitHubReleaseUpdateCheckService(HttpClient httpClient) : IUp
 
         [JsonPropertyName("body")]
         public string? Body { get; set; }
+
+        [JsonPropertyName("assets")]
+        public GitHubReleaseAssetResponse[]? Assets { get; set; }
+    }
+
+    private sealed class GitHubReleaseAssetResponse
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("browser_download_url")]
+        public string? BrowserDownloadUrl { get; set; }
     }
 }

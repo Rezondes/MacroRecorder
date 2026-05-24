@@ -25,12 +25,12 @@
                         Padding="12,6"
                         Style="{DynamicResource UiButtonChrome}"
                         Click="OnLaterClick" />
-                <Button Content="{loc:Loc Update_OpenRelease}"
+                <Button Content="{loc:Loc Update_ApplyNow}"
                         MinWidth="140"
                         Padding="12,6"
                         IsDefault="True"
                         Style="{DynamicResource UiPrimaryButton}"
-                        Click="OnOpenReleaseClick" />
+                        Click="OnApplyNowClick" />
             </StackPanel>
         </StackPanel>
     </Border>

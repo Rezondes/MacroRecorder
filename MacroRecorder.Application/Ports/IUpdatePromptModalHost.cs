@@ -3,7 +3,7 @@ namespace MacroRecorder.Application.Ports;
 public enum UpdatePromptChoice
 {
     Later,
-    OpenRelease
+    ApplyNow
 }
 
 public interface IUpdatePromptModalHost

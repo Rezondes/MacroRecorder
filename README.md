@@ -16,7 +16,7 @@ Windows desktop app to record, edit, and replay keyboard and mouse macros — in
 
 1. **Download** the latest portable ZIP from [GitHub Releases](https://github.com/Rezondes/MacroRecorder/releases).
 2. **Choose a folder** — e.g. `D:\Apps\MacroRecorder\`. Any writable path works; Program Files is not required.
-3. **Extract** the ZIP. The folder contains a single **`MacroRecorderByRezondes.exe`** (self-contained; no separate .NET install).
+3. **Extract** the ZIP. The folder contains **`MacroRecorderByRezondes.exe`** (main app) and **`MacroRecorderByRezondes.Updater.exe`** (in-app updates; keep both files together).
 4. **Run** `MacroRecorderByRezondes.exe`.
 5. **Optional:** Pin a shortcut to the EXE or taskbar.
 
@@ -38,9 +38,10 @@ flowchart LR
 
 1. Open **Settings** (gear icon) → **General** tab.
 2. Use **Check for updates now**, or rely on the startup check (enabled by default).
-3. If an update is available, the app opens the GitHub release page in your browser.
-4. Download the new ZIP, **close the app**, and extract over your existing folder (or into the same path).
-5. Start the app again. Macros, settings, and hotkeys in `%LocalAppData%` are unchanged.
+3. If an update is available, choose **Update now**. The app closes, downloads the release ZIP, replaces app files in the install folder (except `MacroRecorderByRezondes.Updater.exe`), and restarts.
+4. Macros, settings, and hotkeys in `%LocalAppData%` are unchanged.
+
+You can still update manually by downloading a new ZIP from [GitHub Releases](https://github.com/Rezondes/MacroRecorder/releases) and extracting over your folder.
 
 ### First-run tips
 
@@ -158,7 +159,7 @@ dotnet run --project MacroRecorder.App/MacroRecorder.App.csproj
 .\scripts\build-portable.ps1
 ```
 
-Output: `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip` containing **`MacroRecorderByRezondes.exe`** (single-file, self-contained).
+Output: `artifacts/portable/MacroRecorder-portable-win-x64-<Version>.zip` containing **`MacroRecorderByRezondes.exe`** and **`MacroRecorderByRezondes.Updater.exe`** (both self-contained).
 
 After changing the logo, regenerate the Windows icon first:
 

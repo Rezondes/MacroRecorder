@@ -1,3 +1,4 @@
+using System.Windows;
 using MacroRecorder.Application;
 using MacroRecorder.Application.Ports;
 using MacroRecorder.App.Services;
@@ -8,22 +9,22 @@ public sealed class UpdateCheckCoordinator
 {
     private readonly IUpdateCheckService _updateCheckService;
     private readonly IUpdatePromptModalHost _updatePromptHost;
+    private readonly IAppUpdateService _appUpdateService;
     private readonly IUserDialogService _dialogs;
     private readonly IUiLocalizer _loc;
-    private readonly IExternalUriOpener _externalUriOpener;
 
     public UpdateCheckCoordinator(
         IUpdateCheckService updateCheckService,
         IUpdatePromptModalHost updatePromptHost,
+        IAppUpdateService appUpdateService,
         IUserDialogService dialogs,
-        IUiLocalizer loc,
-        IExternalUriOpener externalUriOpener)
+        IUiLocalizer loc)
     {
         _updateCheckService = updateCheckService;
         _updatePromptHost = updatePromptHost;
+        _appUpdateService = appUpdateService;
         _dialogs = dialogs;
         _loc = loc;
-        _externalUriOpener = externalUriOpener;
     }
 
     public void RunStartupCheckIfEnabled()
@@ -65,9 +66,33 @@ public sealed class UpdateCheckCoordinator
         }
 
         var choice = _updatePromptHost.ShowUpdateAvailable(result);
-        if (choice == UpdatePromptChoice.OpenRelease)
-            _externalUriOpener.Open(result.ReleasePageUrl);
-        else
-            AppSettingsStore.SaveLastDismissedUpdateVersion(result.LatestVersion);
+        if (choice == UpdatePromptChoice.ApplyNow)
+        {
+            await ApplyUpdateAsync(result).ConfigureAwait(true);
+            return;
+        }
+
+        AppSettingsStore.SaveLastDismissedUpdateVersion(result.LatestVersion);
+    }
+
+    private async Task ApplyUpdateAsync(UpdateCheckResult result)
+    {
+        _dialogs.ShowInfo(_loc.GetString("Update_PreparingRestart"));
+
+        var launchResult = await _appUpdateService.LaunchPortableUpdateAsync(result).ConfigureAwait(true);
+        if (!launchResult.IsSuccess)
+        {
+            var messageKey = launchResult.FailureReason switch
+            {
+                AppUpdateLaunchFailureReason.UpdaterMissing => "Update_ApplyFailedUpdaterMissing",
+                AppUpdateLaunchFailureReason.InstallDirectoryNotWritable => "Update_ApplyFailedNotWritable",
+                AppUpdateLaunchFailureReason.PortableZipUrlMissing => "Update_ApplyFailedNoAsset",
+                _ => "Update_ApplyFailed"
+            };
+            _dialogs.ShowInfo(_loc.GetString(messageKey));
+            return;
+        }
+
+        System.Windows.Application.Current.Shutdown();
     }
 }

@@ -33,5 +33,5 @@ public partial class UpdateAvailableView : UserControl, IContentModalEscape
 
     private void OnLaterClick(object sender, RoutedEventArgs e) => _complete(false);
 
-    private void OnOpenReleaseClick(object sender, RoutedEventArgs e) => _complete(true);
+    private void OnApplyNowClick(object sender, RoutedEventArgs e) => _complete(true);
 }

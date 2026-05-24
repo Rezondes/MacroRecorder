@@ -27,6 +27,7 @@ public static class DependencyInjection
             return httpClient;
         });
         services.AddSingleton<IUpdateCheckService, GitHubReleaseUpdateCheckService>();
+        services.AddSingleton<IAppUpdateService, PortableAppUpdateLauncher>();
         return services;
     }
 }

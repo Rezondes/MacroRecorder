@@ -11,7 +11,13 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
         {
           "tag_name": "v0.0.2",
           "html_url": "https://github.com/Rezondes/MacroRecorder/releases/tag/v0.0.2",
-          "body": "**Full Changelog**: https://github.com/Rezondes/MacroRecorder/commits/v0.0.2"
+          "body": "**Full Changelog**: https://github.com/Rezondes/MacroRecorder/commits/v0.0.2",
+          "assets": [
+            {
+              "name": "MacroRecorder-portable-win-x64-0.0.2.zip",
+              "browser_download_url": "https://github.com/Rezondes/MacroRecorder/releases/download/v0.0.2/MacroRecorder-portable-win-x64-0.0.2.zip"
+            }
+          ]
         }
         """;
 
@@ -33,6 +39,38 @@ public sealed class GitHubReleaseUpdateCheckServiceTests
             result.ReleasePageUrl);
         Assert.Contains("Full Changelog", result.ReleaseNotes);
         Assert.False(string.IsNullOrWhiteSpace(result.CurrentVersion));
+        Assert.Equal(
+            new Uri("https://github.com/Rezondes/MacroRecorder/releases/download/v0.0.2/MacroRecorder-portable-win-x64-0.0.2.zip"),
+            result.PortableZipDownloadUrl);
+    }
+
+    [Fact]
+    public async Task CheckForUpdateAsync_whenPortableZipAssetMissing_leavesPortableZipDownloadUrlNull()
+    {
+        const string releaseWithoutZipAsset =
+            """
+            {
+              "tag_name": "v0.0.2",
+              "html_url": "https://github.com/Rezondes/MacroRecorder/releases/tag/v0.0.2",
+              "body": "notes",
+              "assets": [
+                {
+                  "name": "other.zip",
+                  "browser_download_url": "https://example.com/other.zip"
+                }
+              ]
+            }
+            """;
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(releaseWithoutZipAsset, Encoding.UTF8, "application/json")
+        });
+        var service = new GitHubReleaseUpdateCheckService(new HttpClient(handler));
+
+        var result = await service.CheckForUpdateAsync();
+
+        Assert.NotNull(result);
+        Assert.Null(result.PortableZipDownloadUrl);
     }
 
     [Fact]

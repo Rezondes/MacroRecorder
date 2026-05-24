@@ -701,9 +701,9 @@ public partial class ShellViewModel : ObservableObject,
         if (!dispatcher.CheckAccess())
             return dispatcher.Invoke(() => ((IUpdatePromptModalHost)this).ShowUpdateAvailable(result));
 
-        var openRelease = RunBlockingContentModal(
+        var applyNow = RunBlockingContentModal(
             complete => new UpdateAvailableView(_loc, result, complete));
-        return openRelease ? UpdatePromptChoice.OpenRelease : UpdatePromptChoice.Later;
+        return applyNow ? UpdatePromptChoice.ApplyNow : UpdatePromptChoice.Later;
     }
 
     private void UpdateShowEditorMacroHeaderActions()
