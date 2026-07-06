@@ -3,7 +3,7 @@
 ## 1. Projekt-Kern
 - **Ziel:** Windows-Desktop-App zum Aufzeichnen, Editieren, Wiedergeben und Verketten von Tastatur-/Maus-Makros (inkl. Fokus-/Fenstererkennung).
 - **Tech-Stack:** .NET 10, WPF (`net10.0-windows`, x64), MVVM (`CommunityToolkit.Mvvm`), `Microsoft.Extensions.Hosting`/DI, RESX-Lokalisierung (DE/EN), WinAPI Low-Level-Hooks + `SendInput`, JSON-Persistenz (`System.Text.Json`, `Ulid`).
-- **Aktueller Status:** Version `0.0.9` in csproj; Release via Tag `v0.0.9` + GitHub Actions (portable ZIP). In-App-Update: Check + **Jetzt aktualisieren** via stabiler `MacroRecorderByRezondes.Updater.exe`.
+- **Aktueller Status:** Version `0.0.10` in csproj; Release via Tag `v0.0.10` + GitHub Actions (portable ZIP). In-App-Update: Check + **Jetzt aktualisieren** via stabiler `MacroRecorderByRezondes.Updater.exe`.
 
 ## 2. Architektur & Abhängigkeiten (DDD-Schichten)
 - **`MacroRecorder.Domain`** – pure Modelle (`Macro`, `RecordedInputEvent`-Hierarchie polymorph via JSON-Discriminator, `RecordingMetadata`, `MacroId`, `PlaybackKeyChord`, `MacroQueueDocument`/`QueueStep`). Keine Plattform-/UI-Abhängigkeit.
@@ -55,4 +55,5 @@
 - **Mausbewegungs-Reduktion:** Live in `LowLevelRecordingEngine` (Mindestabstand + Collinearity-Skip, Drag-Schutz via Button-State, Anchor-Flush vor Klick/Rad). Nachbearbeitung: `MouseMovePathSimplifier` (RDP, epsilon = `recordingMouseMoveMinPixels`) nach Stop/Save/Share; Drag-Segmente (Moves zwischen Button-Down/Up) unangetastet. Share-JSON: pretty (`MacroJsonFileFormat.Serialize`, `WriteIndented=true`).
 
 ## 6. Aktueller Fokus / Next Steps
-- [ ] Release `v0.0.9` pushen
+- [x] Release `v0.0.9` pushen
+- [ ] Release `v0.0.10` pushen
