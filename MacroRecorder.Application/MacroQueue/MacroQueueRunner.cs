@@ -56,7 +56,7 @@ public sealed class MacroQueueRunner(
                 await _pause.WaitIfPausedAsync(cancellationToken).ConfigureAwait(false);
                 await DelayNonNegativeAsync(step.PostStepDelay, cancellationToken).ConfigureAwait(false);
             }
-        } while (document.LoopWholeQueue && !cancellationToken.IsCancellationRequested);
+        } while (document.LoopWholeQueue);
     }
 
     private static Task DelayNonNegativeAsync(TimeSpan delay, CancellationToken cancellationToken)
