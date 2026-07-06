@@ -39,6 +39,8 @@ public partial class MacroEditorViewModel : ObservableObject
     private bool _persistedOnDisk = true;
     private List<RecordedInputEvent>? _recordingSnapshot;
     private readonly Action? _onMacroSaved;
+    private bool _liveUiRefreshScheduled;
+    private TimeSpan _liveRecordingPlaybackEnd;
 
     public event Action? RequestTimelineScrollToEnd;
 
@@ -188,6 +190,7 @@ public partial class MacroEditorViewModel : ObservableObject
         }
 
         IsRecording = false;
+        _liveUiRefreshScheduled = false;
         RebuildRows();
         RefreshCommandStates();
     }
@@ -318,7 +321,12 @@ public partial class MacroEditorViewModel : ObservableObject
 
     private void UpdateStatusText()
     {
-        var playbackTotal = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(_flatEvents);
+        TimeSpan playbackTotal;
+        if (IsRecording)
+            playbackTotal = _liveRecordingPlaybackEnd;
+        else
+            playbackTotal = PlaybackDurationEstimator.EstimateTotalPlaybackDuration(_flatEvents);
+
         var durationText = playbackTotal.ToString(@"hh\:mm\:ss\.fff", _loc.CurrentUiCulture);
 
         if (IsRecording)
@@ -923,6 +931,10 @@ public partial class MacroEditorViewModel : ObservableObject
             RebuildRows();
             _undo.Clear();
             _redo.Clear();
+            _liveUiRefreshScheduled = false;
+            _liveRecordingPlaybackEnd = _flatEvents.Count == 0
+                ? TimeSpan.Zero
+                : PlaybackDurationEstimator.EstimateTotalPlaybackDuration(_flatEvents);
             IsRecording = true;
             RefreshCommandStates();
             var minMouseMovePixels = AppSettingsStore.Load().RecordingMouseMoveMinPixels;
@@ -956,14 +968,38 @@ public partial class MacroEditorViewModel : ObservableObject
         if (_uiDispatcher.CheckAccess())
             AppendLiveEvent(recordedEvent);
         else
-            _uiDispatcher.BeginInvoke(() => AppendLiveEvent(recordedEvent));
+            _uiDispatcher.BeginInvoke(() => AppendLiveEvent(recordedEvent), DispatcherPriority.Background);
     }
 
     private void AppendLiveEvent(RecordedInputEvent recordedEvent)
     {
         if (!IsRecording)
             return;
-        _flatEvents.Add(CloneEvent(recordedEvent));
+        _flatEvents.Add(recordedEvent);
+        AccumulateLiveRecordingDuration(recordedEvent);
+        ScheduleLiveUiRefresh();
+    }
+
+    private void AccumulateLiveRecordingDuration(RecordedInputEvent recordedEvent)
+    {
+        _liveRecordingPlaybackEnd += recordedEvent.DelayBefore;
+        if (recordedEvent is SyntheticWaitRecordedEvent syntheticWait)
+            _liveRecordingPlaybackEnd += syntheticWait.AdditionalDelay;
+    }
+
+    private void ScheduleLiveUiRefresh()
+    {
+        if (_liveUiRefreshScheduled)
+            return;
+        _liveUiRefreshScheduled = true;
+        _uiDispatcher.BeginInvoke(FlushCoalescedLiveUi, DispatcherPriority.Background);
+    }
+
+    private void FlushCoalescedLiveUi()
+    {
+        _liveUiRefreshScheduled = false;
+        if (!IsRecording)
+            return;
         RebuildRows();
         RequestTimelineScrollToEnd?.Invoke();
     }
@@ -992,6 +1028,7 @@ public partial class MacroEditorViewModel : ObservableObject
         }
 
         IsRecording = false;
+        _liveUiRefreshScheduled = false;
 
         var meta = RecordingMetadata.ForNewSession(result.Environment) with
         {

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,23 +29,28 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     private Task? _foregroundTask;
     private volatile bool _running;
     private nint _lastForeground = nint.Zero;
-    private bool _haveLastRecordedMouseMove;
-    private int _lastRecordedMouseMoveX;
-    private int _lastRecordedMouseMoveY;
-    private bool _haveSecondLastRecordedMouseMove;
-    private int _secondLastRecordedMouseMoveX;
-    private int _secondLastRecordedMouseMoveY;
-    private bool _leftMouseButtonDown;
-    private bool _rightMouseButtonDown;
-    private bool _middleMouseButtonDown;
+    private volatile bool _haveLastRecordedMouseMove;
+    private volatile int _lastRecordedMouseMoveX;
+    private volatile int _lastRecordedMouseMoveY;
+    private volatile bool _haveSecondLastRecordedMouseMove;
+    private volatile int _secondLastRecordedMouseMoveX;
+    private volatile int _secondLastRecordedMouseMoveY;
+    private volatile bool _leftMouseButtonDown;
+    private volatile bool _rightMouseButtonDown;
+    private volatile bool _middleMouseButtonDown;
     private Action<RecordedInputEvent>? _onEventRecorded;
-    private bool _recordMouseMoves = true;
-    private int _mouseMoveMinPixelDelta = 5;
+    private ConcurrentQueue<RecordedInputEvent>? _liveEventQueue;
+    private Thread? _callbackThread;
+    private volatile bool _callbackDispatchRunning;
+    private AutoResetEvent? _callbackSignal;
+    private readonly RecordingKeyboardHoldState _keyboardHoldState = new();
+    private volatile bool _recordMouseMoves = true;
+    private volatile int _mouseMoveMinPixelDelta = 5;
     private bool _haveAnchor;
     private TimeSpan _lastAnchorElapsed;
     private TimeSpan _playbackTimelineEnd;
     private bool _useFocusBoundMouseCoordinates;
-    private bool _useClientSpaceForMouse;
+    private volatile bool _useClientSpaceForMouse;
     private readonly ILogger<LowLevelRecordingEngine> _logger;
 
     public LowLevelRecordingEngine(ILogger<LowLevelRecordingEngine> logger)
@@ -83,9 +89,24 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             _playbackTimelineEnd = TimeSpan.Zero;
             _useFocusBoundMouseCoordinates = useFocusBoundMouseCoordinates;
             _useClientSpaceForMouse = false;
+            _keyboardHoldState.Reset();
         }
 
         _onEventRecorded = onEventRecorded;
+        if (onEventRecorded is not null)
+        {
+            _liveEventQueue = new ConcurrentQueue<RecordedInputEvent>();
+            _callbackSignal = new AutoResetEvent(false);
+            _callbackDispatchRunning = true;
+            _callbackThread = new Thread(CallbackDispatchLoop) { IsBackground = true, Name = "RecordingLiveCallback" };
+            _callbackThread.Start();
+        }
+        else
+        {
+            _liveEventQueue = null;
+            _callbackSignal = null;
+            _callbackThread = null;
+        }
         _hooksReady = false;
         _lastForeground = NormalizeToRootWindow(NativeMethods.GetForegroundWindow());
         _running = true;
@@ -101,6 +122,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         if (!_hooksReady)
         {
             _running = false;
+            StopCallbackDispatch();
             _onEventRecorded = null;
             _foregroundCts?.Cancel();
             try
@@ -125,6 +147,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     public RecordingEngineResult Stop()
     {
         _running = false;
+        StopCallbackDispatch();
         lock (_lock)
             _onEventRecorded = null;
         _foregroundCts?.Cancel();
@@ -345,14 +368,35 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
     {
         if (nCode >= 0 && _running)
         {
+            var windowMessage = (int)(nint)wParam;
+            if (windowMessage == NativeMethods.WM_MOUSEMOVE && !_recordMouseMoves)
+                return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+
             var mouseLowLevel = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
-            var mappedEvent = HookToDomainMapper.FromMouse((int)(nint)wParam, mouseLowLevel);
+            if (windowMessage == NativeMethods.WM_MOUSEMOVE && _recordMouseMoves && !_useClientSpaceForMouse
+                && ShouldSkipMouseMoveFast(mouseLowLevel.pt.X, mouseLowLevel.pt.Y))
+                return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+
+            var mappedEvent = HookToDomainMapper.FromMouse(windowMessage, mouseLowLevel);
             if (mappedEvent is not null)
                 AppendStamped(mappedEvent);
         }
 
         return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
+
+    private bool ShouldSkipMouseMoveFast(int screenX, int screenY) =>
+        MouseMoveRecordingFilter.ShouldSkipMove(
+            screenX,
+            screenY,
+            _lastRecordedMouseMoveX,
+            _lastRecordedMouseMoveY,
+            _haveLastRecordedMouseMove,
+            _secondLastRecordedMouseMoveX,
+            _secondLastRecordedMouseMoveY,
+            _haveSecondLastRecordedMouseMove,
+            _mouseMoveMinPixelDelta,
+            _leftMouseButtonDown || _rightMouseButtonDown || _middleMouseButtonDown);
 
     private static bool ShouldRecordForegroundChangeBeforeKeyboardEvent(RecordedInputEvent eventTemplate) =>
         eventTemplate is KeyDownRecordedEvent or KeyUpRecordedEvent;
@@ -393,12 +437,12 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
         }
 
         eventTemplate = ConvertMouseScreenToClientIfNeeded(eventTemplate);
-        Action<RecordedInputEvent>? live;
         List<RecordedInputEvent> pendingCallbacks = new(2);
-        lock (_lock)
-        {
-            live = _onEventRecorded;
+        if (!TryEnterAppendLock())
+            return;
 
+        try
+        {
             if (_recordMouseMoves && TryGetAnchorMousePosition(eventTemplate, out var anchorScreenX, out var anchorScreenY))
                 FlushMouseMoveAt(anchorScreenX, anchorScreenY, pendingCallbacks);
 
@@ -406,7 +450,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
                 return;
 
             if (eventTemplate is KeyDownRecordedEvent keyDownAutorepeat
-                && IsKeyboardAutorepeatKeyDown(_events, keyDownAutorepeat))
+                && _keyboardHoldState.IsAutorepeatKeyDown(keyDownAutorepeat.Vk))
                 return;
 
             if (eventTemplate is MouseMoveRecordedEvent mouseMoveEvent && _recordMouseMoves
@@ -447,6 +491,7 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             }
 
             StoreStampedEvent(eventTemplate, pendingCallbacks);
+            UpdateKeyboardHoldState(eventTemplate);
 
             if (!_recordMouseMoves && IsAnchorEvent(eventTemplate))
             {
@@ -456,9 +501,93 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
 
             UpdateMouseButtonState(eventTemplate);
         }
+        finally
+        {
+            Monitor.Exit(_lock);
+        }
+
+        EnqueueLiveCallbacks(pendingCallbacks);
+    }
+
+    private bool TryEnterAppendLock()
+    {
+        if (NativeMethods.GetCurrentThreadId() == _hookThreadId)
+        {
+            Monitor.Enter(_lock);
+            return true;
+        }
+
+        return Monitor.TryEnter(_lock);
+    }
+
+    private void CallbackDispatchLoop()
+    {
+        var signal = _callbackSignal;
+        var queue = _liveEventQueue;
+        if (signal is null || queue is null)
+            return;
+
+        while (_callbackDispatchRunning)
+        {
+            signal.WaitOne(50);
+            DispatchQueuedLiveCallbacks(queue);
+        }
+
+        DispatchQueuedLiveCallbacks(queue);
+    }
+
+    private void DispatchQueuedLiveCallbacks(ConcurrentQueue<RecordedInputEvent> queue)
+    {
+        var live = _onEventRecorded;
+        if (live is null)
+            return;
+
+        while (queue.TryDequeue(out var recordedEvent))
+            live.Invoke(recordedEvent);
+    }
+
+    private void EnqueueLiveCallbacks(List<RecordedInputEvent> pendingCallbacks)
+    {
+        var queue = _liveEventQueue;
+        var signal = _callbackSignal;
+        if (queue is null || pendingCallbacks.Count == 0)
+            return;
 
         foreach (var recordedEvent in pendingCallbacks)
-            live?.Invoke(CloneForCallback(recordedEvent));
+            queue.Enqueue(CloneForCallback(recordedEvent));
+        signal?.Set();
+    }
+
+    private void StopCallbackDispatch()
+    {
+        _callbackDispatchRunning = false;
+        _callbackSignal?.Set();
+        try
+        {
+            _callbackThread?.Join(TimeSpan.FromSeconds(2));
+        }
+        catch
+        {
+            // ignore
+        }
+
+        _callbackThread = null;
+        _callbackSignal?.Dispose();
+        _callbackSignal = null;
+        _liveEventQueue = null;
+    }
+
+    private void UpdateKeyboardHoldState(RecordedInputEvent eventTemplate)
+    {
+        switch (eventTemplate)
+        {
+            case KeyDownRecordedEvent keyDown:
+                _keyboardHoldState.OnKeyDownStored(keyDown.Vk);
+                break;
+            case KeyUpRecordedEvent keyUp:
+                _keyboardHoldState.OnKeyUpStored(keyUp.Vk);
+                break;
+        }
     }
 
     private static bool TryGetAnchorMousePosition(RecordedInputEvent eventTemplate, out int screenX, out int screenY)
@@ -571,28 +700,6 @@ public sealed class LowLevelRecordingEngine : IRecordingEngine
             or KeyUpRecordedEvent
             or MouseButtonDownRecordedEvent
             or MouseButtonUpRecordedEvent;
-
-    /// <summary>
-    /// WH_KEYBOARD_LL sends repeated <see cref="KeyDownRecordedEvent"/> for the same VK while the key is held.
-    /// We keep only the first key-down per hold; repeats are not stored so the timeline shows one action until <see cref="KeyUpRecordedEvent"/>.
-    /// </summary>
-    private static bool IsKeyboardAutorepeatKeyDown(IReadOnlyList<RecordedInputEvent> events, KeyDownRecordedEvent keyDown)
-    {
-        for (var i = events.Count - 1; i >= 0; i--)
-        {
-            switch (events[i])
-            {
-                case SyntheticWaitRecordedEvent:
-                    continue;
-                case KeyDownRecordedEvent previousKeyDown:
-                    return previousKeyDown.Vk == keyDown.Vk;
-                default:
-                    return false;
-            }
-        }
-
-        return false;
-    }
 
     private static RecordedInputEvent CloneForCallback(RecordedInputEvent recordedEvent) =>
         recordedEvent switch

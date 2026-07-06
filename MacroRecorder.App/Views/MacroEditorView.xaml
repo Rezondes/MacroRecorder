@@ -261,7 +261,7 @@
                 <ListView x:Name="TimelineList"
                           BorderThickness="0"
                           Background="Transparent"
-                          VirtualizingPanel.IsVirtualizing="False"
+                VirtualizingPanel.IsVirtualizing="{Binding IsRecording}"
                           AllowDrop="{Binding IsRecording, Converter={StaticResource InverseBool}}"
                           ItemsSource="{Binding Rows}"
                           SelectionMode="Extended"
